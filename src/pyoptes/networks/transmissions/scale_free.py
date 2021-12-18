@@ -75,4 +75,6 @@ def get_scale_free_transmissions_data (
         print("     Total no. of transmissions:", len(events))
         print("     ...done")
 
-    return Transmissions(t_max, events)
+    tr = Transmissions(t_max, events)
+    setattr(tr, 'BA_network', G)
+    return tr

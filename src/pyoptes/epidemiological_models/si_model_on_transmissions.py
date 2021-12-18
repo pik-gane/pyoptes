@@ -273,7 +273,7 @@ class SIModelOnTransmissions (object):
         self._transmissions_time_offset = 0
         self._tests_time_offset = 0
 
-    def run (self, n_days=time_t.maxval):
+    def run (self, n_days=1e6):
         """Run the simulation for n_days 
         (or until an infection is detected if self.stop_when_detected,
         or when running out of transmissions or test data)
@@ -311,7 +311,7 @@ class SIModelOnTransmissions (object):
                         while self._tests_time_offset + self.tests_time_covered <= self.t:
                             if self.verbose: print("      Reusing tests data for another repetition")
                             self._tests_time_offset += self.tests_time_covered
-                            self._next_test_index = 0
+                            self._next_test_index = -1
                     # is there another test scheduled?
                     if self._tests_time_offset + self.tests[self.tests.shape[0]-1, 0] >= self.t:
                         # yes, so advance test list to current day:
@@ -348,9 +348,9 @@ class SIModelOnTransmissions (object):
                     while self._transmissions_time_offset + self.transmissions_time_covered <= self.t:
                         if self.verbose: print("      Reusing transmissions data for another repetition")
                         self._transmissions_time_offset += self.transmissions_time_covered
-                        self._next_transmission_index = 0
+                        self._next_transmission_index = -1
                 # is there another transmission scheduled?
-                if self._transmissions_time_offset + self.transmissions[self.transmissions.shape[0]-1, 0] >= self.t:
+                if self._transmissions_time_offset + self.transmissions[self.transmissions.shape[0]-1, 1] >= self.t:
                     # yes, so advance transmission list to current day:
                     next_t_received = -1
                     while next_t_received < self.t:
