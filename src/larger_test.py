@@ -123,13 +123,45 @@ for ep in range(n_episodes):
     model.run()
 print("Running many episodes of length", max_t, "took", (time()-start)/n_episodes, "seconds on average")
 
+# now run many episodes with random budget allocations until detection:
 start = time()
 sum_t = 0
 sum_infected_at_detection = 0
 sum_infected_at_symptoms = 0
 n_detected_by_test = 0
 for ep in range(n_episodes):
-    print("Partial episode", ep)
+    print("Partial episode with random budget", ep)
+    weights = np.random.rand(n_nodes)
+    shares = weights / weights.sum()
+    expected_n_tests = shares * expected_total_n_tests
+    model.daily_test_probabilities = expected_n_tests / max_t
+    model.reset()
+    model.stop_when_detected = True
+    model.run()
+    sum_infected_at_detection += model.is_infected[model.t].sum()
+    n_detected_by_test += model.detection_was_by_test
+    model.stop_when_detected = False
+    model.run(model.t_first_infection + model.delta_t_symptoms - model.t)
+    sum_infected_at_symptoms += model.is_infected[model.t].sum()
+    sum_t += model.t
+print("Running many partial episodes of average length", sum_t/n_episodes, "took", (time()-start)/n_episodes, "seconds on average")
+print("Share of episodes where infection was detected by a test:", n_detected_by_test/n_episodes)
+print("Avg. no. infected at detection:", sum_infected_at_detection/n_episodes)
+print("Avg. no. infected at symptoms: ", sum_infected_at_symptoms/n_episodes)
+print("--> Share saved by detection:  ", 100*(sum_infected_at_symptoms - sum_infected_at_detection)/sum_infected_at_symptoms, "%")
+
+# finally run many episodes with a degree-based budget allocations until detection:
+weights = np.array(degrees)
+shares = weights / weights.sum()
+expected_n_tests = shares * expected_total_n_tests
+model.daily_test_probabilities = expected_n_tests / max_t
+start = time()
+sum_t = 0
+sum_infected_at_detection = 0
+sum_infected_at_symptoms = 0
+n_detected_by_test = 0
+for ep in range(n_episodes):
+    print("Partial episode with degree-based budget", ep)
     model.reset()
     model.stop_when_detected = True
     model.run()
