@@ -1,14 +1,6 @@
-
-import numpy as np
-import numba as nb
-
-
-"""
-TODO:
-- implement transmissions probabilities
-- implement delays
-- implement node-dependent infection and test positive probabilities
-"""    
+from ..util import *
+#import numpy as np
+#import numba as nb
 
 if False:
     """
@@ -124,11 +116,6 @@ if False:
 
 # Instead, we specify the types for numba jit compilation as follows:
     
-time_t = nb.int64
-node_t = nb.int64
-edge_t = nb.types.Tuple((node_t, node_t))
-prob_t = nb.float64
-
 spec = [
 # SYSTEM STATE (changes during a simulation run): 
 # current time and node state:

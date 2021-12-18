@@ -1,0 +1,12 @@
+# Fdb version 3
+["pdflatex"] 1639820938 "/home/heitzig/Nextcloud/git/pyoptes/src/simple_test.py" "simple_test.pdf" "simple_test" 1639820938
+  "/etc/texmf/web2c/texmf.cnf" 1602197523 475 c0e671620eb5563b2130f56340a5fde8 ""
+  "/home/heitzig/.texlive2019/texmf-var/web2c/pdftex/pdflatex.fmt" 1597445670 4791332 fdfb327b26a3fec9bbd5425d27583412 ""
+  "/home/heitzig/Nextcloud/git/pyoptes/src/simple_test.py" 1639820927 2386 28816407bf011b3391f6710ea82f5621 ""
+  "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1581979058 38841 ce3692aa899bb693b90b87eaa5d4d84e ""
+  "/usr/share/texmf/web2c/texmf.cnf" 1581979058 38841 ce3692aa899bb693b90b87eaa5d4d84e ""
+  "simple_test.aux" 1639820938 8 a94a2480d3289e625eea47cd1b285758 ""
+  "simple_test.py" 1639820927 2386 28816407bf011b3391f6710ea82f5621 ""
+  (generated)
+  "simple_test.log"
+  "simple_test.pdf"

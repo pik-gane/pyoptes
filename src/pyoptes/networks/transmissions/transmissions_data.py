@@ -1,9 +1,12 @@
-import numpy as np
+from ...util import *
 from .. import Node
 
-
-class TransmissionEvent (object):
-    """represents a single transmission"""
+if False:
+    """
+    Class attribute declarations, only listed for documentation purposes,
+    not actually specified in class definition since numba does not support
+    this so far.
+    """
     
     t_sent = None
     """(number) time point of when the transmission left the source node"""
@@ -20,6 +23,20 @@ class TransmissionEvent (object):
     size = None
     """(number>0) size of the transmission in relevant units, e.g. number of transferred animals"""
      
+# Instead, we specify the types for numba jit compilation as follows:
+    
+spec = [
+    ('t_sent', time_t), 
+    ('t_received', time_t),
+    ('source', node_t),
+    ('target', node_t),
+    ('size', nb.int64)    
+]
+
+@nb.jitclass(spec)
+class TransmissionEvent (object):
+    """represents a single transmission"""
+    
     def __init__(self, t_sent, t_received, source, target, size):
         self.t_sent = t_sent
         self.t_received = t_received
@@ -27,13 +44,12 @@ class TransmissionEvent (object):
         self.target = target
         self.size = size
 
-
 class Transmissions (object):
     """Represents a list of all transmissions of potentially infectious material between nodes
     that happen within a certain time interval"""
     
     time_covered = None
-    """(number) length of the time interval covered by this list of transmissions"""
+    """(number) length of the (reception) time interval covered by this list of transmissions"""
 
     events = None
     """(list of TransmissionEvents) in potentially unordered fashion"""
@@ -64,6 +80,6 @@ class Transmissions (object):
                          
     def __str__(self):
         return "Transmissions:\n" + "\n".join([
-            "    sent " + str(ev.t_sent) + " rcvd " + str(ev.t_received) + " from " + str(ev.source) + " to " + str(ev.target)
+            "     sent on day " + str(ev.t_sent) + ", rcvd on day " + str(ev.t_received) + " from " + str(ev.source) + " to " + str(ev.target)
             for ev in self.events_by_time_received
         ]) + "\n"
