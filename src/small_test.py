@@ -38,12 +38,12 @@ daily_test_probabilities = expected_n_tests / max_t
 model = SIModelOnTransmissions(
     n_nodes = n_nodes,
     
-    use_transmission_list = True,
-    transmissions = transmissions.get_data_array(), 
+    use_transmissions_array = True,
+    transmissions_array = transmissions.get_data_array(), 
     transmissions_time_covered = transmissions_time_covered, 
     repeat_transmissions = True,
     
-    use_test_list = False,
+    use_tests_array = False,
     daily_test_probabilities = daily_test_probabilities,
     
     p_infection_from_outside = 0.01,

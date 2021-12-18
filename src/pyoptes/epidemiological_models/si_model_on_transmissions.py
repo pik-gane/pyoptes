@@ -42,9 +42,9 @@ if False:
         
     # transmissions:
     
-    use_transmission_list = None
+    use_transmissions_array = None
     """(boolean) whether to use a list of transmissions (otherwise transmission probabilities)"""
-    transmissions = None
+    transmissions_array = None
     """(optional 2d-array of ints with rows (t_sent, t_received, source, target) sorted by t_received (!), where source, target are node ids) 
     Array of transmissions""" # not yet: """Might alternatively be specified via transmission_probabilities"""
     transmissions_time_covered = None
@@ -61,7 +61,7 @@ if False:
     
     # tests:
     
-    use_test_list = None
+    use_tests_array = None
     """(boolean) whether to use a list of tests (otherwise test probabilities)"""
     tests = None
     """(optional 2d-array with rows (t, node_id) sorted by t)
@@ -131,15 +131,15 @@ spec = [
 # PARAMETERS (fixed during a simulation run):
     ('n_nodes', node_t),
 # transmissions:
-    ('use_transmission_list', nb.boolean),
-    ('transmissions', nb.int64[:, :]),
+    ('use_transmissions_array', nb.boolean),
+    ('transmissions_array', nb.int64[:, :]),
     ('transmissions_time_covered', time_t),
     ('_n_edges', nb.int64),
     ('repeat_transmissions', nb.boolean),
     ('transmission_network', nb.int64[:, :]),
     ('daily_transmission_probabilities', prob_t[:]),
 # tests:    
-    ('use_test_list', nb.boolean),
+    ('use_tests_array', nb.boolean),
     ('tests', nb.int64[:, :]),
     ('tests_time_covered', time_t),
     ('repeat_tests', nb.boolean),
@@ -178,14 +178,14 @@ class SIModelOnTransmissions (object):
     def __init__(self, 
                  n_nodes=0,
                  
-                 use_transmission_list=False,
-                 transmissions=np.array([[-1,-1,-1]]), 
+                 use_transmissions_array=False,
+                 transmissions_array=np.array([[-1,-1,-1]]), 
                  transmissions_time_covered=0, 
                  repeat_transmissions=False,
                  transmission_network=np.array([[-1,-1,-1]]),
                  daily_transmission_probabilities=np.array([-1.0]),
                  
-                 use_test_list=False,
+                 use_tests_array=False,
                  tests=np.array([[-1,-1]]), 
                  tests_time_covered=0, 
                  repeat_tests=False, 
@@ -210,10 +210,10 @@ class SIModelOnTransmissions (object):
         self.n_nodes = n_nodes
         
         # are transmissions specified via transmissions or via daily_test_probabilities:
-        self.use_transmission_list = use_transmission_list
-        if use_transmission_list:
+        self.use_transmissions_array = use_transmissions_array
+        if use_transmissions_array:
             if verbose: print("     using a list of transmissions")
-            self.transmissions = transmissions
+            self.transmissions_array = transmissions_array
             self.transmissions_time_covered = transmissions_time_covered
             self.repeat_transmissions = repeat_transmissions
         else:
@@ -223,8 +223,8 @@ class SIModelOnTransmissions (object):
             self._n_edges = transmission_network.shape[0]
             
         # are tests specified via tests or via daily_test_probabilities:
-        self.use_test_list = use_test_list
-        if self.use_test_list:
+        self.use_tests_array = use_tests_array
+        if self.use_tests_array:
             if verbose: print("     using a list of tests")
             self.tests = tests
             self.tests_time_covered = tests_time_covered
@@ -305,7 +305,7 @@ class SIModelOnTransmissions (object):
                 
             # take tests (if no positive test yet, otherwise skip):
             if self.t_first_detection == -1 and self.t >= self.delta_t_testable:
-                if self.use_test_list:
+                if self.use_tests_array:
                     if self.repeat_tests:
                         # if necessary, forward offset to cover current time:
                         while self._tests_time_offset + self.tests_time_covered <= self.t:
@@ -342,7 +342,7 @@ class SIModelOnTransmissions (object):
 
             # EVENING of day t: transmissions arrive:
                 
-            if self.use_transmission_list:
+            if self.use_transmissions_array:
                 if self.repeat_transmissions:
                     # if necessary, forward offset to cover current time:
                     while self._transmissions_time_offset + self.transmissions_time_covered <= self.t:
@@ -350,21 +350,21 @@ class SIModelOnTransmissions (object):
                         self._transmissions_time_offset += self.transmissions_time_covered
                         self._next_transmission_index = -1
                 # is there another transmission scheduled?
-                if self._transmissions_time_offset + self.transmissions[self.transmissions.shape[0]-1, 1] >= self.t:
+                if self._transmissions_time_offset + self.transmissions_array[self.transmissions_array.shape[0]-1, 1] >= self.t:
                     # yes, so advance transmission list to current day:
                     next_t_received = -1
                     while next_t_received < self.t:
                         self._next_transmission_index += 1
-                        next_t_received = self._transmissions_time_offset + self.transmissions[self._next_transmission_index, 1]
+                        next_t_received = self._transmissions_time_offset + self.transmissions_array[self._next_transmission_index, 1]
                     # now process all transmissions scheduled for this day:
                     while next_t_received == self.t:
-                        t_sent = self._transmissions_time_offset + self.transmissions[self._next_transmission_index, 0]
-                        source = self.transmissions[self._next_transmission_index, 2]
-                        target = self.transmissions[self._next_transmission_index, 3]
+                        t_sent = self._transmissions_time_offset + self.transmissions_array[self._next_transmission_index, 0]
+                        source = self.transmissions_array[self._next_transmission_index, 2]
+                        target = self.transmissions_array[self._next_transmission_index, 3]
                         self._process_transmission(t_sent, source, target)
                         # advance to next transmission:
                         self._next_transmission_index += 1
-                        next_t_received = self._transmissions_time_offset + self.transmissions[self._next_transmission_index, 1]
+                        next_t_received = self._transmissions_time_offset + self.transmissions_array[self._next_transmission_index, 1]
                     # at this point, last extracted transmission was not performed because it is in the future
                     # hence we will have to extract it again tomorrow:
                     self._next_transmission_index -= 1

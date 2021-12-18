@@ -7,47 +7,58 @@ from time import time
 import numpy as np
 import pylab as plt
 from pyoptes import set_seed
-from pyoptes.networks.transmissions.scale_free import get_scale_free_transmissions_data
 from pyoptes.epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions
 
 #set_seed(1)
 
 # PARAMETERS:
-    
-n_nodes = 60000  # as in HI-Tier German pig trade data
+
+use_real_data = False #True
 max_t = 365  # simulate at most for one year
-expected_total_n_tests = n_nodes * max_t / 365  # i.e. on average one test per node and year
-transmissions_time_covered = 180  # typical lifetime of a pig
-n_total_transmissions = 6e6 * transmissions_time_covered / 1440  # as in HI-Tier German pig trade data
-transmission_delay = 1
+tests_per_node_and_year = 1
 expected_time_of_first_infection = 30
 
-# generate transmissions data:
+if use_real_data:
+    from pyoptes.networks.transmissions.hitier_schweine import load_transdataarray
+    transmissions_array = load_transdataarray(verbose=True)
+    transmissions_time_covered = transmissions_array[:,[0,1]].max() + 1
+    n_nodes = transmissions_array[:,[2,3]].max() + 1
     
-start = time()
-n_transmissions_per_day = int(n_total_transmissions // transmissions_time_covered)
-n_forward_transmissions_per_day = int(0.75 * n_transmissions_per_day)
-n_backward_transmissions_per_day = n_transmissions_per_day - n_forward_transmissions_per_day
-transmissions = get_scale_free_transmissions_data (
-    n_nodes=n_nodes, 
-    BA_m=20,
-    t_max=transmissions_time_covered, 
-    n_forward_transmissions_per_day=n_forward_transmissions_per_day,
-    n_backward_transmissions_per_day=n_backward_transmissions_per_day,
-    delay=transmission_delay,
-    verbose=True
-    )
-duration = time() - start
-print("Generating transmissions data took", duration, "seconds total,", duration/n_total_transmissions, "seconds/transmission")
-assert transmissions.max_delay == transmission_delay
-assert len(transmissions.events) == transmissions_time_covered * (n_backward_transmissions_per_day + n_forward_transmissions_per_day)  
-degrees = [d for n, d in transmissions.BA_network.degree()]
-plt.loglog(sorted(degrees, reverse=True), np.arange(n_nodes)/n_nodes)
-plt.gca().set_xlabel("node degree in static network")
-plt.gca().set_ylabel("decumulative probability distribution")
-plt.show()
+else:
+    from pyoptes.networks.transmissions.scale_free import get_scale_free_transmissions_data
+    n_nodes = 60000  # as in HI-Tier German pig trade data
+    transmissions_time_covered = 180  # typical lifetime of a pig
+    n_total_transmissions = 6e6 * transmissions_time_covered / 1440  # as in HI-Tier German pig trade data
+    transmission_delay = 1
+
+    # generate transmissions data:
+        
+    start = time()
+    n_transmissions_per_day = int(n_total_transmissions // transmissions_time_covered)
+    n_forward_transmissions_per_day = int(0.75 * n_transmissions_per_day)
+    n_backward_transmissions_per_day = n_transmissions_per_day - n_forward_transmissions_per_day
+    transmissions = get_scale_free_transmissions_data (
+        n_nodes=n_nodes, 
+        BA_m=20,
+        t_max=transmissions_time_covered, 
+        n_forward_transmissions_per_day=n_forward_transmissions_per_day,
+        n_backward_transmissions_per_day=n_backward_transmissions_per_day,
+        delay=transmission_delay,
+        verbose=True
+        )
+    duration = time() - start
+    print("Generating transmissions data took", duration, "seconds total,", duration/n_total_transmissions, "seconds/transmission")
+    assert transmissions.max_delay == transmission_delay
+    assert len(transmissions.events) == transmissions_time_covered * (n_backward_transmissions_per_day + n_forward_transmissions_per_day)  
+    degrees = [d for n, d in transmissions.BA_network.degree()]
+    plt.loglog(sorted(degrees, reverse=True), np.arange(n_nodes)/n_nodes)
+    plt.gca().set_xlabel("node degree in static network")
+    plt.gca().set_ylabel("decumulative probability distribution")
+    plt.show()
+    transmissions_array = transmissions.get_data_array(), 
 
 # distribute the test budget randomly (rather than intelligently):
+expected_total_n_tests = tests_per_node_and_year * n_nodes * max_t / 365
 weights = np.random.rand(n_nodes)
 shares = weights / weights.sum()
 expected_n_tests = shares * expected_total_n_tests
@@ -59,12 +70,12 @@ p_infection_from_outside = 1 / (n_nodes * expected_time_of_first_infection)
 model = SIModelOnTransmissions(
     n_nodes = n_nodes,
     
-    use_transmission_list = True,
-    transmissions = transmissions.get_data_array(), 
+    use_transmissions_array = True,
+    transmissions_array = transmissions_array, 
     transmissions_time_covered = transmissions_time_covered, 
     repeat_transmissions = True,
     
-    use_test_list = False,
+    use_tests_array = False,
     daily_test_probabilities = daily_test_probabilities,
     
     p_infection_from_outside = p_infection_from_outside,
@@ -150,29 +161,30 @@ print("Avg. no. infected at detection:", sum_infected_at_detection/n_episodes)
 print("Avg. no. infected at symptoms: ", sum_infected_at_symptoms/n_episodes)
 print("--> Share saved by detection:  ", 100*(sum_infected_at_symptoms - sum_infected_at_detection)/sum_infected_at_symptoms, "%")
 
-# finally run many episodes with a degree-based budget allocations until detection:
-weights = np.array(degrees)
-shares = weights / weights.sum()
-expected_n_tests = shares * expected_total_n_tests
-model.daily_test_probabilities = expected_n_tests / max_t
-start = time()
-sum_t = 0
-sum_infected_at_detection = 0
-sum_infected_at_symptoms = 0
-n_detected_by_test = 0
-for ep in range(n_episodes):
-    print("Partial episode with degree-based budget", ep)
-    model.reset()
-    model.stop_when_detected = True
-    model.run()
-    sum_infected_at_detection += model.is_infected[model.t].sum()
-    n_detected_by_test += model.detection_was_by_test
-    model.stop_when_detected = False
-    model.run(model.t_first_infection + model.delta_t_symptoms - model.t)
-    sum_infected_at_symptoms += model.is_infected[model.t].sum()
-    sum_t += model.t
-print("Running many partial episodes of average length", sum_t/n_episodes, "took", (time()-start)/n_episodes, "seconds on average")
-print("Share of episodes where infection was detected by a test:", n_detected_by_test/n_episodes)
-print("Avg. no. infected at detection:", sum_infected_at_detection/n_episodes)
-print("Avg. no. infected at symptoms: ", sum_infected_at_symptoms/n_episodes)
-print("--> Share saved by detection:  ", 100*(sum_infected_at_symptoms - sum_infected_at_detection)/sum_infected_at_symptoms, "%")
+if not use_real_data:
+    # finally run many episodes with a degree-based budget allocations until detection:
+    weights = np.array(degrees)
+    shares = weights / weights.sum()
+    expected_n_tests = shares * expected_total_n_tests
+    model.daily_test_probabilities = expected_n_tests / max_t
+    start = time()
+    sum_t = 0
+    sum_infected_at_detection = 0
+    sum_infected_at_symptoms = 0
+    n_detected_by_test = 0
+    for ep in range(n_episodes):
+        print("Partial episode with degree-based budget", ep)
+        model.reset()
+        model.stop_when_detected = True
+        model.run()
+        sum_infected_at_detection += model.is_infected[model.t].sum()
+        n_detected_by_test += model.detection_was_by_test
+        model.stop_when_detected = False
+        model.run(model.t_first_infection + model.delta_t_symptoms - model.t)
+        sum_infected_at_symptoms += model.is_infected[model.t].sum()
+        sum_t += model.t
+    print("Running many partial episodes of average length", sum_t/n_episodes, "took", (time()-start)/n_episodes, "seconds on average")
+    print("Share of episodes where infection was detected by a test:", n_detected_by_test/n_episodes)
+    print("Avg. no. infected at detection:", sum_infected_at_detection/n_episodes)
+    print("Avg. no. infected at symptoms: ", sum_infected_at_symptoms/n_episodes)
+    print("--> Share saved by detection:  ", 100*(sum_infected_at_symptoms - sum_infected_at_detection)/sum_infected_at_symptoms, "%")
