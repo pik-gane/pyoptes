@@ -55,7 +55,7 @@ else:
     plt.gca().set_xlabel("node degree in static network")
     plt.gca().set_ylabel("decumulative probability distribution")
     plt.show()
-    transmissions_array = transmissions.get_data_array(), 
+    transmissions_array = transmissions.get_data_array()
 
 # distribute the test budget randomly (rather than intelligently):
 expected_total_n_tests = tests_per_node_and_year * n_nodes * max_t / 365
