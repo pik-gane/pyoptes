@@ -4,15 +4,17 @@ using transmissions data generated with get_scale_free_transmissions_data.
 
 Input: a budget allocation, i.e., a vector of nonnegative floats specifying
        the expected number of tests each node will take per year.
-Output: the number of infected nodes at the time the simulation is stopped
-        due to the detection of an outbreak either because of a test or because 
-        of symptoms.
+       
+Output: an estimate of the number of infected animals at the time the simulation 
+        is stopped due to the detection of an outbreak either because of a test 
+        or because of symptoms. This estimate is noisy because it depends on
+        the stochastic infection dynamics simulated by the model.
 """
 
 import numpy as np
 from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions
 
-global model
+global model, capacities, network
 
 
 def prepare():
@@ -23,13 +25,14 @@ def prepare():
     max_t = 365  # simulate at most for one year
     expected_time_of_first_infection = 30
     
-    global model
+    global model, capacities, network
     
     if use_real_data:
         from pyoptes.networks.transmissions.hitier_schweine import load_transdataarray
         transmissions_array = load_transdataarray(verbose=True)
         transmissions_time_covered = transmissions_array[:,[0,1]].max() + 1
         n_nodes = transmissions_array[:,[2,3]].max() + 1
+        # TODO: also read the file that states the nodes' estimated capacities
         
     else:
         from pyoptes.networks.transmissions.scale_free import get_scale_free_transmissions_data
@@ -54,7 +57,14 @@ def prepare():
         assert transmissions.max_delay == transmission_delay
         assert len(transmissions.events) == transmissions_time_covered * (n_backward_transmissions_per_day + n_forward_transmissions_per_day)  
         transmissions_array = transmissions.get_data_array()
-
+        network = transmissions.BA_network
+        
+        # set random capacities:
+        total_capacity = 25e6  # as in German pig trade 
+        weights = np.random.rand(n_nodes)
+        shares = weights / weights.sum()
+        capacities = shares * total_capacity
+         
     # setup the model:
     p_infection_from_outside = 1 / (n_nodes * expected_time_of_first_infection)
     model = SIModelOnTransmissions(
@@ -102,13 +112,13 @@ def evaluate(budget_allocation):
     stopped
     """
 
-    global model
+    global model, capacities
 
     model.daily_test_probabilities = budget_allocation / 365
     model.reset()
     # run until detection:
     model.run()
-    n_infected_when_stopped = model.is_infected[model.t,:].sum()
+    n_infected_when_stopped = (capacities * model.is_infected[model.t,:]).sum()
 
     return n_infected_when_stopped
     # Note: other indicators are available via target_function.model
