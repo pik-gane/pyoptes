@@ -1,0 +1,10 @@
+name: bbo
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7
+  - matplotlib
+  - numpy
+  - scipy
+  - numba=0.46.0
+  - networkx
