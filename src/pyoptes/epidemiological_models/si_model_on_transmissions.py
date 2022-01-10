@@ -166,7 +166,7 @@ spec = [
 
 # HERE COMES THE ACTUAL CLASS:
     
-@nb.jitclass(spec)
+#@nb.jitclass(spec) # temporarily disabled until numba version problem is solved.
 class SIModelOnTransmissions (object):
     """Can run simulations of the SI (susceptible-infectious) model on a 
     transmission network."""
@@ -262,7 +262,7 @@ class SIModelOnTransmissions (object):
         """Reset the simulation to time t, no nodes infected, and no past positive test"""
         if self.verbose: print("\n    Resetting SI simulation to day zero") 
         self.t = -1
-        self.is_infected = np.zeros((self.max_t + 1, self.n_nodes), nb.boolean)
+        self.is_infected = np.zeros((self.max_t + 1, self.n_nodes)) #, nb.boolean) # temporarily edited until numba version problem is solved.
         self.have_still_data = True
         self.t_first_infection = -1
         self.node_first_infected = -1
@@ -364,7 +364,10 @@ class SIModelOnTransmissions (object):
                         self._process_transmission(t_sent, source, target)
                         # advance to next transmission:
                         self._next_transmission_index += 1
-                        next_t_received = self._transmissions_time_offset + self.transmissions_array[self._next_transmission_index, 1]
+                        if self._next_transmission_index < self.transmissions_array.shape[0]:
+                            next_t_received = self._transmissions_time_offset + self.transmissions_array[self._next_transmission_index, 1]
+                        else:
+                            next_t_received += 1
                     # at this point, last extracted transmission was not performed because it is in the future
                     # hence we will have to extract it again tomorrow:
                     self._next_transmission_index -= 1
