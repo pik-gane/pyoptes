@@ -1,0 +1,28 @@
+Last login: Mon Jan 10 19:13:27 on ttys002
+(base) admin@Admins-MBP src % touch simple.yml
+(base) admin@Admins-MBP src % vim
+
+
+
+
+
+
+
+
+
+
+
+channels:
+  - default
+         
+
+dependencies:
+  - python=3.7.6
+  - numba=0.48.0
+  - numpy=1.18.1
+  - scipy=1.4.1
+~                                                                                                                                                                     
+~                                                                                                                                                                     
+~                                                                                                                                                                     
+~                                                                                                                                                                     
+-- INSERT --
