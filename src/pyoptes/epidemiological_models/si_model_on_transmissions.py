@@ -166,7 +166,7 @@ spec = [
 
 # HERE COMES THE ACTUAL CLASS:
     
-#@nb.jitclass(spec) # temporarily disabled until numba version problem is solved.
+@nb.jitclass(spec) 
 class SIModelOnTransmissions (object):
     """Can run simulations of the SI (susceptible-infectious) model on a 
     transmission network."""
@@ -262,7 +262,7 @@ class SIModelOnTransmissions (object):
         """Reset the simulation to time t, no nodes infected, and no past positive test"""
         if self.verbose: print("\n    Resetting SI simulation to day zero") 
         self.t = -1
-        self.is_infected = np.zeros((self.max_t + 1, self.n_nodes)) #, nb.boolean) # temporarily edited until numba version problem is solved.
+        self.is_infected = np.zeros((self.max_t + 1, self.n_nodes), nb.boolean)
         self.have_still_data = True
         self.t_first_infection = -1
         self.node_first_infected = -1
@@ -367,6 +367,8 @@ class SIModelOnTransmissions (object):
                         if self._next_transmission_index < self.transmissions_array.shape[0]:
                             next_t_received = self._transmissions_time_offset + self.transmissions_array[self._next_transmission_index, 1]
                         else:
+                            # moved past end of ransmissions list, so next transmission, if any, is not on same day.
+                            # hence we can simply increment it since it will be overwritten next time anyway:
                             next_t_received += 1
                     # at this point, last extracted transmission was not performed because it is in the future
                     # hence we will have to extract it again tomorrow:
@@ -401,9 +403,12 @@ class SIModelOnTransmissions (object):
 
     def _process_transmission(self, t_sent, source, target):
             if self.verbose: print("      Transmission from", source, "to", target)
-            if t_sent - self.delta_t_infectious >= 0 and self.is_infected[t_sent - self.delta_t_infectious, source]:
+            if (t_sent - self.delta_t_infectious >= 0 
+                and self.is_infected[t_sent - self.delta_t_infectious, source]
+                and not self.is_infected[self.t, target]):
                 # source node was infected for long enough before transmission was sent
-                # for the transmission to be potentially infectious:
+                # for the transmission to be potentially infectious,
+                # and target node is not infected yet, so test for new infection:
                 if np.random.rand() < self.p_infection_by_transmission:
                     # infection was transmitted
                     if self.verbose: print("       causes an infection")
