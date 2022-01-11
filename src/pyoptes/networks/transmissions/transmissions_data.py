@@ -33,7 +33,7 @@ spec = [
     ('size', nb.int64)    
 ]
 
-@nb.jitclass(spec)
+@jitclass(spec)
 class TransmissionEvent (object):
     """represents a single transmission"""
     
