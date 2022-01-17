@@ -8,3 +8,4 @@ dependencies:
   - scipy
   - numba=0.48.0
   - networkx
+  - tqdm
