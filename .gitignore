@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 /*/outcmaes
+.idea
 
 # C extensions
 *.so
