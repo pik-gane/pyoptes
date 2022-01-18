@@ -1,11 +1,14 @@
-name: bbo
+name: alebo
 channels:
   - conda-forge
+  - acellera
 dependencies:
-  - python=3.7
+  - python
   - matplotlib
-  - numpy=1.18.1
+  - numpy=1.19
   - scipy
-  - numba=0.48.0
+  - numba=0.48
   - networkx
   - tqdm
+  - ax-platform>=0.1.17
+  - cma

@@ -1,6 +1,4 @@
 import numpy as np
-# from scipy.stats import gaussian_kde as kde
-# import pylab as plt
 from pyoptes import set_seed
 from pyoptes.optimization.budget_allocation import target_function as f
 import cma
