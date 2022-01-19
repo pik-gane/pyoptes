@@ -1,8 +1,8 @@
 """
 Simple test to illustrate how the target function could be used.
-Here focussing on the AVERAGE no. of infected animals
-hence using a target function based on a SINGLE simulation
-so that the optimizer can later decide how often to evaluate it. 
+Here focussing on the 95th PERCENTILE of the no. of infected animals,
+hence using a target function based on MANY simulations
+and reporting the std.err. of the resulting estimation of the 95th percentile.
 """
 
 import numpy as np
@@ -33,17 +33,31 @@ total_budget = 1.0 * n_inputs  # i.e., on average, nodes will do one test per ye
 weights = np.random.rand(n_inputs)
 shares = weights / weights.sum()
 x = shares * total_budget  
-y = f.evaluate(x)
+y = f.evaluate(
+        x, 
+        n_simulations=100, 
+        statistic=lambda a: np.percentile(a, 95)  # to focus on the tail of the distribution
+        )
 
 print("\nOne evaluation at random x:", y)
 
-n_trials = 10000
+
+evaluation_parms = { 
+        'n_simulations': 100, 
+        'statistic': lambda a: np.percentile(a, 95)
+        }
+
+n_trials = 1000
+
+def stderr(a):
+    return np.std(a, ddof=1) / np.sqrt(np.size(a))
+
 
 # evaluate f a number of times at the same input:
-ys = np.array([f.evaluate(x) for it in range(n_trials)])
+ys = np.array([f.evaluate(x, **evaluation_parms) for it in range(n_trials)])
 logys = np.log(ys)
-print("Mean, std.dev. and 95th percentile of", n_trials, "evaluations at the same random x:", ys.mean(), ys.std(), np.quantile(ys,0.95))
-print("Mean, std.dev. and 95th percentile of the log of", n_trials, "evaluations at that x:", logys.mean(), logys.std(), np.quantile(logys,0.95))
+print("Mean and std.err. of", n_trials, "evaluations at the same random x:", ys.mean(), stderr(ys))
+print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys.mean(), stderr(logys))
 
 
 # do the same for an x that is based on the total capacity of a node:
@@ -52,10 +66,10 @@ weights = f.capacities
 shares = weights / weights.sum()
 
 x2 = shares * total_budget
-ys2 = np.array([f.evaluate(x2) for it in range(n_trials)])
+ys2 = np.array([f.evaluate(x2, **evaluation_parms) for it in range(n_trials)])
 logys2 = np.log(ys2)
-print("\nMean, std.dev. and 95th percentile of", n_trials, "evaluations at a capacity-based x:", ys2.mean(), ys2.std(), np.quantile(ys2,0.95))
-print("Mean, std.dev. and 95th percentile of the log of", n_trials, "evaluations at that x:", logys2.mean(), logys2.std(), np.quantile(logys2,0.95))
+print("\nMean and std.err. of", n_trials, "evaluations at a capacity-based x:", ys2.mean(), stderr(ys2))
+print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys2.mean(), stderr(logys2))
 
 
 # do the same for an x that is based on the total number of incoming transmissions per node:
@@ -68,10 +82,10 @@ shares = weights / weights.sum()
 total_budget = 1.0 * n_inputs
 
 x3 = shares * total_budget
-ys3 = np.array([f.evaluate(x3) for it in range(n_trials)])
+ys3 = np.array([f.evaluate(x3, **evaluation_parms) for it in range(n_trials)])
 logys3 = np.log(ys3)
-print("\nMean, std.dev. and 95th percentile of", n_trials, "evaluations at a transmissions-based x:", ys3.mean(), ys3.std(), np.quantile(ys3,0.95))
-print("Mean, std.dev. and 95th percentile of the log of", n_trials, "evaluations at that x:", logys3.mean(), logys3.std(), np.quantile(logys3,0.95))
+print("\nMean and std.err. of", n_trials, "evaluations at a transmissions-based x:", ys3.mean(), stderr(ys3))
+print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys3.mean(), stderr(logys3))
 
 
 # do the same for an x that is based on the static network's node degrees:
@@ -80,11 +94,10 @@ weights = np.array(list([d for n, d in f.network.degree()]))
 shares = weights / weights.sum()
 
 x4 = shares * total_budget
-ys4 = np.array([f.evaluate(x4) for it in range(n_trials)])
+ys4 = np.array([f.evaluate(x4, **evaluation_parms) for it in range(n_trials)])
 logys4 = np.log(ys4)
-print("\nMean, std.dev. and 95th percentile of", n_trials, "evaluations at a degree-based x:", ys4.mean(), ys4.std(), np.quantile(ys4,0.95))
-print("Mean, std.dev. and 95th percentile of the log of", n_trials, "evaluations at that x:", logys4.mean(), logys4.std(), np.quantile(logys4,0.95))
-
+print("\nMean and std.err. of", n_trials, "evaluations at a degree-based x:", ys4.mean(), stderr(ys4))
+print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys4.mean(), stderr(logys4))
 
 
 xs = np.linspace(ys3.min(), ys.max())

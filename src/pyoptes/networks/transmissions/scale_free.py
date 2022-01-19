@@ -1,6 +1,5 @@
 from networkx import barabasi_albert_graph
 import random as rd
-#from numpy.random import choice
 from ...util import *
 from .transmissions_data import TransmissionEvent, Transmissions
 
@@ -69,7 +68,7 @@ def get_scale_free_transmissions_data (
         n_forward_transmissions_per_day=n_forward_transmissions_per_day,
         n_backward_transmissions_per_day=n_backward_transmissions_per_day,
         delay=delay,
-        verbose=verbose,   # whether to print information to stdout
+        verbose=verbose, 
         )    
     if verbose: 
         print("     Total no. of transmissions:", len(events))
