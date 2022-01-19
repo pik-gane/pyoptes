@@ -12,3 +12,4 @@ dependencies:
   - tqdm
   - ax-platform>=0.1.17
   - cma
+  - smac

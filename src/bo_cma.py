@@ -49,7 +49,7 @@ if __name__ == '__main__':
     sigma = 0.2
     max_iterations = 1000
     ea = cma.CMAEvolutionStrategy(x, sigma, inopts={'maxiter': max_iterations, 'verbose': -8})
-    ea.optimize(f.evaluate)
+    ea.optimize(get_mean_function_output)
     solutions = ea.pop_sorted
 
     for s in solutions:

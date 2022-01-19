@@ -15,7 +15,7 @@ def branin_evaluation_function(parameterization):
     return {"objective": (branin(x), 0.0)}
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     # Define the parameters in the format expected by Ax.
     # Here we define a D=100 search space by augmenting the real Branin parameters
     # with 98 unused parameters.
