@@ -18,14 +18,28 @@ global model, capacities, network
 
 
 def prepare(use_real_data=False, 
+            static_network=None,
+            n_nodes=60000,
             max_t=365, 
             expected_time_of_first_infection=30, 
-            n_nodes=60000,
             capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
             delta_t_symptoms=30
             ):
     """Prepare the target function before being able to evaluate it for the 
-    first time."""
+    first time.
+    
+    @param use_real_data: (boolean) Whether to use the real HI-Tier dataset
+    (default: false)
+    @param static_network: (optional networkx Graph or DiGraph) Which network
+    to base transmissions on (if not use_real_data), or None if a scale-free
+    network should be used (default: None)
+    @param n_nodes: (optional int) Number of nodes for the scale-free network
+    (if not use_real_data and static_network is None) (default: 60000)
+    @param max_t: (optional int) Maximal simulation time in days (default: 365)
+    @param expected_time_of_first_infection: (optional int, default: 30)
+    @param delta_t_symptoms: (optional int, default: 30) After what time the 
+    infection should be detected automatically even without a test.
+    """
 
     global model, capacities, network
     
@@ -37,28 +51,47 @@ def prepare(use_real_data=False,
         # TODO: also read the file that states the nodes' estimated capacities
         
     else:
-        from pyoptes.networks.transmissions.scale_free import get_scale_free_transmissions_data
+        if static_network is not None:
+            n_nodes = static_network.number_of_nodes()
+            
         transmissions_time_covered = 180  # typical lifetime of a pig
         n_total_transmissions = 6e6 * n_nodes/60000 * transmissions_time_covered/1440  # proportional to HI-Tier German pig trade data
         transmission_delay = 1
     
         # generate transmissions data:
         n_transmissions_per_day = int(n_total_transmissions // transmissions_time_covered)
-        n_forward_transmissions_per_day = int(0.75 * n_transmissions_per_day)
-        n_backward_transmissions_per_day = n_transmissions_per_day - n_forward_transmissions_per_day
-        transmissions = get_scale_free_transmissions_data (
-            n_nodes=n_nodes, 
-            BA_m=20,
-            t_max=transmissions_time_covered, 
-            n_forward_transmissions_per_day=n_forward_transmissions_per_day,
-            n_backward_transmissions_per_day=n_backward_transmissions_per_day,
-            delay=transmission_delay,
-            verbose=False
-            )
+
+        if static_network is None:
+            # use a scale-free network:
+            from pyoptes.networks.transmissions.scale_free import get_scale_free_transmissions_data
+            n_forward_transmissions_per_day = int(0.75 * n_transmissions_per_day)
+            n_backward_transmissions_per_day = n_transmissions_per_day - n_forward_transmissions_per_day
+            transmissions = get_scale_free_transmissions_data (
+                n_nodes=n_nodes, 
+                BA_m=20,
+                t_max=transmissions_time_covered, 
+                n_forward_transmissions_per_day=n_forward_transmissions_per_day,
+                n_backward_transmissions_per_day=n_backward_transmissions_per_day,
+                delay=transmission_delay,
+                verbose=False
+                )
+            assert len(transmissions.events) == transmissions_time_covered * (n_backward_transmissions_per_day + n_forward_transmissions_per_day)  
+            network = transmissions.BA_network
+            
+        else:
+            from pyoptes.networks.transmissions.static_network_based import get_static_network_based_transmissions_data
+            transmissions = get_static_network_based_transmissions_data (
+                network=static_network,
+                t_max=transmissions_time_covered, 
+                n_transmissions_per_day=n_transmissions_per_day,
+                delay=transmission_delay,
+                verbose=True #False
+                )
+            assert len(transmissions.events) == transmissions_time_covered * n_transmissions_per_day  
+            network = static_network
+            
         assert transmissions.max_delay == transmission_delay
-        assert len(transmissions.events) == transmissions_time_covered * (n_backward_transmissions_per_day + n_forward_transmissions_per_day)  
         transmissions_array = transmissions.get_data_array()
-        network = transmissions.BA_network
         
         # set random capacities:
         total_capacity = 25e6 * n_nodes/60000  # proportional to German pig trade 
