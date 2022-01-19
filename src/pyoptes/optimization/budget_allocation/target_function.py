@@ -17,14 +17,16 @@ from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmi
 global model, capacities, network
 
 
-def prepare():
+def prepare(use_real_data=False, 
+            max_t=365, 
+            expected_time_of_first_infection=30, 
+            n_nodes=60000,
+            capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
+            delta_t_symptoms=30
+            ):
     """Prepare the target function before being able to evaluate it for the 
     first time."""
 
-    use_real_data = False #True
-    max_t = 365  # simulate at most for one year
-    expected_time_of_first_infection = 30
-    
     global model, capacities, network
     
     if use_real_data:
@@ -36,9 +38,8 @@ def prepare():
         
     else:
         from pyoptes.networks.transmissions.scale_free import get_scale_free_transmissions_data
-        n_nodes = 60000  # as in HI-Tier German pig trade data
         transmissions_time_covered = 180  # typical lifetime of a pig
-        n_total_transmissions = 6e6 * transmissions_time_covered / 1440  # as in HI-Tier German pig trade data
+        n_total_transmissions = 6e6 * n_nodes/60000 * transmissions_time_covered/1440  # proportional to HI-Tier German pig trade data
         transmission_delay = 1
     
         # generate transmissions data:
@@ -60,8 +61,8 @@ def prepare():
         network = transmissions.BA_network
         
         # set random capacities:
-        total_capacity = 25e6  # as in German pig trade 
-        weights = np.random.rand(n_nodes)
+        total_capacity = 25e6 * n_nodes/60000  # proportional to German pig trade 
+        weights = capacity_distribution(size=n_nodes)
         shares = weights / weights.sum()
         capacities = shares * total_capacity
          
@@ -83,7 +84,7 @@ def prepare():
         p_test_positive = 0.99,
         delta_t_testable = 1,
         delta_t_infectious = 1,
-        delta_t_symptoms = 30,
+        delta_t_symptoms = delta_t_symptoms,
         
         max_t = max_t,
         stop_when_detected = True,
@@ -99,26 +100,45 @@ def get_n_inputs():
     return model.n_nodes
 
 
-def evaluate(budget_allocation):
+def evaluate(budget_allocation, 
+             n_simulations=1, 
+             statistic=np.mean  # any function converting an array into a number
+             ):
     """Run the SIModelOnTransmissions a single time, using the given budget 
     allocation, and return the number of nodes infected at the time the 
     simulation is stopped. Since the simulated process is a stochastic
     process, this returns a "noisy" evaluation of the "true" target function
     (which is the expected value of this number of infected nodes).
     
+    Examples for 'statistic':
+    - np.mean
+    - np.median
+    - np.max
+    - lambda a: np.percentile(a, 95)
+    
     @param budget_allocation: (array of floats) expected number of tests per 
     year, indexed by node
-    @return: (int) number of nodes infected at the time the simulation is 
-    stopped
+    @param n_simulations: (optional int) number of epidemic simulation runs the 
+    evaluation should be based on (default: 1)
+    @param statistic: (optional function array-->float) function aggregating 
+    the results from the individual epidemic simulation runs into a single
+    number to be used as the evaluation (default: np.mean) 
+    @return: (float) typical (in the sense of the requested statistic) number
+    of animals infected at the time the simulation is stopped
     """
 
     global model, capacities
 
     model.daily_test_probabilities = budget_allocation / 365
-    model.reset()
-    # run until detection:
-    model.run()
-    n_infected_when_stopped = (capacities * model.is_infected[model.t,:]).sum()
+    
+    n_infected_when_stopped = np.zeros(n_simulations)
+    for sim in range(n_simulations):
+        model.reset()
+        # run until detection:
+        model.run()
+        # store simulation result:
+        n_infected_when_stopped[sim] = (capacities * model.is_infected[model.t,:]).sum()
 
-    return n_infected_when_stopped
+    # return the requested statistic:
+    return statistic(n_infected_when_stopped)
     # Note: other indicators are available via target_function.model
