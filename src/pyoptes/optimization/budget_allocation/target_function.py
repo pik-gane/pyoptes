@@ -162,6 +162,9 @@ def evaluate(budget_allocation,
 
     global model, capacities
 
+    budget_allocation = np.array(budget_allocation)
+    assert budget_allocation.size == model.daily_test_probabilities.size
+    
     model.daily_test_probabilities = budget_allocation / 365
     
     n_infected_when_stopped = np.zeros(n_simulations)

@@ -55,7 +55,7 @@ print("\nOne evaluation at random x:", y)
 
 evaluation_parms = { 
         'n_simulations': 100, 
-        'statistic': lambda a: np.percentile(a, 95)
+        'statistic': np.mean #lambda a: np.percentile(a, 95)
         }
 
 n_trials = 1000
@@ -112,6 +112,7 @@ print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", log
 # do the same for an x that concentrates the budget on a few nodes:
 
 sentinels = [0, 3, 6, 9, 30, 33, 36, 39, 60, 63, 66, 69, 90, 93, 96, 99]
+#sentinels = [33, 36, 63, 66]
 weights = np.zeros(100)
 weights[sentinels] = 1
 shares = weights / weights.sum()
