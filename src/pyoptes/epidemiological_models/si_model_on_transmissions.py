@@ -1,6 +1,4 @@
 from ..util import *
-#import numpy as np
-#import numba as nb
 
 if False:
     """
@@ -166,7 +164,7 @@ spec = [
 
 # HERE COMES THE ACTUAL CLASS:
     
-@nb.jitclass(spec) 
+@jitclass(spec) 
 class SIModelOnTransmissions (object):
     """Can run simulations of the SI (susceptible-infectious) model on a 
     transmission network."""
