@@ -7,6 +7,7 @@ The code should work with the following python environment version combinations:
 - python=3.7.6, numba=0.54.1, numpy=1.20.3, scipy=1.4.1, networkx=2.6.3
 - python=3.7.12, numba=0.54.1, numpy=1.20.3, scipy=1.7.3, networkx=2.6.3
 - python=3.9.9, numba=0.54.1, numpy=1.20.3, scipy=1.7.3, networkx=2.6.3
+
 If the older numba=0.46.0 was used instead, an unresolved issue with data types arises.
 
 If one needs tensorflow/keras, one can create a corresponding env as follows:
