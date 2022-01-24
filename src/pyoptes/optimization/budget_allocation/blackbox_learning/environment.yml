@@ -1,15 +1,20 @@
 name: alebo
 channels:
   - conda-forge
-  - acellera
+  - acellera  # channel for ax
 dependencies:
   - python
   - matplotlib
-  - numpy=1.19
+  - numpy=1.19  # fixed for pyoptes
   - scipy
-  - numba=0.48
+  - numba=0.48  # fixed for pyoptes
   - networkx
   - tqdm
   - ax-platform>=0.1.17
   - cma
-  - smac
+  - gfortran
+  - pip
+  - pip:
+    - git+https://github.com/uber-research/TuRBO
+    - dragonfly-opt == 0.1.4
+    - smac==0.11.1
