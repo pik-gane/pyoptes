@@ -14,7 +14,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 print(f.__doc__)
 
 # set some seed to get reproducible results:
-set_seed(1)
+set_seed(2)
 
 print("Preparing the target function for a random but fixed transmissions network")
 
@@ -37,7 +37,7 @@ y = f.evaluate(x)
 
 print("\nOne evaluation at random x:", y)
 
-n_trials = 10000
+n_trials = 100000
 
 # evaluate f a number of times at the same input:
 ys = np.array([f.evaluate(x) for it in range(n_trials)])
