@@ -76,7 +76,9 @@ print("Mean, std.dev. and 95th percentile of the log of", n_trials, "evaluations
 
 # do the same for an x that is based on the static network's node degrees:
 
-weights = np.array(list([d for n, d in f.network.degree()]))
+weights = np.zeros(n_inputs)
+for n, d in f.network.degree():
+    weights[n] = d
 shares = weights / weights.sum()
 
 x4 = shares * total_budget
