@@ -100,11 +100,38 @@ print("\nMean and std.err. of", n_trials, "evaluations at a degree-based x:", ys
 print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys4.mean(), stderr(logys4))
 
 
+# do the same for an x that concentrates the budget on a few nodes:
+
+sentinels = range(n_inputs//40)
+weights = np.zeros(n_inputs)
+weights[sentinels] = 1
+shares = weights / weights.sum()
+
+x5 = shares * total_budget
+ys5 = np.array([f.evaluate(x5, **evaluation_parms) for it in range(n_trials)])
+logys5 = np.log(ys5)
+print("\nMean and std.err. of", n_trials, "evaluations at a 1/40 sentinel-based x:", ys5.mean(), stderr(ys5))
+print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys5.mean(), stderr(logys5))
+
+sentinels = range(n_inputs//10)
+weights = np.zeros(n_inputs)
+weights[sentinels] = 1
+shares = weights / weights.sum()
+
+x6 = shares * total_budget
+ys6 = np.array([f.evaluate(x6, **evaluation_parms) for it in range(n_trials)])
+logys6 = np.log(ys6)
+print("\nMean and std.err. of", n_trials, "evaluations at a 1/10 sentinel-based x:", ys6.mean(), stderr(ys6))
+print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys6.mean(), stderr(logys6))
+
+
 xs = np.linspace(ys3.min(), ys.max())
 plt.plot(xs, kde(ys)(xs), label="random x")
 plt.plot(xs, kde(ys2)(xs), alpha=0.5, label="capacity-based x")
 plt.plot(xs, kde(ys4)(xs), alpha=0.5, label="degree-based x")
 plt.plot(xs, kde(ys3)(xs), alpha=0.5, label="transmissions-based x")
+plt.plot(xs, kde(ys5)(xs), alpha=0.5, label="1/40 sentinel-based x")
+plt.plot(xs, kde(ys6)(xs), alpha=0.5, label="1/10 sentinel-based x")
 plt.legend()
 plt.title("distribution of f(x) for different fixed inputs x")
 plt.show()
@@ -114,6 +141,8 @@ plt.plot(xs, kde(logys)(xs), label="random x")
 plt.plot(xs, kde(logys2)(xs), alpha=0.5, label="capacity-based x")
 plt.plot(xs, kde(logys4)(xs), alpha=0.5, label="degree-based x")
 plt.plot(xs, kde(logys3)(xs), alpha=0.5, label="transmissions-based x")
+plt.plot(xs, kde(logys5)(xs), alpha=0.5, label="1/40 sentinel-based x")
+plt.plot(xs, kde(logys6)(xs), alpha=0.5, label="1/10 sentinel-based x")
 plt.legend()
 plt.title("distribution of log(f(x)) for different fixed inputs x")
 plt.show()

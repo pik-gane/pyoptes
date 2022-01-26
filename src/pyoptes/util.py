@@ -2,6 +2,12 @@ import random as rd
 import numpy as np
 import numba as nb
 
+# import jitclass from the right place (which changes between numba versions):
+try:
+    from numba import jitclass
+except:
+    from numba.experimental import jitclass
+
 @nb.njit
 def _set_numba_seed(seed):
     """helper function"""
