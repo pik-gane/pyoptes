@@ -1,16 +1,8 @@
-# Define a function to be optimized.
-# Here we use a simple synthetic function with a d=2 true linear embedding, in
-# a D=100 ambient space.
 import numpy as np
-from ax.utils.measurement.synthetic_functions import branin
 from ax.modelbridge.strategies.alebo import ALEBOStrategy
 from ax.modelbridge.strategies.rembo import HeSBOStrategy, REMBOStrategy
 from ax.service.managed_loop import optimize
 from matplotlib import pyplot as plt
-
-from pyoptes import set_seed
-from pyoptes.optimization.budget_allocation import target_function as f
-
 
 # def branin_evaluation_function(parameterization):
 #     # Evaluates Branin on the first two parameters of the parameterization.
@@ -18,26 +10,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 #     x = np.array([parameterization["x0"], parameterization["x1"]])
 #     return {"objective": (branin(x), 0.0)}
 
-
-if __name__ == '__main__':
-
-    # set some seed to get reproducible results:
-    set_seed(1)
-
-    n_nodes = 120
-    nn_simulations = 2
-    print('\nn_simulations outside evaluate', nn_simulations,'\n')
-    # at the beginning, call prepare() once:
-    f.prepare(n_nodes=n_nodes)
-
-    # weird hack, cma-es only takes function objects and the default value n_simula
-    def evaluate(x):#, nn_simulations=nn_simulations):
-        x = np.array(list(x.values()))
-        print(x[:3])
-        # print(type(x), np.shape(x))
-        # print('n_simulations inside evaluate', nn_simulations)
-        return f.evaluate(x)#, n_simulations=nn_simulations), 0.0)}
-
+def bo_alebo(objective_function, n_nodes):
     parameters = [
         {"name": f"x{i}", "type": "range", "bounds": [0.0, float(n_nodes)], "value_type": "float"}
         for i in range(n_nodes)]
@@ -64,7 +37,7 @@ if __name__ == '__main__':
         parameters=parameters,
         experiment_name="alebo_si",
         objective_name="objective",
-        evaluation_function=evaluate,
+        evaluation_function=objective_function,
         minimize=True,
         total_trials=30,
         generation_strategy=strategy2,
@@ -81,7 +54,7 @@ if __name__ == '__main__':
 
     print('best_parameters', best_parameters)
 
-    print('values',values, np.shape(values), type(model))
+    print('values', values, np.shape(values), type(model))
     fig = plt.figure(figsize=(12, 6))
     ax = fig.add_subplot(111)
     ax.grid(alpha=0.2)
@@ -90,3 +63,10 @@ if __name__ == '__main__':
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Best objective found')
     plt.show()
+
+    return best_parameters, values, experiment, model
+
+
+if __name__ == '__main__':
+
+    print('bo_alebo')
