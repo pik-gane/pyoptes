@@ -9,13 +9,11 @@ if __name__ == '__main__':
     # set some seed to get reproducible results:
     set_seed(1)
 
-    print("Preparing the target function for a random but fixed transmissions network")
     n_nodes = 120
     n_simulations = 1000
     # at the beginning, call prepare() once:
     f.prepare(n_nodes=n_nodes)
     n_inputs = f.get_n_inputs()
-    print("n_inputs (=number of network nodes):", n_inputs)
 
     total_budget = 1.0 * n_inputs  # i.e., on average, nodes will do one test per year
 
@@ -27,11 +25,12 @@ if __name__ == '__main__':
     # for _ in tqdm(range(10)):
     #     print(get_mean_function_output(x, n=100))
 
-    # Prints out the all hyperparameters for CMA
-    for k in cma.CMAOptions():
-        print(k, cma.CMAOptions()[k])
+    # # Prints out the all hyperparameters for CMA
+    # for k in cma.CMAOptions():
+    #     print(k, cma.CMAOptions()[k])
 
-    # weird hack, cma-es only takes function objects and the default value n_simula
+    # weird hack, cma-es only takes function objects so the default value n_simulations of f.evaluate
+    # can't be changed. The wrapper "evaluate" fixes only the n_simulations and passes the x to the "real" function
     def evaluate(x, n_simulations=n_simulations):
         return f.evaluate(x, n_simulations=n_simulations)
 

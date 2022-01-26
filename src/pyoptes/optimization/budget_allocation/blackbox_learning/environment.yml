@@ -1,7 +1,7 @@
-name: alebo
+name: bo
 channels:
   - conda-forge
-  - acellera  # channel for ax
+  - acellera  # channel for ax-platform
 dependencies:
   - python
   - matplotlib
@@ -10,11 +10,13 @@ dependencies:
   - numba=0.48  # fixed for pyoptes
   - networkx
   - tqdm
-  - ax-platform>=0.1.17
   - cma
-  - gfortran
+#  - gfortran
+  - pytorch
   - pip
   - pip:
-    - git+https://github.com/uber-research/TuRBO
-    - dragonfly-opt == 0.1.4
+#    - git+https://github.com/uber-research/TuRBO
+#    - dragonfly-opt == 0.1.4
     - smac==0.11.1
+    - ax-platform>=0.1.17
+    - pymoo
