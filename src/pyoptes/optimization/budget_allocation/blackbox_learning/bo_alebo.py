@@ -10,7 +10,14 @@ from matplotlib import pyplot as plt
 #     x = np.array([parameterization["x0"], parameterization["x1"]])
 #     return {"objective": (branin(x), 0.0)}
 
+
 def bo_alebo(objective_function, n_nodes):
+    """
+
+    @param objective_function:
+    @param n_nodes:
+    @return:
+    """
     parameters = [
         {"name": f"x{i}", "type": "range", "bounds": [0.0, float(n_nodes)], "value_type": "float"}
         for i in range(n_nodes)]

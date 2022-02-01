@@ -4,7 +4,15 @@ import cma
 def bo_cma(objective_function, initial_population,
            sigma=0.2,
            max_iterations=1000):
+    """
 
+    @param objective_function:
+    @param initial_population:
+    @param sigma:
+    @param max_iterations:
+    @return:
+    """
+    # TODO look into param "bounds" to set upper and lower bounds of solutions
     ea = cma.CMAEvolutionStrategy(initial_population, sigma, inopts={'maxiter': max_iterations, 'verbose': -8})
     ea.optimize(objective_function)
     solutions = ea.pop_sorted
