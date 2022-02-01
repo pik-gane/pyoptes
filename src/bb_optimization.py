@@ -42,7 +42,7 @@ if __name__ == '__main__':
     def objective_function_alebo(x, total_budget=total_budget):#, nn_simulations=nn_simulations):
         x = np.array(list(x.values()))
         # TODO add check whether x satisfies constraint x0 + .. xi <= B
-        print(type(x.sum()), x.sum())
+        # print(type(x.sum()), x.sum())
         # print(type(total_budget), total_budget)
         if x.sum() <= 120.0:
             return f.evaluate(x)#, n_simulations=nn_simulations), 0.0)}
@@ -51,11 +51,15 @@ if __name__ == '__main__':
 
     if args.optimizer == 'cma':
         solutions = bo_cma(objective_function_cma, x, max_iterations=args.max_iterations)
-        print(type(x.sum()), x.sum())
+        # print(type(x.sum()), x.sum())
         # for s in solutions:
         #     print(solutions)
     elif args.optimizer == 'alebo':
-        r = bo_alebo(objective_function_alebo, args.n_nodes)
+        best_parameters, values, experiment, model = bo_alebo(objective_function_alebo, args.n_nodes,
+                                                              args.max_iterations)
+
+        best_parameters = np.array(list(best_parameters.values()))
+        print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
 
     else:
         print('Something went wrong with choosing the optimizer.')

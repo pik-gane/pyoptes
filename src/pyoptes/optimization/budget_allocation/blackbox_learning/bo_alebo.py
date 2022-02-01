@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 #     return {"objective": (branin(x), 0.0)}
 
 
-def bo_alebo(objective_function, n_nodes):
+def bo_alebo(objective_function, n_nodes, total_trials):
     """
 
     @param objective_function:
@@ -25,6 +25,7 @@ def bo_alebo(objective_function, n_nodes):
     # ALEBO/REMBO/HeSBO do not take constraints
     constraints = ' + '.join([f'x{i}' for i in range(n_nodes)])
     constraints = [constraints + f' <= {float(n_nodes)}']
+    # print('constraints', constraints)
 
     # Setup the ALEBO optimization strategy
     # We must specify the ambient dimensionality (determined by the problem - here 100),
@@ -46,10 +47,10 @@ def bo_alebo(objective_function, n_nodes):
         objective_name="objective",
         evaluation_function=objective_function,
         minimize=True,
-        total_trials=30,
+        total_trials=total_trials,
         generation_strategy=strategy2,
         # parameter_constraints=constraints
-    )
+        )
 
     # Extract out the objective values at each iteration and make a plot
     objectives = np.array([trial.objective_mean for trial in experiment.trials.values()])
@@ -57,15 +58,10 @@ def bo_alebo(objective_function, n_nodes):
     print('objectives', objectives)
     print(type(objectives), np.shape(objectives))
 
-    print('np.minimum.accumulate(objectives)', np.minimum.accumulate(objectives))
-
-    print('best_parameters', best_parameters)
-
-    print('values', values, np.shape(values), type(model))
     fig = plt.figure(figsize=(12, 6))
     ax = fig.add_subplot(111)
     ax.grid(alpha=0.2)
-    ax.plot(range(1, 31), np.minimum.accumulate(objectives))
+    ax.plot(range(1, total_trials+1), np.minimum.accumulate(objectives))
     # ax.axhline(y=branin.fmin, ls='--', c='k') # adds a line at the specified y, indicates the minimum of the branim function
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Best objective found')

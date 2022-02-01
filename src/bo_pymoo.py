@@ -10,6 +10,8 @@ from pymoo.factory import get_sampling, get_crossover, get_mutation
 from pymoo.factory import get_termination
 from pymoo.optimize import minimize
 
+import matplotlib.pyplot as plt
+
 
 class ProblemSIModel(ElementwiseProblem):
     def __init__(self, n_var=120,
@@ -27,15 +29,16 @@ class ProblemSIModel(ElementwiseProblem):
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu)
 
         set_seed(1)
+        # TODO even only creating an object of f creates an error: TypeError: cannot pickle 'module' object
         self.f = f
         self.f.prepare(n_nodes=n_var)
 
     def _evaluate(self, x, out, *args, **kwargs):
         # print(x)
         # print(type(x), np.shape(x))
-        out["F"] = self.f.evaluate(x)
-        out["G"] = out["F"].sum() <= 120.0
-        print(out["G"])
+        out["F"] = x.sum() #self.f.evaluate(x)
+        out["G"] = out["F"].sum() - 120.0
+        # print(out["G"])
 
 
 class MyProblem(ElementwiseProblem):
@@ -56,8 +59,7 @@ class MyProblem(ElementwiseProblem):
 
         out["F"] = [f1, f2]
         out["G"] = [g1, g2]
-        print(out["G"])
-
+        # print(out["G"])
 
 
 if __name__ == '__main__':
@@ -65,11 +67,11 @@ if __name__ == '__main__':
     # f.prepare(n_nodes=n_nodes)
     # print('d')
 
-    # problem = ProblemSIModel()
-    problem = MyProblem
+    problem = ProblemSIModel()
+    # problem = MyProblem()
 
     algorithm = NSGA2(
-        pop_size=40,
+        pop_size=4,
         n_offsprings=10,
         sampling=get_sampling("real_random"),
         crossover=get_crossover("real_sbx", prob=0.9, eta=15),
@@ -87,6 +89,19 @@ if __name__ == '__main__':
 
     X = res.X
     F = res.F
+
+    xl, xu = problem.bounds()
+    plt.figure(figsize=(7, 5))
+    plt.scatter(X[:, 0], X[:, 1], s=30, facecolors='none', edgecolors='r')
+    plt.xlim(xl[0], xu[0])
+    plt.ylim(xl[1], xu[1])
+    plt.title("Design Space")
+    plt.show()
+
+    plt.figure(figsize=(7, 5))
+    plt.scatter(F[:, 0], F[:, 1], s=30, facecolors='none', edgecolors='blue')
+    plt.title("Objective Space")
+    plt.show()
 
     # a = SiModel(n_var=10)
     # print(a.xl)
