@@ -37,9 +37,11 @@ y = f.evaluate(
         x, 
         n_simulations=100, 
         statistic=lambda a: np.percentile(a, 95)  # to focus on the tail of the distribution
+        # alternatively, we currently explore a target function based on the 2nd moment of the distribution:
+        # statistic=lambda a: np.mean(a**2)
         )
 
-print("\nOne evaluation at random x:", y)
+print("\nOne evaluation of f at a randomly generated x:", y)
 
 
 evaluation_parms = { 
@@ -60,7 +62,7 @@ print("Mean and std.err. of", n_trials, "evaluations at the same random x:", ys.
 print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys.mean(), stderr(logys))
 
 
-# do the same for an x that is based on the total capacity of a node:
+# do the same for an x that is based on the total "capacity" (max. no. of housed animals) of a node:
 
 weights = f.capacities
 shares = weights / weights.sum()
