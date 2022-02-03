@@ -10,8 +10,8 @@ def postprocessing(input_data, target_data, split):
     is_NaN = input_data.isnull()
     row_has_NaN = is_NaN.any(axis=1)
     rows_with_NaN = input_data[row_has_NaN]
-    input_data = input_data.drop(rows_with_NaN)
-    target_data = target_data.drop(rows_with_NaN)
+    input_data = input_data.drop(rows_with_NaN.index.values)
+    target_data = target_data.drop(rows_with_NaN.index.values)
 
     subset_training_input = input_data.iloc[split:]
     subset_training_targets = target_data.iloc[split:]
@@ -36,22 +36,36 @@ print(f'\n\nTrain targets mean: {train_targets.to_numpy().mean()}, Train targets
 print(f'\n\nTest inputs mean: {test_input.to_numpy().mean()}, Test inputs std: {test_input.to_numpy().std()}')
 print(f'\n\nTest targets mean: {test_targets.to_numpy().mean()}, Train targets std: {test_targets.to_numpy().std()}')
 
+plt.figure("Histogramm train inputs", figsize=(5,5))
+plt.xlabel("node value")
+plt.ylabel("number occurences")
+plt.title("Distribution of budget")
+for i in range(len(train_input)):
+    plt.hist(train_input.iloc[i])
+
+
+plt.figure("Histogramm training targets", figsize=(5,5))
+plt.xlabel("log of y=f(x)")
+plt.hist(np.log(train_targets))
+
 
 #plt.subplots()
 
 plt.figure("Training inputs", figsize=(5,5))
+plt.xlabel="Nodes"
+plt.ylabel="Budget"
 for i in range(len(train_input)):
     plt.plot(np.arange(121), train_input.iloc[i])
     plt.axis([0, 121, 0, 130])
     plt.title("Training Inputs")
-    #plt.xlabel="Nodes"
-    #plt.ylabel="Budget"
+
 
 plt.figure("Training targets", figsize=(5,5))
+plt.ylabel="Infected animals"
+plt.xlabel="Samples"
 plt.plot(np.arange(len(train_targets)), train_targets)
 plt.title("Training targets")
-#plt.ylabel="Infected animals"
-#plt.xlabel="Samples"
+
 
 plt.figure("Test inputs", figsize=(5,5))
 for i in range(len(test_input)):
