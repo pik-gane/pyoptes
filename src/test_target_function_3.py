@@ -19,7 +19,9 @@ set_seed(1)
 print("Preparing the target function for a lattice-based, fixed transmissions network")
 
 # generate a 11 by 11 2d lattice with nodes numbered 0 to 120:
-lattice = nx.DiGraph(nx.to_numpy_array(nx.lattice.grid_2d_graph(10, 10)))
+lattice = nx.DiGraph(nx.to_numpy_array(nx.lattice.grid_2d_graph(20, 20)))
+
+print(lattice)
 
 # at the beginning, call prepare() once:
 f.prepare(
@@ -47,7 +49,7 @@ nx.draw_kamada_kawai(lattice, node_color=[[0,0,0,xi/xmax] for xi in x])
 y = f.evaluate(
         x, 
         n_simulations=100, 
-        statistic=lambda a: np.percentile(a, 95)  # to focus on the tail of the distribution
+        statistic=lambda a: np.percentile(a, 95)  # to focus on the tail of the distribution np.mean(a**2)
         )
 
 print("\nOne evaluation at random x:", y)
@@ -55,7 +57,7 @@ print("\nOne evaluation at random x:", y)
 
 evaluation_parms = { 
         'n_simulations': 100, 
-        'statistic': np.mean #lambda a: np.percentile(a, 95)
+        'statistic': lambda a: np.percentile(a, 95)
         }
 
 n_trials = 1000
@@ -113,7 +115,7 @@ print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", log
 
 sentinels = [0, 3, 6, 9, 30, 33, 36, 39, 60, 63, 66, 69, 90, 93, 96, 99]
 #sentinels = [33, 36, 63, 66]
-weights = np.zeros(100)
+weights = np.zeros(n_inputs)
 weights[sentinels] = 1
 shares = weights / weights.sum()
 
