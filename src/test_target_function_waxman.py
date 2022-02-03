@@ -1,10 +1,10 @@
 """
 Simple test to illustrate how the target function could be used.
-Here focussing on the 95th PERCENTILE of the no. of infected animals,
-hence using a target function based on MANY simulations
-and reporting the std.err. of the resulting estimation of the 95th percentile.
+Here focussing on the 2ND MOMENT of the no. of infected animals,
+and using a Waxman network
 """
 
+import networkx as nx
 import numpy as np
 from scipy.stats import gaussian_kde as kde
 import pylab as plt
@@ -16,36 +16,49 @@ print(f.__doc__)
 # set some seed to get reproducible results:
 set_seed(1)
 
-print("Preparing the target function for a random but fixed transmissions network")
+print("Preparing the target function for a Waxman-graph-based, fixed transmissions network")
+
+# generate a Waxman graph:
+waxman = nx.waxman_graph(120)
+pos = dict(waxman.nodes.data('pos'))
+# convert into a directed graph:
+static_network = nx.DiGraph(nx.to_numpy_array(waxman))
 
 # at the beginning, call prepare() once:
 f.prepare(
-    n_nodes=120,  # instead of 60000, since this should suffice in the beginning
+    static_network=static_network,  
     capacity_distribution=np.random.lognormal,  # this is more realistic than a uniform distribution
-    delta_t_symptoms=60  # instead of 30, since this gave a clearer picture in Sara's simulations
+    delta_t_symptoms=60
     )
 n_inputs = f.get_n_inputs()
 print("n_inputs (=number of network nodes):", n_inputs)
 
 total_budget = 1.0 * n_inputs  # i.e., on average, nodes will do one test per year
 
-# evaluate f once at a random input:
+# generate a random input:
 weights = np.random.rand(n_inputs)
 shares = weights / weights.sum()
 x = shares * total_budget  
+
+# plot it on the network (the darker a node, the higher the budged):
+xmax = x.max()
+plt.figure()
+nx.draw(waxman, node_color=[[0,0,0,xi/xmax] for xi in x], pos=pos)
+#plt.show()
+
+# evaluate f once at that input:
 y = f.evaluate(
         x, 
         n_simulations=100, 
         statistic=lambda a: np.percentile(a, 95)  # to focus on the tail of the distribution
-        # alternatively, we currently explore a target function based on the 2nd moment of the distribution:
-        # statistic=lambda a: np.mean(a**2)
         )
 
-print("\nOne evaluation of f at a randomly generated x:", y)
+print("\nOne evaluation at random x:", y)
+
 
 evaluation_parms = { 
         'n_simulations': 100, 
-        'statistic': lambda a: np.percentile(a, 95)
+        'statistic': np.mean #lambda a: np.percentile(a, 95)
         }
 
 n_trials = 1000
@@ -61,12 +74,17 @@ print("Mean and std.err. of", n_trials, "evaluations at the same random x:", ys.
 print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys.mean(), stderr(logys))
 
 
-# do the same for an x that is based on the total "capacity" (max. no. of housed animals) of a node:
+# do the same for an x that is based on the total capacity of a node:
 
 weights = f.capacities
 shares = weights / weights.sum()
 
 x2 = shares * total_budget
+x2max = x2.max()
+plt.figure()
+nx.draw(waxman, node_color=[[0,0,0,xi/x2max] for xi in x2], pos=pos)
+#plt.show()
+
 ys2 = np.array([f.evaluate(x2, **evaluation_parms) for it in range(n_trials)])
 logys2 = np.log(ys2)
 print("\nMean and std.err. of", n_trials, "evaluations at a capacity-based x:", ys2.mean(), stderr(ys2))
@@ -83,72 +101,34 @@ shares = weights / weights.sum()
 total_budget = 1.0 * n_inputs
 
 x3 = shares * total_budget
+x3max = x3.max()
+plt.figure()
+nx.draw(waxman, node_color=[[0,0,0,xi/x3max] for xi in x3], pos=pos)
+#plt.show()
+
 ys3 = np.array([f.evaluate(x3, **evaluation_parms) for it in range(n_trials)])
 logys3 = np.log(ys3)
 print("\nMean and std.err. of", n_trials, "evaluations at a transmissions-based x:", ys3.mean(), stderr(ys3))
 print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys3.mean(), stderr(logys3))
 
 
-# do the same for an x that is based on the static network's node degrees:
-
-weights = np.array(list([d for n, d in f.network.degree()]))
-shares = weights / weights.sum()
-
-x4 = shares * total_budget
-ys4 = np.array([f.evaluate(x4, **evaluation_parms) for it in range(n_trials)])
-logys4 = np.log(ys4)
-print("\nMean and std.err. of", n_trials, "evaluations at a degree-based x:", ys4.mean(), stderr(ys4))
-print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys4.mean(), stderr(logys4))
-
-import networkx as nx
-plt.figure()
-nx.draw_spring(f.network, node_color=[[0,0,0,xi/x4.max()] for xi in x4], edge_color=(0,0,0,0.1))
-plt.show()
-
-
-# do the same for an x that concentrates the budget on a few nodes:
-
-sentinels = range(n_inputs//40)
-weights = np.zeros(n_inputs)
-weights[sentinels] = 1
-shares = weights / weights.sum()
-
-x5 = shares * total_budget
-ys5 = np.array([f.evaluate(x5, **evaluation_parms) for it in range(n_trials)])
-logys5 = np.log(ys5)
-print("\nMean and std.err. of", n_trials, "evaluations at a 1/40 sentinel-based x:", ys5.mean(), stderr(ys5))
-print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys5.mean(), stderr(logys5))
-
-sentinels = range(n_inputs//10)
-weights = np.zeros(n_inputs)
-weights[sentinels] = 1
-shares = weights / weights.sum()
-
-x6 = shares * total_budget
-ys6 = np.array([f.evaluate(x6, **evaluation_parms) for it in range(n_trials)])
-logys6 = np.log(ys6)
-print("\nMean and std.err. of", n_trials, "evaluations at a 1/10 sentinel-based x:", ys6.mean(), stderr(ys6))
-print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys6.mean(), stderr(logys6))
-
-
 xs = np.linspace(ys3.min(), ys.max())
+plt.figure()
 plt.plot(xs, kde(ys)(xs), label="random x")
 plt.plot(xs, kde(ys2)(xs), alpha=0.5, label="capacity-based x")
-plt.plot(xs, kde(ys4)(xs), alpha=0.5, label="degree-based x")
 plt.plot(xs, kde(ys3)(xs), alpha=0.5, label="transmissions-based x")
-plt.plot(xs, kde(ys5)(xs), alpha=0.5, label="1/40 sentinel-based x")
-plt.plot(xs, kde(ys6)(xs), alpha=0.5, label="1/10 sentinel-based x")
 plt.legend()
 plt.title("distribution of f(x) for different fixed inputs x")
-plt.show()
+#plt.show()
 
 xs = np.linspace(logys3.min(), logys.max())
+plt.figure()
 plt.plot(xs, kde(logys)(xs), label="random x")
 plt.plot(xs, kde(logys2)(xs), alpha=0.5, label="capacity-based x")
-plt.plot(xs, kde(logys4)(xs), alpha=0.5, label="degree-based x")
 plt.plot(xs, kde(logys3)(xs), alpha=0.5, label="transmissions-based x")
-plt.plot(xs, kde(logys5)(xs), alpha=0.5, label="1/40 sentinel-based x")
-plt.plot(xs, kde(logys6)(xs), alpha=0.5, label="1/10 sentinel-based x")
 plt.legend()
 plt.title("distribution of log(f(x)) for different fixed inputs x")
+#plt.show()
+
 plt.show()
+
