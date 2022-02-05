@@ -25,10 +25,10 @@ def postprocessing(input_data, target_data, split):
 #input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_full.csv"
 #target_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_full.csv"
 
-input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_none.csv"
-target_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_none.csv"
+input_data = "/Users/admin/pyoptes/input_data_500.csv"
+target_data = "/Users/admin/pyoptes/label_data_500.csv"
 
-train_input, train_targets, test_input, test_targets = postprocessing(input_data, target_data, split = 300)
+train_input, train_targets, test_input, test_targets = postprocessing(input_data, target_data, split = 500)
 
 print(f'\nSize of training set: {len(train_input)}, Size of test set: {len(test_input)}')
 print(f'\n\nTrain inputs mean: {train_input.to_numpy().mean()}, Train inputs std: {train_input.to_numpy().std()}')
@@ -55,8 +55,8 @@ plt.figure("Training inputs", figsize=(5,5))
 plt.xlabel="Nodes"
 plt.ylabel="Budget"
 for i in range(len(train_input)):
-    plt.plot(np.arange(121), train_input.iloc[i])
-    plt.axis([0, 121, 0, 130])
+    plt.plot(np.arange(500), train_input.iloc[i])
+    plt.axis([0, 500, 0, 500])
     plt.title("Training Inputs")
 
 
@@ -69,8 +69,8 @@ plt.title("Training targets")
 
 plt.figure("Test inputs", figsize=(5,5))
 for i in range(len(test_input)):
-    plt.plot(np.arange(121), test_input.iloc[i])
-    plt.axis([0, 121, 0, 130])
+    plt.plot(np.arange(500), test_input.iloc[i])
+    plt.axis([0, 500, 0, 500])
     plt.title("Test inputs")
 
 plt.figure("Test targets", figsize=(5,5))

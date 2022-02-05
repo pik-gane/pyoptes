@@ -45,23 +45,23 @@ def postprocessing(train_input_data, train_targets_data, split):
     train_input_data = train_input_data.drop(del_cells)
     train_targets_data = train_targets_data.drop(del_cells)
 
-    subset_training_input = train_input_data.iloc[split:]
-    subset_training_targets = train_targets_data.iloc[split:]
+    subset_training_input = train_input_data.iloc[0:split]
+    subset_training_targets = train_targets_data.iloc[0:split]
 
-    subset_val_input = train_input_data.iloc[0:split]
-    subset_val_targets = train_targets_data.iloc[0:split]
+    subset_val_input = train_input_data.iloc[split:]
+    subset_val_targets = train_targets_data.iloc[split:]
 
     return subset_training_input, subset_training_targets, subset_val_input, subset_val_targets
 
-train_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_none.csv"
-train_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_none.csv"
+train_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_500.csv"
+train_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_500.csv"
 
 test_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_round.csv"
 test_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_round.csv"
 
-train_input, train_targets, val_input, val_targets = postprocessing(train_input_data, train_targets_data, split = 300)
+train_input, train_targets, val_input, val_targets = postprocessing(train_input_data, train_targets_data, split = 800)
 
-print(f'Size of training inputs, targets: {len(train_input)} \nSize of test inputs, targets: {len(val_input)}')
+print(f'\n\nSize of training inputs, targets: {len(train_input)} \n\nSize of test inputs, targets: {len(val_input)}\n\n')
 
 training_set = Loader(input_path = train_input, 
                       targets_path = train_targets, path = False)
@@ -82,18 +82,12 @@ def train(trainloader: DataLoader, model: torchvision.models, device: torch.devi
     train_loss = []
 
     for i, (inputs, targets) in enumerate(trainloader, 1):
-        
-
         inputs, targets = inputs.to(device).float(), targets.to(device).float()
-
         optimizer.zero_grad()
-
         output = model.forward(inputs)
         loss = criterion(output, targets)
-
         loss.backward()
         optimizer.step()
-
         train_loss.append(loss.item())
 
         for j, val in enumerate(output):
@@ -101,7 +95,6 @@ def train(trainloader: DataLoader, model: torchvision.models, device: torch.devi
             pred.append(output[j].item())
 
     acc = explained_variance_score(true, pred)
-
     return np.mean(train_loss), acc
 
 
@@ -116,24 +109,20 @@ def validate(valloader: DataLoader, model: torchvision.models,device: torch.devi
 
     with torch.no_grad():
         for i, (inputs, targets) in enumerate(valloader, 1):
-
             inputs, targets = inputs.to(device).float(), targets.to(device).float()
             output = model.forward(inputs)
             loss = criterion(output, targets)
             val_loss.append(loss.item())
-
             for j, val in enumerate(output):
                 true.append(targets[j].item())
                 pred.append(output[j].item())
     
     acc = explained_variance_score(true, pred) #1 - var(y-y_hat)/var(y) 
-
     return np.mean(val_loss), acc
     
 random.seed(10)
 
-epochs = 150
-
+epochs = 100
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def set_model(model = str, dim = int):
@@ -146,11 +135,9 @@ def set_model(model = str, dim = int):
     #elif model == "GRU":
     #    model = nets.GRU(dim, 1, bias = True)
     return model
-
-pick = "RNN"
-
-model = set_model(pick, dim = 121)
-
+    
+pick = "FCN"
+model = set_model(pick, dim = 500)
 model.to(device)
 
 #criterion = nn.MSELoss() 
@@ -191,9 +178,7 @@ for epoch in range(1, epochs + 1):
 
     train_loss, train_acc = train(trainloader = train_data, model=model, device=device, optimizer = optimizer,
                                   criterion=criterion, verbose=50)
-    
     val_loss, val_acc = validate(valloader= test_input_data, model=model, device=device, criterion=criterion, verbose=10)
-
 
     #test_loss, test_acc =  validate(valloader= test_input_data, model=model, device=device, criterion=criterion, verbose=10)
 
