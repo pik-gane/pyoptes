@@ -14,7 +14,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 print(f.__doc__)
 
 # set some seed to get reproducible results:
-set_seed(1)
+set_seed(2)
 
 print("Preparing the target function for a random but fixed transmissions network")
 
@@ -37,7 +37,7 @@ y = f.evaluate(x)
 
 print("\nOne evaluation at random x:", y)
 
-n_trials = 10000
+n_trials = 100000
 
 # evaluate f a number of times at the same input:
 ys = np.array([f.evaluate(x) for it in range(n_trials)])
@@ -76,7 +76,9 @@ print("Mean, std.dev. and 95th percentile of the log of", n_trials, "evaluations
 
 # do the same for an x that is based on the static network's node degrees:
 
-weights = np.array(list([d for n, d in f.network.degree()]))
+weights = np.zeros(n_inputs)
+for n, d in f.network.degree():
+    weights[n] = d
 shares = weights / weights.sum()
 
 x4 = shares * total_budget
