@@ -7,6 +7,22 @@ from pyoptes.optimization.budget_allocation.blackbox_learning.bo_alebo import bo
 import numpy as np
 import argparse
 
+
+def choose_high_degree_nodes(node_degrees, n):
+    """
+    Returns the indices of n nodes with the highest degrees.
+    @param node_degrees:
+    @param n:
+    @return:
+    """
+    # print(node_degrees,'\n')
+
+    nodes_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
+    indices_highest_degree_nodes = [i[0] for i in nodes_sorted[:n]]
+    # print(indices_highest_degree_nodes)
+    return indices_highest_degree_nodes
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("optimizer", choices=['cma', 'alebo'],
@@ -48,6 +64,36 @@ if __name__ == '__main__':
             return f.evaluate(x)#, n_simulations=nn_simulations), 0.0)}
         else:
             return 1e10     # * x.sum(x)
+
+    # print('transmission array', f.model.transmissions_array)
+    #
+    # print('capacities per node: ', f.capacities)
+
+    # print('node degree: ', f.network.degree)
+
+    ix = choose_high_degree_nodes(f.network.degree, 12)
+
+    def of(x, objective_function=objective_function_cma, n_simulations=args.n_simulations, indices=ix, true_x_size=120):
+        """
+        Maps a lower dimensional x to their corresponding indices in the input vector of the given  objective function.
+
+        @param x: numpy array,
+        @param objective_function: function object,
+        @param n_simulations: int, number of times the objective funtion will run a simulation for averaging the output
+        @param indices: list, indices of x in the higher dimensional x
+        @param true_x_size: int, dimension of the input of the objective function
+        @return:
+        """
+        # create a dummy vector to be filled with the values of x at the appropriate indices
+        true_x = np.zeros(true_x_size)
+        for i, v in zip(indices, x):
+            true_x[i] = v
+        # print(true_x)
+        # print(true_x.sum())
+
+        y = objective_function(true_x, n_simulations=n_simulations)
+
+        return y
 
     if args.optimizer == 'cma':
         solutions = bo_cma(objective_function_cma, x, max_iterations=args.max_iterations)

@@ -4,6 +4,9 @@ Adapted from Matlab code
 
 import numpy as np
 
+from pyoptes import set_seed
+from pyoptes.optimization.budget_allocation import target_function as f
+
 
 def ECNoise(nf, fval):
     """
@@ -36,25 +39,72 @@ def ECNoise(nf, fval):
         #     inform = 2
         #     return fnoise, level, inform
 
-        gamma = 0.5*((j+1)/(2*j))*gamma
-        print(gamma)
-    print('post loop', fval)
+        jj = j+1
+        gamma = 0.5*((jj)/(2*jj-1))*gamma
+
+        # Compute the estimates for the noise level
+        level[j] = np.sqrt(gamma*np.mean(fval[0:nf-j]**2))
+        # a = fval[0:nf-j]**2
+        # b = np.mean(a)
+        # c = gamma*b
+        # d = np.sqrt(c)
+        # print('\n',fval[0:nf-j])
+        # print(a)
+        # print(b)
+        # print(c)
+        # print(d)
+
+        # determine differences in sign
+        emin = fval[0:nf-j].min()
+        emax = fval[0:nf-j].max()
+        if emin*emax < 0.0:
+            dsgn[j] = 0
+
+    print('dsgn', dsgn)
+
+    for k in range(nf-3):
+        emin = level[k:k+2].min()
+        emax = level[k:k+2].max()
+        if emax <= 4*emin and dsgn[k]:
+            fnoise = level[k]
+            inform = 1
+            return fnoise, level, inform
+
     # If noise not detected then h is too large
     inform = 3
-
+    # print('post loop', fval)
     return fnoise, level, inform
 
 
 if __name__ == '__main__':
 
-    # fval = np.array(range(9))
-    fval = np.array([2.0042, 2.0042, 2.0042, 2.0042, 2.0042, 2.0042, 2.0042, 2.0042, 2.0042])
+    # define the number of variables
+    n = 10
+    # xb = np.random()
+    # p =
+    # Define the number of additional evaluations
+    m = 8
 
-    fnoise, level, inform = ECNoise(9, fval)
+    # Define the sampling distance
+    h = 1e-14
 
-    print('fnoise', fnoise)
-    print('level', level)
-    print('inform', inform)
+    fval = np.zeros(m+1)
+    mid = np.floor((m+2)/2) # compute half of m, rounded down
+
+    for i in range(0, m+1):
+
+        # s = 2*(i-mid)/m
+        # x = xb + s*h*p
+        fval[i] = 2.0042 #
+
+    print(fval)
+    print(mid)
+
+    # fnoise, level, inform = ECNoise(9, fval)
+    #
+    # print('fnoise', fnoise)
+    # print('level', level)
+    # print('inform', inform)
 
 
 

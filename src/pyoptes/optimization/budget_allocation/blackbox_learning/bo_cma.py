@@ -17,6 +17,7 @@ def bo_cma(objective_function, initial_population,
     ea.optimize(objective_function)
     solutions = ea.pop_sorted
 
+    print('Evaluation of the best solutions on 10k simulations, descending')
     for s in solutions:
         print(objective_function(s, n_simulations=10000))
 
