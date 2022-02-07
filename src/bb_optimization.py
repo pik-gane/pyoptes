@@ -33,7 +33,9 @@ if __name__ == '__main__':
                                                                         "SI-model. Higher values of n_simulations lower"
                                                                         "the variance of the output of the simulation. "
                                                                         "Default value is 1000.")
-    parser.add_argument("--max_iterations", type=int, default=100)
+    parser.add_argument("--max_iterations", type=int, default=100, help="")
+    parser.add_argument("--size_subset", type=int, default=10, help="Set the number of nodes that are used. Has to be"
+                                                                    "smaller than n_nodes")
     args = parser.parse_args()
 
     # set some seed to get reproducible results:
@@ -49,54 +51,56 @@ if __name__ == '__main__':
 
     # weird hack, cma-es only takes function objects so the default value n_simulations of f.evaluate
     # can't be changed. The wrapper "evaluate" fixes only the n_simulations and passes the x to the "real" function
-    def objective_function_cma(x, n_simulations=args.n_simulations):
-        if x.sum() <= 120.0:
+    def objective_function_cma(x, n_simulations=args.n_simulations, total_budget=120.0):
+        """
+        Wrapper function for SI-model. Checks whether any input x violates the constraint of the objective function.
+        @param x: numpy array,
+        @param n_simulations: int,
+        @param total_budget: float,
+        @return: float,
+        """
+        # TODO depending on the CMA-ES options, a second check for positivity of the x values has to be added
+        if x.sum() <= total_budget:
             return f.evaluate(x, n_simulations=n_simulations)
         else:
+            # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
             return 1e10     # * x.sum(x)
 
     def objective_function_alebo(x, total_budget=total_budget):#, nn_simulations=nn_simulations):
         x = np.array(list(x.values()))
-        # TODO add check whether x satisfies constraint x0 + .. xi <= B
-        # print(type(x.sum()), x.sum())
-        # print(type(total_budget), total_budget)
         if x.sum() <= 120.0:
             return f.evaluate(x)#, n_simulations=nn_simulations), 0.0)}
         else:
             return 1e10     # * x.sum(x)
 
     # print('transmission array', f.model.transmissions_array)
-    #
-    # print('capacities per node: ', f.capacities)
 
-    # print('node degree: ', f.network.degree)
+    # print('capacities per node: ', f.capacities)
 
     ix = choose_high_degree_nodes(f.network.degree, 12)
 
-    def of(x, objective_function=objective_function_cma, n_simulations=args.n_simulations, indices=ix, true_x_size=120):
+    def of(x, n_simulations=args.n_simulations, indices=ix, true_x_size=120, objective_function=objective_function_cma):
         """
         Maps a lower dimensional x to their corresponding indices in the input vector of the given  objective function.
-
         @param x: numpy array,
         @param objective_function: function object,
-        @param n_simulations: int, number of times the objective funtion will run a simulation for averaging the output
+        @param n_simulations: int, number of times the objective function will run a simulation for averaging the output
         @param indices: list, indices of x in the higher dimensional x
         @param true_x_size: int, dimension of the input of the objective function
-        @return:
+        @return: float, objective function value at x
         """
         # create a dummy vector to be filled with the values of x at the appropriate indices
         true_x = np.zeros(true_x_size)
         for i, v in zip(indices, x):
             true_x[i] = v
-        # print(true_x)
-        # print(true_x.sum())
 
-        y = objective_function(true_x, n_simulations=n_simulations)
-
-        return y
+        return objective_function(true_x, n_simulations=n_simulations)
 
     if args.optimizer == 'cma':
-        solutions = bo_cma(objective_function_cma, x, max_iterations=args.max_iterations)
+        solutions = bo_cma(of, x, max_iterations=args.max_iterations,
+                           n_simulations=args.n_simulations,
+                           indices=ix,
+                           true_size_x=args.n_nodes)
         # print(type(x.sum()), x.sum())
         # for s in solutions:
         #     print(solutions)
