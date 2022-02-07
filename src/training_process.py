@@ -1,4 +1,5 @@
 import os
+from xml.dom import HierarchyRequestErr
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -24,6 +25,10 @@ import warnings
 import networkx as nx
 from pyoptes.optimization.budget_allocation.supervised_learning import NN as nets
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import Loader as Loader
+from torch.utils.tensorboard import SummaryWriter
+from ray import tune
+
+writer = SummaryWriter(log_dir = "/Users/admin/pyoptes/src")
 
 def get_device():
     if torch.cuda.is_available():
@@ -45,11 +50,11 @@ def postprocessing(train_input_data, train_targets_data, split):
     train_input_data = train_input_data.drop(del_cells)
     train_targets_data = train_targets_data.drop(del_cells)
 
-    subset_training_input = train_input_data.iloc[0:split]
-    subset_training_targets = train_targets_data.iloc[0:split]
+    subset_training_input = train_input_data.iloc[split:]
+    subset_training_targets = train_targets_data.iloc[split:]
 
-    subset_val_input = train_input_data.iloc[split:]
-    subset_val_targets = train_targets_data.iloc[split:]
+    subset_val_input = train_input_data.iloc[0:split]
+    subset_val_targets = train_targets_data.iloc[0:split]
 
     return subset_training_input, subset_training_targets, subset_val_input, subset_val_targets
 
@@ -59,7 +64,7 @@ train_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_alloc
 test_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_round.csv"
 test_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_round.csv"
 
-train_input, train_targets, val_input, val_targets = postprocessing(train_input_data, train_targets_data, split = 800)
+train_input, train_targets, val_input, val_targets = postprocessing(train_input_data, train_targets_data, split = 500)
 
 print(f'\n\nSize of training inputs, targets: {len(train_input)} \n\nSize of test inputs, targets: {len(val_input)}\n\n')
 
@@ -125,19 +130,23 @@ random.seed(10)
 epochs = 100
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def set_model(model = str, dim = int):
+def set_model(model: str, dim: int, hidden_dims):
     if model == "Linear":
-        model = nets.LinearNetwork(dim, 1, bias = True)
+        model = nets.LinearNetwork(dim, 1, bias = True, hidden_dims = hidden_dims)
     elif model == "RNN":
-        model = nets.RNNetwork(dim, 1, bias = True)
+        model = nets.RNNetwork(dim, 1, bias = True, hidden_dims = hidden_dims)
     elif model == "FCN":
-        model = nets.FCNetwork(dim, 1, bias = True)
+        model = nets.FCNetwork(dim, 1, bias = True, hidden_dims = hidden_dims)
     #elif model == "GRU":
     #    model = nets.GRU(dim, 1, bias = True)
     return model
-    
-pick = "FCN"
-model = set_model(pick, dim = 500)
+
+network = "Barabasi-Albert" #"lattice" #"Barabasi-Albert"
+
+hidden_dims = (512, 256, 128, 16)
+nodes = 500
+pick = "RNN"
+model = set_model(pick, dim = nodes, hidden_dims = hidden_dims)
 model.to(device)
 
 #criterion = nn.MSELoss() 
@@ -182,18 +191,25 @@ for epoch in range(1, epochs + 1):
 
     #test_loss, test_acc =  validate(valloader= test_input_data, model=model, device=device, criterion=criterion, verbose=10)
 
+    writer.add_scalar(f'Loss/train {pick} {nodes} nodes {network}', train_loss, epoch)
+    writer.add_scalar(f'Loss/test {pick} {nodes} nodes {network}', val_loss, epoch)
+    writer.add_scalar(f'Accuracy/train {pick} {nodes} nodes {network}', train_acc, epoch)
+    writer.add_scalar(f'Accuracy/test {pick} {nodes} nodes {network}', val_acc, epoch)
 
+    """
     plotter_train_loss.append(train_loss)
     plotter_test_loss.append(val_loss)
-
-
     plotter_train_acc.append(train_acc)
     plotter_test_acc.append(val_acc)
-
+    """
 
     if epoch%1==0 or epoch == 1:
       print(f"epoch {epoch}:, train loss: {train_loss:.4f}, train acc: {train_acc:.4f}, validation loss: {val_loss:.4f}, validation acc: {val_acc:.4f}")
 
+
+
+
+"""
 plt.figure(figsize=(5,5))
 plt.plot(np.arange(epochs), plotter_train_loss, label = "training loss")
 plt.plot(np.arange(epochs), plotter_test_loss, label = "test loss")
@@ -214,3 +230,4 @@ plt.ylabel("Accuracy")
 plt.title(f"{pick}")
 plt.legend()
 plt.show()
+"""

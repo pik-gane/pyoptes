@@ -1,10 +1,13 @@
 from torch import nn
 from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
 from torch.optim import Adam
+from ray import tune
+
+
 
 class RNNetwork(nn.Module): #Recurrent Neural Network
     """Network with recurrent layers and ReLU activations."""    
-    def __init__(self, in_features: int, out_features: int, bias: bool): 
+    def __init__(self, in_features: int, out_features: int, bias: bool, hidden_dims): 
         super(RNNetwork, self).__init__()
             
         """activation functions"""
@@ -12,11 +15,11 @@ class RNNetwork(nn.Module): #Recurrent Neural Network
         self.act_func = nn.Sigmoid()
 
         """Recurrent Network architecture"""
-        self.layer_1 = nn.RNNCell(in_features, 512, nonlinearity = 'relu', bias = bias) 
-        self.layer_2 = nn.RNNCell(512,256, nonlinearity = 'relu', bias = bias)
-        self.layer_3 = nn.RNNCell(256,128, nonlinearity = 'relu', bias = bias)
-        self.layer_4 = nn.RNNCell(128,16, nonlinearity = 'relu', bias = bias)
-        self.layer_5 = nn.Linear(16, 1)
+        self.layer_1 = nn.RNNCell(in_features, hidden_dims[0], nonlinearity = 'relu', bias = bias) 
+        self.layer_2 = nn.RNNCell(hidden_dims[0], hidden_dims[1], nonlinearity = 'relu', bias = bias)
+        self.layer_3 = nn.RNNCell(hidden_dims[1], hidden_dims[2], nonlinearity = 'relu', bias = bias)
+        self.layer_4 = nn.RNNCell(hidden_dims[2], hidden_dims[3], nonlinearity = 'relu', bias = bias)
+        self.layer_5 = nn.Linear(hidden_dims[3], 1)
 
     def forward(self, x):
         layer_1 = self.layer_1(x)
@@ -29,7 +32,7 @@ class RNNetwork(nn.Module): #Recurrent Neural Network
 
 class FCNetwork(nn.Module): #Fully Connected Neural Network
     """Fully Connected Network with Linear layers and non-linear activation."""    
-    def __init__(self, in_features: int, out_features: int, bias: bool):
+    def __init__(self, in_features: int, out_features: int, bias: bool, hidden_dims):
         
         super(FCNetwork, self).__init__()
 
@@ -38,13 +41,13 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
         #self.act_func = nn.Sigmoid()
 
         """Linear Network architecture"""
-        self.layer_1 = nn.Linear(in_features, 512, bias = bias) 
+        self.layer_1 = nn.Linear(in_features, hidden_dims[0], bias = bias) 
         #self.drop_outs = nn.Dropout()
         #self.layer_2 = nn.Linear(256, 256, bias = bias)
         #self.layer_3 = nn.Linear(256, out_features, bias = bias)
-        self.layer_2 = nn.Linear(512, 256, bias = bias)
-        self.layer_3 = nn.Linear(256, 128, bias = bias)
-        self.layer_4 = nn.Linear(128, out_features, bias = bias)
+        self.layer_2 = nn.Linear(hidden_dims[0], hidden_dims[1], bias = bias)
+        self.layer_3 = nn.Linear(hidden_dims[1], hidden_dims[3], bias = bias)
+        self.layer_4 = nn.Linear(hidden_dims[3], out_features, bias = bias)
         #self.layer_5 = nn.Linear(128, out_features, bias = bias)
                   
     def forward(self, x):
@@ -58,17 +61,17 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
 
 class LinearNetwork(nn.Module): #Linear Neural Network
     """Fully Connected Network with Linear layers and non-linear activation."""    
-    def __init__(self, in_features: int, out_features: int, bias: bool):
+    def __init__(self, in_features: int, out_features: int, bias: bool, hidden_dim: int):
         
         super(LinearNetwork, self).__init__()
         #activation functions
         #self.act_func = nn.ReLU()
         self.act_func = nn.Sigmoid()
         #Linear Network architecture
-        self.layer_1 = nn.Linear(in_features, 512, bias = bias) 
+        self.layer_1 = nn.Linear(in_features, hidden_dim, bias = bias) 
         #self.drop_outs = nn.Dropout()
         #self.layer_2 = nn.Linear(256, 256, bias = bias)
-        self.layer_2 = nn.Linear(512, out_features, bias = bias)
+        self.layer_2 = nn.Linear(hidden_dim, out_features, bias = bias)
         #self.layer_4 = nn.Linear(256, 128, bias = bias)
         #self.layer_5 = nn.Linear(128, out_features, bias = bias)
                                  
