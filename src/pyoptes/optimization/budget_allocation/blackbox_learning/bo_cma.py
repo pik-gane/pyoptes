@@ -34,7 +34,7 @@ def bo_cma(objective_function, initial_population,
 
     ea[-1].plot()
     cma.s.figsave = matplotlib.pyplot.savefig
-    cma.s.figsave(os.path.join(path_plot, 'cma-es'))
+    cma.s.figsave(os.path.join(path_plot, 'cma-es'), dpi=400)
 
     return solutions
 

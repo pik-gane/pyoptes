@@ -62,7 +62,7 @@ if __name__ == '__main__':
     parser.add_argument("--size_subset", type=int, default=10, help="Set the number of nodes that are used. Has to be"
                                                                     "smaller than or equal to n_nodes")
     parser.add_argument('--cma_sigma', type=float, default=0.2, help="")
-    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/',
+    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
                         help="")
     args = parser.parse_args()
 
@@ -103,11 +103,11 @@ if __name__ == '__main__':
                            bounds=bounds,
                            path_plot=args.path_plot)
         print('\nBest CMA-ES solutions evaluated on 10k simulations, descending ')
-        for s in solutions:
-            print(of(s, indices=ix,
-                     true_size_x=args.n_nodes,
-                     eval_function=f.evaluate,
-                     n_simulations=10000))
+        # for s in solutions:
+        #     print(of(s, indices=ix,
+        #              true_size_x=args.n_nodes,
+        #              eval_function=f.evaluate,
+        #              n_simulations=10000))
     elif args.optimizer == 'alebo':
         best_parameters, values, experiment, model = bo_alebo(objective_function_alebo, args.n_nodes,
                                                               args.max_iterations)
