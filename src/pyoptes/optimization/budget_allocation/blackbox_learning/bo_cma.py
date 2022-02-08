@@ -1,44 +1,47 @@
 import cma
+import numpy as np
 
 
 def bo_cma(objective_function, initial_population,
-           sigma=0.2,
-           max_iterations=1000,
-           n_simulations=1000,
-           indices=[],
-           true_size_x=120):
+           max_iterations,
+           n_simulations,
+           indices,
+           true_size_x,
+           eval_function,
+           bounds,
+           sigma=0.2):
     """
 
-    @param n_simulations:
-    @param indices:
-    @param true_size_x:
-    @param objective_function:
-    @param initial_population:
-    @param sigma:
-    @param max_iterations:
+    @param objective_function: function object
+    @param eval_function: function object,
+    @param bounds: list,
+    @param n_simulations: int,
+    @param indices: list,
+    @param true_size_x: int,
+    @param initial_population: numpy array,
+    @param sigma: float,
+    @param max_iterations: int,
     @return:
     """
-    # TODO look into param "bounds" to set upper and lower bounds of solutions
-    # ea = cma.CMAEvolutionStrategy(initial_population, sigma, inopts={'maxiter': max_iterations, 'verbose': -8})
-    # ea.optimize(objective_function)
-    # solutions = ea.pop_sorted
+    ea = cma.fmin(objective_function, initial_population, sigma0=sigma,
+                  options={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds},
+                  args=(n_simulations, indices, true_size_x, eval_function))
 
-    ea = cma.fmin(objective_function, initial_population, sigma0=sigma, options={'maxiter': max_iterations,
-                                                                                 'verbose': -8,
-                                                                                 'verb_plot': 0},
-                  args=(n_simulations, indices, true_size_x))
+    solutions = ea[-2].pop_sorted
 
+    print('solutions', np.shape(solutions))
+
+    # cma.plot('test')
+    # input()
     # logger = ea[-1].load()
     # logger.plot_all()
     # print(solutions)
     # cma.s.figsave('f')
     # cma.plot('outcmaes')
     # print('\nEvaluation of the best solutions on 10k simulations, descending')
-    # for s in solutions:
-    #     print(objective_function(s, n_simulations=10000))
 
-    return 0
-    # return solutions
+
+    return solutions
 
 
 if __name__ == '__main__':
