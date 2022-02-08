@@ -1,5 +1,6 @@
 import cma
-import numpy as np
+import matplotlib.pyplot
+import os
 
 
 def bo_cma(objective_function, initial_population,
@@ -9,9 +10,11 @@ def bo_cma(objective_function, initial_population,
            true_size_x,
            eval_function,
            bounds,
+           path_plot,
            sigma=0.2):
     """
-
+    Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
+    @param path_plot: string,
     @param objective_function: function object
     @param eval_function: function object,
     @param bounds: list,
@@ -21,7 +24,7 @@ def bo_cma(objective_function, initial_population,
     @param initial_population: numpy array,
     @param sigma: float,
     @param max_iterations: int,
-    @return:
+    @return: list of lists, each list represents an optimal solution
     """
     ea = cma.fmin(objective_function, initial_population, sigma0=sigma,
                   options={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds},
@@ -29,17 +32,9 @@ def bo_cma(objective_function, initial_population,
 
     solutions = ea[-2].pop_sorted
 
-    print('solutions', np.shape(solutions))
-
-    # cma.plot('test')
-    # input()
-    # logger = ea[-1].load()
-    # logger.plot_all()
-    # print(solutions)
-    # cma.s.figsave('f')
-    # cma.plot('outcmaes')
-    # print('\nEvaluation of the best solutions on 10k simulations, descending')
-
+    ea[-1].plot()
+    cma.s.figsave = matplotlib.pyplot.savefig
+    cma.s.figsave(os.path.join(path_plot, 'cma-es'))
 
     return solutions
 

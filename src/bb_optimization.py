@@ -15,8 +15,9 @@ def choose_high_degree_nodes(node_degrees, n):
     @param n: int, number of nodes to be returned
     @return: list of ints
     """
-
+    # sort list of nodes by degree
     nodes_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
+    # save the indices of the n highest degree nodes
     indices_highest_degree_nodes = [i[0] for i in nodes_sorted[:n]]
     return indices_highest_degree_nodes
 
@@ -61,6 +62,8 @@ if __name__ == '__main__':
     parser.add_argument("--size_subset", type=int, default=10, help="Set the number of nodes that are used. Has to be"
                                                                     "smaller than or equal to n_nodes")
     parser.add_argument('--cma_sigma', type=float, default=0.2, help="")
+    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/',
+                        help="")
     args = parser.parse_args()
 
     # set some seed to get reproducible results:
@@ -97,8 +100,9 @@ if __name__ == '__main__':
                            indices=ix,
                            true_size_x=args.n_nodes,
                            eval_function=f.evaluate,
-                           bounds=bounds)
-        print('\nCMA-ES solutions')
+                           bounds=bounds,
+                           path_plot=args.path_plot)
+        print('\nBest CMA-ES solutions evaluated on 10k simulations, descending ')
         for s in solutions:
             print(of(s, indices=ix,
                      true_size_x=args.n_nodes,
