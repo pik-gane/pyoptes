@@ -1,55 +1,12 @@
 from pyoptes import set_seed
 from pyoptes.optimization.budget_allocation import target_function as f
 
-from pyoptes.optimization.budget_allocation.blackbox_learning.bo_cma import bo_cma
+from pyoptes.optimization.budget_allocation.blackbox_learning.bo_cma import bo_cma, cma_objective_function
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_alebo import bo_alebo
+from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes
 
 import numpy as np
 import argparse
-
-
-def choose_high_degree_nodes(node_degrees, n):
-    """
-    Returns the indices of n nodes with the highest degrees.
-    @param node_degrees: list, contains indices of nodes and their degree
-    @param n: int, number of nodes to be returned
-    @return: list of ints
-    """
-    # sort list of nodes by degree
-    nodes_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
-    # save the indices of the n highest degree nodes
-    indices_highest_degree_nodes = [i[0] for i in nodes_sorted[:n]]
-    return indices_highest_degree_nodes
-
-
-# TODO find descriptive name for function
-# TODO rename true_size_x to n_nodes ??
-def of(x, n_simulations, indices, true_size_x, eval_function, statistic):
-    """
-    Maps a lower dimensional x to their corresponding indices in the input vector of the given objective function.
-    The input vector x_true is zero at every index except at the indices of x.
-
-    The sum of all values of x_true (or x) is checked to be smaller or equal to the total budget.
-    If this constraint is violated the function return 1e10, otherwise the output of the eva function
-    (the evaluate function of the SI-model) for n_simulations is returned.
-
-    @param x: numpy array,
-    @param eval_function: function object,
-    @param n_simulations: int, number of times the objective function will run a simulation for averaging the output
-    @param indices: list, indices of x in the higher dimensional x
-    @param true_size_x: int, dimension of the input of the objective function
-    @return: float, objective function value at x
-    """
-    assert np.shape(x) == np.shape(indices)
-    # create a dummy vector to be filled with the values of x at the appropriate indices
-    x_true = np.zeros(true_size_x)
-    for i, xi in zip(indices, x):
-        x_true[i] = xi
-    if x_true.sum() <= total_budget:
-        return eval_function(x_true, n_simulations=n_simulations, statistic=statistic)
-    else:
-        # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
-        return 1e10     # * x.sum(x)
 
 
 if __name__ == '__main__':
@@ -92,6 +49,16 @@ if __name__ == '__main__':
     else:
         raise Exception('Invalid solution initialisation chosen.')
 
+    # reduce the dimension of the input space
+    ix = choose_high_degree_nodes(f.network.degree, args.size_subset)
+
+    # get the first constraint, the boundaries of x_i
+    bounds = [0, total_budget]
+
+    # define function to average the results of the simulation
+    # the square of the mean is taken to emphasise the tail of the distribution of y
+    statistic = lambda x: np.mean(x)**2
+
     # def objective_function_alebo(x, total_budget=total_budget):#, nn_simulations=nn_simulations):
     #     x = np.array(list(x.values()))
     #     if x.sum() <= 120.0:
@@ -103,32 +70,26 @@ if __name__ == '__main__':
 
     # print('capacities per node: ', f.capacities)
 
-    # reduce the dimension of the input space
-    ix = choose_high_degree_nodes(f.network.degree, args.size_subset)
-
-    # get the first constraint, the boundaries of x_i
-    bounds = [0, total_budget]
-
-    # define function to average the results of the simulation
-    # the square of the mean is taken to emphasise the tail of the distribution of y
-    statistic = lambda x: np.mean(x)**2
-
     if args.optimizer == 'cma':
-        solutions = bo_cma(of, x, max_iterations=args.max_iterations,
-                           n_simulations=args.n_simulations,
+        solutions = bo_cma(cma_objective_function, x,
                            indices=ix,
                            true_size_x=args.n_nodes,
                            eval_function=f.evaluate,
+                           n_simulations=args.n_simulations,
+                           statistic=statistic,
+                           total_budget=total_budget,
                            bounds=bounds,
                            path_plot=args.path_plot,
-                           statistic=statistic)
+                           max_iterations=args.max_iterations)
         print(f'\nBest CMA-ES solutions evaluated on {args.n_simulations} simulations, descending ')
         for s in solutions:
-            print(of(s, indices=ix,
-                     true_size_x=args.n_nodes,
-                     eval_function=f.evaluate,
-                     n_simulations=args.n_simulations,
-                     statistic=statistic))
+            print(cma_objective_function(s,
+                                         indices=ix,
+                                         true_size_x=args.n_nodes,
+                                         eval_function=f.evaluate,
+                                         n_simulations=args.n_simulations,
+                                         statistic=statistic,
+                                         total_budget=total_budget))
     elif args.optimizer == 'alebo':
         best_parameters, values, experiment, model = bo_alebo(objective_function_alebo, args.n_nodes,
                                                               args.max_iterations)
