@@ -58,13 +58,13 @@ def postprocessing(train_input_data, train_targets_data, split):
 
     return subset_training_input, subset_training_targets, subset_val_input, subset_val_targets
 
-train_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_500.csv"
-train_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_500.csv"
+train_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_1000.csv"
+train_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_1000.csv"
 
 test_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_round.csv"
 test_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_round.csv"
 
-train_input, train_targets, val_input, val_targets = postprocessing(train_input_data, train_targets_data, split = 500)
+train_input, train_targets, val_input, val_targets = postprocessing(train_input_data, train_targets_data, split = 300)
 
 print(f'\n\nSize of training inputs, targets: {len(train_input)} \n\nSize of test inputs, targets: {len(val_input)}\n\n')
 
@@ -74,8 +74,8 @@ training_set = Loader(input_path = train_input,
 validation_set = Loader(input_path = val_input, 
                         targets_path = val_targets, path = False)
 
-train_data = DataLoader(training_set, batch_size = 32, shuffle=True)
-test_input_data = DataLoader(validation_set, batch_size = 32, shuffle=True)
+train_data = DataLoader(training_set, batch_size = 128, shuffle=True)
+test_input_data = DataLoader(validation_set, batch_size = 128, shuffle=True)
 
 
 def train(trainloader: DataLoader, model: torchvision.models, device: torch.device, 
@@ -127,7 +127,7 @@ def validate(valloader: DataLoader, model: torchvision.models,device: torch.devi
     
 random.seed(10)
 
-epochs = 100
+epochs = 150
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def set_model(model: str, dim: int, hidden_dims):
@@ -143,8 +143,8 @@ def set_model(model: str, dim: int, hidden_dims):
 
 network = "Barabasi-Albert" #"lattice" #"Barabasi-Albert"
 
-hidden_dims = (512, 256, 128, 16)
-nodes = 500
+hidden_dims = (128, 64, 32, 16)
+nodes = 1000
 pick = "RNN"
 model = set_model(pick, dim = nodes, hidden_dims = hidden_dims)
 model.to(device)

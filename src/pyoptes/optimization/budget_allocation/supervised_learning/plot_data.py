@@ -5,7 +5,7 @@ import numpy as np
 
 from torch.utils.tensorboard import SummaryWriter
 
-writer = SummaryWriter(log_dir = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning")
+#writer = SummaryWriter(log_dir = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning")
 
 
 
@@ -32,10 +32,10 @@ def postprocessing(input_data, target_data, split):
 #input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_full.csv"
 #target_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_full.csv"
 
-input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_none.csv"
-target_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_none.csv"
+input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_1000.csv"
+target_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_1000.csv"
 
-train_input, train_targets, test_input, test_targets = postprocessing(input_data, target_data, split = 500)
+train_input, train_targets, test_input, test_targets = postprocessing(input_data, target_data, split = 300)
 
 print(f'\nSize of training set: {len(train_input)}, Size of test set: {len(test_input)}')
 print(f'\n\nTrain inputs mean: {train_input.to_numpy().mean()}, Train inputs std: {train_input.to_numpy().std()}')
@@ -58,7 +58,7 @@ plt.hist(np.log(train_targets))
 
 #plt.subplots()
 
-nodes = 121
+nodes = len(train_input.iloc[0])
 
 plt.figure("Training inputs", figsize=(5,5))
 plt.xlabel="Nodes"

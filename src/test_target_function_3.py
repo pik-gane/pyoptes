@@ -19,9 +19,7 @@ set_seed(1)
 print("Preparing the target function for a lattice-based, fixed transmissions network")
 
 # generate a 11 by 11 2d lattice with nodes numbered 0 to 120:
-lattice = nx.DiGraph(nx.to_numpy_array(nx.lattice.grid_2d_graph(20, 20)))
-
-print(lattice)
+lattice = nx.DiGraph(nx.to_numpy_array(nx.lattice.grid_2d_graph(11, 11)))
 
 # at the beginning, call prepare() once:
 f.prepare(

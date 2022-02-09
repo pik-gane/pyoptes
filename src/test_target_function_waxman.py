@@ -50,7 +50,7 @@ nx.draw(waxman, node_color=[[0,0,0,xi/xmax] for xi in x], pos=pos)
 y = f.evaluate(
         x, 
         n_simulations=100, 
-        statistic=lambda a: np.percentile(a, 95)  # to focus on the tail of the distribution
+        statistic=lambda a: np.mean(a**2) #np.percentile(a, 95) to focus on the tail of the distribution
         )
 
 print("\nOne evaluation at random x:", y)

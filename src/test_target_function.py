@@ -37,7 +37,7 @@ y = f.evaluate(x)
 
 print("\nOne evaluation at random x:", y)
 
-n_trials = 100000
+n_trials = 1000
 
 # evaluate f a number of times at the same input:
 ys = np.array([f.evaluate(x) for it in range(n_trials)])
