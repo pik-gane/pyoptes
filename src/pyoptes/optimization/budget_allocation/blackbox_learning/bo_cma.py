@@ -11,6 +11,7 @@ def bo_cma(objective_function, initial_population,
            eval_function,
            bounds,
            path_plot,
+           statistic,
            sigma=0.2):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
@@ -28,13 +29,13 @@ def bo_cma(objective_function, initial_population,
     """
     ea = cma.fmin(objective_function, initial_population, sigma0=sigma,
                   options={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds},
-                  args=(n_simulations, indices, true_size_x, eval_function))
+                  args=(n_simulations, indices, true_size_x, eval_function, statistic))
 
     solutions = ea[-2].pop_sorted
 
     ea[-1].plot()
     cma.s.figsave = matplotlib.pyplot.savefig
-    cma.s.figsave(os.path.join(path_plot, 'cma-es'), dpi=400)
+    cma.s.figsave(os.path.join(path_plot), dpi=400)
 
     return solutions
 

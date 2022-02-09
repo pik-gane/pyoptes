@@ -24,9 +24,15 @@ def choose_high_degree_nodes(node_degrees, n):
 
 # TODO find descriptive name for function
 # TODO rename true_size_x to n_nodes ??
-def of(x, n_simulations, indices, true_size_x, eval_function):
+def of(x, n_simulations, indices, true_size_x, eval_function, statistic):
     """
-    Maps a lower dimensional x to their corresponding indices in the input vector of the given  objective function.
+    Maps a lower dimensional x to their corresponding indices in the input vector of the given objective function.
+    The input vector x_true is zero at every index except at the indices of x.
+
+    The sum of all values of x_true (or x) is checked to be smaller or equal to the total budget.
+    If this constraint is violated the function return 1e10, otherwise the output of the eva function
+    (the evaluate function of the SI-model) for n_simulations is returned.
+
     @param x: numpy array,
     @param eval_function: function object,
     @param n_simulations: int, number of times the objective function will run a simulation for averaging the output
@@ -36,13 +42,11 @@ def of(x, n_simulations, indices, true_size_x, eval_function):
     """
     assert np.shape(x) == np.shape(indices)
     # create a dummy vector to be filled with the values of x at the appropriate indices
-    true_x = np.zeros(true_size_x)
+    x_true = np.zeros(true_size_x)
     for i, xi in zip(indices, x):
-        true_x[i] = xi
-
-    # TODO depending on the CMA-ES options, a second check for positivity of the x values has to be added
-    if x.sum() <= total_budget:
-        return eval_function(true_x, n_simulations=n_simulations)
+        x_true[i] = xi
+    if x_true.sum() <= total_budget:
+        return eval_function(x_true, n_simulations=n_simulations, statistic=statistic)
     else:
         # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
         return 1e10     # * x.sum(x)
@@ -62,7 +66,9 @@ if __name__ == '__main__':
     parser.add_argument("--size_subset", type=int, default=10, help="Set the number of nodes that are used. Has to be"
                                                                     "smaller than or equal to n_nodes")
     parser.add_argument('--cma_sigma', type=float, default=0.2, help="")
-    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
+    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/cma-es',
+                        help="location and name of the file a plot of the results of CMA-ES is saved to.")
+    parser.add_argument('--solution_initialisation', choices=['uniform', 'random'], default='random',
                         help="")
     args = parser.parse_args()
 
@@ -72,17 +78,26 @@ if __name__ == '__main__':
     f.prepare(n_nodes=args.n_nodes)
 
     total_budget = 1.0 * args.n_nodes  # i.e., on average, nodes will do one test per year
-    # evaluate f once at a random input:
-    weights = np.random.rand(args.size_subset)
-    shares = weights / weights.sum()
-    x = shares * total_budget
 
-    def objective_function_alebo(x, total_budget=total_budget):#, nn_simulations=nn_simulations):
-        x = np.array(list(x.values()))
-        if x.sum() <= 120.0:
-            return f.evaluate(x)#, n_simulations=nn_simulations), 0.0)}
-        else:
-            return 1e10     # * x.sum(x)
+    if args.solution_initialisation == 'random':
+        # evaluate f once at a random input:
+        weights = np.random.rand(args.size_subset)
+        shares = weights / weights.sum()
+        x = shares * total_budget
+    # TODO maybe change to np.random.uniform ??
+    elif args.solution_initialisation == 'uniform':
+        # distribute total budget uniformly
+        x = np.array([total_budget/args.size_subset for _ in range(args.size_subset)])
+    # TODO exponential distribution ?
+    else:
+        raise Exception('Invalid solution initialisation chosen.')
+
+    # def objective_function_alebo(x, total_budget=total_budget):#, nn_simulations=nn_simulations):
+    #     x = np.array(list(x.values()))
+    #     if x.sum() <= 120.0:
+    #         return f.evaluate(x)#, n_simulations=nn_simulations), 0.0)}
+    #     else:
+    #         return 1e10     # * x.sum(x)
 
     # print('transmission array', f.model.transmissions_array)
 
@@ -94,6 +109,10 @@ if __name__ == '__main__':
     # get the first constraint, the boundaries of x_i
     bounds = [0, total_budget]
 
+    # define function to average the results of the simulation
+    # the square of the mean is taken to emphasise the tail of the distribution of y
+    statistic = lambda x: np.mean(x)**2
+
     if args.optimizer == 'cma':
         solutions = bo_cma(of, x, max_iterations=args.max_iterations,
                            n_simulations=args.n_simulations,
@@ -101,13 +120,15 @@ if __name__ == '__main__':
                            true_size_x=args.n_nodes,
                            eval_function=f.evaluate,
                            bounds=bounds,
-                           path_plot=args.path_plot)
-        print('\nBest CMA-ES solutions evaluated on 10k simulations, descending ')
-        # for s in solutions:
-        #     print(of(s, indices=ix,
-        #              true_size_x=args.n_nodes,
-        #              eval_function=f.evaluate,
-        #              n_simulations=10000))
+                           path_plot=args.path_plot,
+                           statistic=statistic)
+        print(f'\nBest CMA-ES solutions evaluated on {args.n_simulations} simulations, descending ')
+        for s in solutions:
+            print(of(s, indices=ix,
+                     true_size_x=args.n_nodes,
+                     eval_function=f.evaluate,
+                     n_simulations=args.n_simulations,
+                     statistic=statistic))
     elif args.optimizer == 'alebo':
         best_parameters, values, experiment, model = bo_alebo(objective_function_alebo, args.n_nodes,
                                                               args.max_iterations)
