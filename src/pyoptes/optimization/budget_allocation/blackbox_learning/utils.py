@@ -13,5 +13,3 @@ def choose_high_degree_nodes(node_degrees, n):
     # save the indices of the n highest degree nodes
     indices_highest_degree_nodes = [i[0] for i in nodes_sorted[:n]]
     return indices_highest_degree_nodes
-
-

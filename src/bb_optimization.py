@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument("--size_subset", type=int, default=10, help="Set the number of nodes that are used. Has to be"
                                                                     "smaller than or equal to n_nodes")
     parser.add_argument('--cma_sigma', type=float, default=0.2, help="")
-    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/cma-es',
+    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/test',
                         help="location and name of the file a plot of the results of CMA-ES is saved to.")
     parser.add_argument('--solution_initialisation', choices=['uniform', 'random'], default='random',
                         help="")
@@ -41,7 +41,6 @@ if __name__ == '__main__':
         weights = np.random.rand(args.size_subset)
         shares = weights / weights.sum()
         x = shares * total_budget
-    # TODO maybe change to np.random.uniform ??
     elif args.solution_initialisation == 'uniform':
         # distribute total budget uniformly
         x = np.array([total_budget/args.size_subset for _ in range(args.size_subset)])
@@ -56,15 +55,8 @@ if __name__ == '__main__':
     bounds = [0, total_budget]
 
     # define function to average the results of the simulation
-    # the square of the mean is taken to emphasise the tail of the distribution of y
-    statistic = lambda x: np.mean(x)**2
-
-    # def objective_function_alebo(x, total_budget=total_budget):#, nn_simulations=nn_simulations):
-    #     x = np.array(list(x.values()))
-    #     if x.sum() <= 120.0:
-    #         return f.evaluate(x)#, n_simulations=nn_simulations), 0.0)}
-    #     else:
-    #         return 1e10     # * x.sum(x)
+    # the mean of the squared ys is taken to emphasise the tail of the distribution of y
+    statistic = lambda x: np.mean(x**2)
 
     # print('transmission array', f.model.transmissions_array)
 
@@ -91,8 +83,15 @@ if __name__ == '__main__':
                                          statistic=statistic,
                                          total_budget=total_budget))
     elif args.optimizer == 'alebo':
-        best_parameters, values, experiment, model = bo_alebo(objective_function_alebo, args.n_nodes,
-                                                              args.max_iterations)
+        best_parameters, values, experiment, model = bo_alebo(args.n_nodes,
+                                                              args.max_iterations,
+                                                              indices=ix,
+                                                              true_size_x=args.n_nodes,
+                                                              eval_function=f.evaluate,
+                                                              n_simulations=args.n_simulations,
+                                                              statistic=statistic,
+                                                              total_budget=total_budget,
+                                                              path_plot=args.path_plot)
 
         best_parameters = np.array(list(best_parameters.values()))
         print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())

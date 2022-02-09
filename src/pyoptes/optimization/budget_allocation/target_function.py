@@ -173,7 +173,6 @@ def evaluate(budget_allocation,
         # run until detection:
         model.run()
         # store simulation result:
-        # TODO compute square of infections
         n_infected_when_stopped[sim] = (capacities * model.is_infected[model.t,:]).sum()
 
     # return the requested statistic:

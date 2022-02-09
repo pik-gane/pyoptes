@@ -4,23 +4,14 @@ import os
 import numpy as np
 
 
-def bo_cma(objective_function, initial_population,
-           max_iterations,
-           n_simulations,
-           indices,
-           true_size_x,
-           eval_function,
-           bounds,
-           path_plot,
-           statistic,
-           total_budget,
-           sigma=0.2):
+def bo_cma(objective_function, initial_population, max_iterations, n_simulations, indices, true_size_x, eval_function,
+           bounds, path_plot, statistic, total_budget, sigma=0.2):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
-    @param total_budget:
-    @param statistic:
+    @param total_budget: float,
+    @param statistic: function object,
     @param path_plot: string,
-    @param objective_function: function object
+    @param objective_function: function object,
     @param eval_function: function object,
     @param bounds: list,
     @param n_simulations: int,
@@ -37,6 +28,7 @@ def bo_cma(objective_function, initial_population,
 
     solutions = ea[-2].pop_sorted
 
+    # TODO change x-axis in pot to iterations instead of function evals
     ea[-1].plot()
     cma.s.figsave = matplotlib.pyplot.savefig
     cma.s.figsave(os.path.join(path_plot), dpi=400)
@@ -44,7 +36,6 @@ def bo_cma(objective_function, initial_population,
     return solutions
 
 
-# TODO find descriptive name for function
 # TODO rename true_size_x to n_nodes ??
 def cma_objective_function(x, n_simulations, indices, true_size_x, eval_function, statistic, total_budget):
     """
@@ -55,8 +46,8 @@ def cma_objective_function(x, n_simulations, indices, true_size_x, eval_function
     If this constraint is violated the function return 1e10, otherwise the output of the eva function
     (the evaluate function of the SI-model) for n_simulations is returned.
 
-    @type total_budget: object
-    @param statistic:
+    @param total_budget: float,
+    @param statistic: function object,
     @param x: numpy array,
     @param eval_function: function object,
     @param n_simulations: int, number of times the objective function will run a simulation for averaging the output
