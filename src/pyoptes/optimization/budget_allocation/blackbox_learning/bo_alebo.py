@@ -6,16 +6,17 @@ from matplotlib import pyplot as plt
 
 
 def bo_alebo(n_nodes, total_trials,
-             n_simulations, indices, true_size_x, eval_function, statistic, total_budget, path_plot):
+             n_simulations, indices, eval_function, statistic, total_budget, path_plot):
     """
 
+    @param path_plot:
+    @param total_trials:
     @param total_budget: object
     @param statistic:
     @param n_nodes:
     @param eval_function: function object,
     @param n_simulations: int, number of times the objective function will run a simulation for averaging the output
     @param indices: list, indices of x in the higher dimensional x
-    @param true_size_x: int, dimension of the input of the objective function
     @return:
     """
 
@@ -36,13 +37,15 @@ def bo_alebo(n_nodes, total_trials,
         @return: float, objective function value at x
         """
         x = np.array(list(x.values()))
+
         assert np.shape(x) == np.shape(indices)
 
         # create a dummy vector to be filled with the values of x at the appropriate indices
-        x_true = np.zeros(true_size_x)
+        x_true = np.zeros(n_nodes)
         for i, xi in zip(indices, x):
             x_true[i] = xi
-        if x_true.sum() <= total_budget:
+
+        if 0 < x_true.sum() <= total_budget:
             return eval_function(x_true, n_simulations=n_simulations, statistic=statistic)
         else:
             # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
@@ -76,6 +79,9 @@ def bo_alebo(n_nodes, total_trials,
 
     # Extract out the objective values at each iteration and make a plot
     objectives = np.array([trial.objective_mean for trial in experiment.trials.values()])
+
+    print(objectives)
+    print(np.shape(objectives))
 
     fig = plt.figure(figsize=(12, 6))
     ax = fig.add_subplot(111)

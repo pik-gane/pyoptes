@@ -4,8 +4,9 @@ import os
 import numpy as np
 
 
+# TODO sigma should be about 1/4th of the search space width e.g sigma 30 for budget 120
 def bo_cma(objective_function, initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-           bounds, path_plot, statistic, total_budget, sigma=0.2):
+           bounds, path_plot, statistic, total_budget, sigma=0.4):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
     @param total_budget: float,
@@ -33,7 +34,7 @@ def bo_cma(objective_function, initial_population, max_iterations, n_simulations
     cma.s.figsave = matplotlib.pyplot.savefig
     cma.s.figsave(os.path.join(path_plot), dpi=400)
 
-    return solutions
+    return [ea[0]]#solutions
 
 
 # TODO maybe enforce correct types of params ? To prevent floats where ints are expected
@@ -61,11 +62,11 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     x_true = np.zeros(n_nodes)
     for i, xi in zip(node_indices, x):
         x_true[i] = xi
-    if x_true.sum() <= total_budget:
+    if 0 < x_true.sum() <= total_budget:
         return eval_function(x_true, n_simulations=n_simulations, statistic=statistic)
     else:
         # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
-        return 1e10     # * x.sum(x)
+        return np.NaN#1e10     # * x.sum(x)
 
 
 if __name__ == '__main__':

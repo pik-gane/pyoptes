@@ -1,4 +1,4 @@
-name: bo
+name: bbo
 channels:
   - conda-forge
   - acellera  # channel for ax-platform
@@ -10,13 +10,12 @@ dependencies:
   - numba=0.48  # fixed for pyoptes
   - networkx
   - tqdm
-  - cma
-#  - gfortran
+  - cma=3.0.3
   - pytorch
   - pip
+#  - pandas
   - pip:
 #    - git+https://github.com/uber-research/TuRBO
 #    - dragonfly-opt == 0.1.4
     - smac==0.11.1
-    - ax-platform>=0.1.17
-    - pymoo
+    - ax-platform

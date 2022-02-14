@@ -3,7 +3,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_cma import bo_cma, cma_objective_function
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_alebo import bo_alebo
-from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes
+from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes, baseline
 
 import numpy as np
 import argparse
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--cma_sigma', type=float, default=0.2, help="")
     parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/test',
                         help="location and name of the file a plot of the results of CMA-ES is saved to.")
-    parser.add_argument('--solution_initialisation', choices=['uniform', 'random'], default='random',
+    parser.add_argument('--solution_initialisation', choices=['uniform', 'random'], default='uniform',
                         help="")
     args = parser.parse_args()
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         raise Exception('Invalid solution initialisation chosen.')
 
     # reduce the dimension of the input space
-    ix = choose_high_degree_nodes(f.network.degree, args.size_subset)
+    node_indices = choose_high_degree_nodes(f.network.degree, args.size_subset)
 
     # get the first constraint, the boundaries of x_i
     bounds = [0, total_budget]
@@ -62,9 +62,13 @@ if __name__ == '__main__':
 
     # print('capacities per node: ', f.capacities)
 
+    baseline = baseline(x, eval_function=f.evaluate, n_nodes=args.n_nodes, node_indices=node_indices, statistic=statistic)
+
+    print(f'Parameters:\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}\nSentinel nodes: {args.size_subset}')
+    print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
     if args.optimizer == 'cma':
         solutions = bo_cma(cma_objective_function, x,
-                           node_indices=ix,
+                           node_indices=node_indices,
                            n_nodes=args.n_nodes,
                            eval_function=f.evaluate,
                            n_simulations=args.n_simulations,
@@ -72,21 +76,25 @@ if __name__ == '__main__':
                            total_budget=total_budget,
                            bounds=bounds,
                            path_plot=args.path_plot,
-                           max_iterations=args.max_iterations)
-        print(f'\nBest CMA-ES solutions evaluated on {args.n_simulations} simulations, descending ')
+                           max_iterations=args.max_iterations,
+                           sigma=args.cma_sigma)
+
+        print(f'\nBest CMA-ES solutions, descending ')
+
         for s in solutions:
             print(f'x sum: {s.sum()} || Objective value: ', cma_objective_function(s,
-                                                                                   node_indices=ix,
+                                                                                   node_indices=node_indices,
                                                                                    n_nodes=args.n_nodes,
                                                                                    eval_function=f.evaluate,
                                                                                    n_simulations=args.n_simulations,
                                                                                    statistic=statistic,
-                                                                                   total_budget=total_budget))
+                                                                                   total_budget=total_budget),
+                  f'\n\tmin, max: {s.min()}, {s.max()}',
+                  f'\n\t{s}')
     elif args.optimizer == 'alebo':
-        best_parameters, values, experiment, model = bo_alebo(args.n_nodes,
-                                                              args.max_iterations,
-                                                              indices=ix,
-                                                              true_size_x=args.n_nodes,
+        best_parameters, values, experiment, model = bo_alebo(n_nodes=args.n_nodes,
+                                                              total_trials=args.max_iterations,
+                                                              indices=node_indices,
                                                               eval_function=f.evaluate,
                                                               n_simulations=args.n_simulations,
                                                               statistic=statistic,
