@@ -64,8 +64,8 @@ if __name__ == '__main__':
 
     if args.optimizer == 'cma':
         solutions = bo_cma(cma_objective_function, x,
-                           indices=ix,
-                           true_size_x=args.n_nodes,
+                           node_indices=ix,
+                           n_nodes=args.n_nodes,
                            eval_function=f.evaluate,
                            n_simulations=args.n_simulations,
                            statistic=statistic,
@@ -75,13 +75,13 @@ if __name__ == '__main__':
                            max_iterations=args.max_iterations)
         print(f'\nBest CMA-ES solutions evaluated on {args.n_simulations} simulations, descending ')
         for s in solutions:
-            print(cma_objective_function(s,
-                                         indices=ix,
-                                         true_size_x=args.n_nodes,
-                                         eval_function=f.evaluate,
-                                         n_simulations=args.n_simulations,
-                                         statistic=statistic,
-                                         total_budget=total_budget))
+            print(f'x sum: {s.sum()} || Objective value: ', cma_objective_function(s,
+                                                                                   node_indices=ix,
+                                                                                   n_nodes=args.n_nodes,
+                                                                                   eval_function=f.evaluate,
+                                                                                   n_simulations=args.n_simulations,
+                                                                                   statistic=statistic,
+                                                                                   total_budget=total_budget))
     elif args.optimizer == 'alebo':
         best_parameters, values, experiment, model = bo_alebo(args.n_nodes,
                                                               args.max_iterations,
