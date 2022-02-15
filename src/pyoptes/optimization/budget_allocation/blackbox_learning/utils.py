@@ -17,6 +17,8 @@ def choose_high_degree_nodes(node_degrees, n):
 
 
 def baseline(x, eval_function, node_indices, n_nodes, statistic):
+    # TODO generate initial values here instead of outside the function
+    # TODO include baseline with no testing
 
     simulations = [100, 1000, 10000]
 

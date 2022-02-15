@@ -27,14 +27,14 @@ def bo_cma(objective_function, initial_population, max_iterations, n_simulations
                   options={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds},
                   args=(n_simulations, node_indices, n_nodes, eval_function, statistic, total_budget))
 
-    solutions = ea[-2].pop_sorted
+    solutions = ea[-2].pop_sorted   # pop_sorted is the population after stopping CMA ||
 
-    # TODO change x-axis in pot to iterations instead of function evals
+    # TODO change x-axis in plot to iterations instead of function evals
     ea[-1].plot()
     cma.s.figsave = matplotlib.pyplot.savefig
     cma.s.figsave(os.path.join(path_plot), dpi=400)
 
-    return [ea[0]]#solutions
+    return [ea[0]]#solutions    # contains the best solution found during the whole run
 
 
 # TODO maybe enforce correct types of params ? To prevent floats where ints are expected

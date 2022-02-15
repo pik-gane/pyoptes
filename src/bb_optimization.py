@@ -3,6 +3,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_cma import bo_cma, cma_objective_function
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_alebo import bo_alebo
+from pyoptes.optimization.budget_allocation.blackbox_learning.bo_smac import bo_smac
 from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes, baseline
 
 import numpy as np
@@ -11,7 +12,7 @@ import argparse
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("optimizer", choices=['cma', 'alebo'],
+    parser.add_argument("optimizer", choices=['cma', 'alebo', 'smac'],
                         help="Choose the optimizer to run on the SI-model. Choose between CMA-ES and ALEBO")
     parser.add_argument("--n_nodes", type=int, default=120, help="Defines the number of nodes used by the SI-model. "
                                                                  "Default value is 120.")
@@ -64,8 +65,6 @@ if __name__ == '__main__':
 
     baseline = baseline(x, eval_function=f.evaluate, n_nodes=args.n_nodes, node_indices=node_indices, statistic=statistic)
 
-    print(f'Parameters:\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}\nSentinel nodes: {args.size_subset}')
-    print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
     if args.optimizer == 'cma':
         solutions = bo_cma(cma_objective_function, x,
                            node_indices=node_indices,
@@ -78,7 +77,8 @@ if __name__ == '__main__':
                            path_plot=args.path_plot,
                            max_iterations=args.max_iterations,
                            sigma=args.cma_sigma)
-
+        print(f'Parameters:\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}\nSentinel nodes: {args.size_subset}')
+        print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
         print(f'\nBest CMA-ES solutions, descending ')
 
         for s in solutions:
@@ -101,8 +101,14 @@ if __name__ == '__main__':
                                                               total_budget=total_budget,
                                                               path_plot=args.path_plot)
 
+        print(f'Parameters:\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}\nSentinel nodes: {args.size_subset}')
+        print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
         best_parameters = np.array(list(best_parameters.values()))
         print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
+
+    elif args.optimizer == 'smac':
+
+        print(bo_smac('f'))
 
     else:
         print('Something went wrong with choosing the optimizer.')
