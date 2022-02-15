@@ -16,6 +16,13 @@ def choose_high_degree_nodes(node_degrees, n):
     return indices_highest_degree_nodes
 
 
+def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
+    x_true = np.zeros(n_nodes)
+    for i, xi in zip(node_indices, x):
+        x_true[i] = xi
+    return x_true
+
+
 def baseline(x, eval_function, node_indices, n_nodes, statistic):
     # TODO generate initial values here instead of outside the function
     # TODO include baseline with no testing

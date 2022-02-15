@@ -11,15 +11,31 @@ from smac.optimizer.acquisition import EI
 # Import SMAC-utilities
 from smac.scenario.scenario import Scenario
 
-__copyright__ = "Copyright 2021, AutoML.org Freiburg-Hannover"
-__license__ = "3-clause BSD"
+
+def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
+            statistic, total_budget):
+    """
 
 
-def bo_smac(k):
+    Adapted from SMAC-tutorial: https://automl.github.io/SMAC3/master/pages/examples/python/synthetic_function.html
+    @param initial_population:
+    @param max_iterations:
+    @param n_simulations:
+    @param node_indices:
+    @param n_nodes:
+    @param eval_function:
+    @param statistic:
+    @param total_budget:
+    @return:
+    """
+    EVAL_FUNCTION = eval_function
+    N_SIMULATIONS = n_simulations
+    NODE_INDICES = node_indices
+    STATISTIC = statistic
+    TOTAL_BUDGET = total_budget
+    N_NODES = n_nodes
 
-    K=k
-
-    def rosenbrock_2d(x):
+    def smac_objective_function(x):
         """ The 2 dimensional Rosenbrock function as a toy model
         The Rosenbrock function is well know in the optimization community and
         often serves as a toy problem. It can be defined for arbitrary
@@ -27,46 +43,41 @@ def bo_smac(k):
         zero. All input parameters are continuous. The search domain for
         all x's is the interval [-5, 10].
         """
-        print(k)
-        x1 = x["x0"]
-        x2 = x["x1"]
+        assert np.shape(x) == np.shape(NODE_INDICES)
+        # convert the smac dict to a numpy array
+        x = np.array(list(x.values()))
 
-        val = 100. * (x2 - x1 ** 2.) ** 2. + (1 - x1) ** 2.
-        return val
+        # create a dummy vector to be filled with the values of x at the appropriate indices
+        x_true = np.zeros(N_NODES)
+        for i, xi in zip(NODE_INDICES, x):
+            x_true[i] = xi
+
+        if 0 < x_true.sum() <= TOTAL_BUDGET:
+            return EVAL_FUNCTION(x_true, n_simulations=N_SIMULATIONS, statistic=STATISTIC)
+        else:
+            # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
+            return 1e10  # * x.sum(x)
 
     # Build Configuration Space which defines all parameters and their ranges
     cs = ConfigurationSpace()
-    x0 = UniformFloatHyperparameter("x0", -5, 10, default_value=-3)
-    x1 = UniformFloatHyperparameter("x1", -5, 10, default_value=-4)
-    cs.add_hyperparameters([x0, x1])
+    parameter_space = [UniformFloatHyperparameter(f'x{i}', 0.0, total_budget, default_value=xi)
+                       for i, xi in enumerate(initial_population)]
+    cs.add_hyperparameters(parameter_space)
 
-    # Scenario object
-    scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
-                         "runcount-limit": 10,  # max. number of function evaluations
+    scenario = Scenario({"run_obj": "quality",
+                         "runcount-limit": max_iterations,  # max. number of function evaluations
                          "cs": cs,  # configuration space
-                         "deterministic": "true"
-                         })
-
-    # Use 'gp' or 'gp_mcmc' here
-    model_type = 'gp'
-
-    # Example call of the function
-    # It returns: Status, Cost, Runtime, Additional Infos
-    def_value = rosenbrock_2d(cs.get_default_configuration())
-    print("Default Value: %.2f" % def_value)
+                         "deterministic": "true"})
 
     # Optimize, using a SMAC-object
-    print("Optimizing! Depending on your machine, this might take a few minutes.")
     smac = SMAC4BB(scenario=scenario,
-                   model_type=model_type,
+                   model_type='gp',
                    rng=np.random.RandomState(42),
                    acquisition_function=EI,  # or others like PI, LCB as acquisition functions
-                   tae_runner=rosenbrock_2d,
-                   )
+                   tae_runner=smac_objective_function)
 
     return smac.optimize()
 
 
 if __name__ == "__main__":
-
-    bo_smac('lllll')
+    print('success')

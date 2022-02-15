@@ -4,12 +4,13 @@ import os
 import numpy as np
 
 
+# TODO complete documentation for parameters
 # TODO sigma should be about 1/4th of the search space width e.g sigma 30 for budget 120
 def bo_cma(objective_function, initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
            bounds, path_plot, statistic, total_budget, sigma=0.4):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
-    @param total_budget: float,
+    @param total_budget: float, the total budget that is to be distributed along the nodes of the graph
     @param statistic: function object,
     @param path_plot: string,
     @param objective_function: function object,

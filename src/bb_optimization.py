@@ -4,7 +4,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_cma import bo_cma, cma_objective_function
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_alebo import bo_alebo
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_smac import bo_smac
-from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes, baseline
+from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes, baseline, map_low_dim_x_to_high_dim
 
 import numpy as np
 import argparse
@@ -66,7 +66,8 @@ if __name__ == '__main__':
     baseline = baseline(x, eval_function=f.evaluate, n_nodes=args.n_nodes, node_indices=node_indices, statistic=statistic)
 
     if args.optimizer == 'cma':
-        solutions = bo_cma(cma_objective_function, x,
+        solutions = bo_cma(objective_function=cma_objective_function,
+                           initial_population=x,
                            node_indices=node_indices,
                            n_nodes=args.n_nodes,
                            eval_function=f.evaluate,
@@ -108,7 +109,22 @@ if __name__ == '__main__':
 
     elif args.optimizer == 'smac':
 
-        print(bo_smac('f'))
+        best_parameters = bo_smac(initial_population=x,
+                                  node_indices=node_indices,
+                                  n_nodes=args.n_nodes,
+                                  eval_function=f.evaluate,
+                                  n_simulations=args.n_simulations,
+                                  statistic=statistic,
+                                  total_budget=total_budget,
+                                  max_iterations=args.max_iterations)
+
+        print(f'Parameters:\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}\nSentinel nodes: {args.size_subset}')
+        print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
+
+        best_parameters = np.array(list(best_parameters.values()))
+        best_parameters = map_low_dim_x_to_high_dim(best_parameters, args.n_nodes, node_indices)
+        print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
+        print(f'Objective value: {f.evaluate(best_parameters, n_simulations=args.n_simulations, statistic=statistic)}')
 
     else:
         print('Something went wrong with choosing the optimizer.')
