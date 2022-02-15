@@ -134,3 +134,4 @@ dmypy.json
 
 .project
 .pydevproject
+__pycache__
