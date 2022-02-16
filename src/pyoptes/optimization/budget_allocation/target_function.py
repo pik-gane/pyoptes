@@ -23,7 +23,8 @@ def prepare(use_real_data=False,
             max_t=365, 
             expected_time_of_first_infection=30, 
             capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
-            delta_t_symptoms=30
+            delta_t_symptoms=30,
+            p_infection_by_transmission=0.5
             ):
     """Prepare the target function before being able to evaluate it for the 
     first time.
@@ -113,7 +114,7 @@ def prepare(use_real_data=False,
         daily_test_probabilities = np.zeros(n_nodes),
         
         p_infection_from_outside = p_infection_from_outside,
-        p_infection_by_transmission = 0.9,
+        p_infection_by_transmission = p_infection_by_transmission,
         p_test_positive = 0.99,
         delta_t_testable = 1,
         delta_t_infectious = 1,
