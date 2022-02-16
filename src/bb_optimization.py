@@ -31,10 +31,11 @@ if __name__ == '__main__':
                         help="")
     args = parser.parse_args()
 
+    # TODO add support for reading parameters from json-files
     # set some seed to get reproducible results:
     set_seed(1)
     # at the beginning, call prepare() once:
-    f.prepare(n_nodes=args.n_nodes, capacity_distribution=np.random.lognormal)
+    f.prepare(n_nodes=args.n_nodes, capacity_distribution=np.random.lognormal, p_infection_by_transmission=0.5)
 
     total_budget = 1.0 * args.n_nodes  # i.e., on average, nodes will do one test per year
 
