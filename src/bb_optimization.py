@@ -21,6 +21,7 @@ if __name__ == '__main__':
                                                                         "the variance of the output of the simulation. "
                                                                         "Default value is 1000.")
     parser.add_argument("--max_iterations", type=int, default=100, help="The maximum number of iterations CMA-ES runs.")
+    # TODO rename size_subset to sentinels ?
     parser.add_argument("--size_subset", type=int, default=10, help="Set the number of nodes that are used. Has to be"
                                                                     "smaller than or equal to n_nodes")
     parser.add_argument('--cma_sigma', type=float, default=0.2, help="")
@@ -33,7 +34,7 @@ if __name__ == '__main__':
     # set some seed to get reproducible results:
     set_seed(1)
     # at the beginning, call prepare() once:
-    f.prepare(n_nodes=args.n_nodes)
+    f.prepare(n_nodes=args.n_nodes, capacity_distribution=np.random.lognormal)
 
     total_budget = 1.0 * args.n_nodes  # i.e., on average, nodes will do one test per year
 
@@ -65,6 +66,7 @@ if __name__ == '__main__':
 
     baseline = baseline(x, eval_function=f.evaluate, n_nodes=args.n_nodes, node_indices=node_indices, statistic=statistic)
 
+    # TODO log the beste and baseline results somewhere
     if args.optimizer == 'cma':
         solutions = bo_cma(objective_function=cma_objective_function,
                            initial_population=x,
@@ -78,7 +80,7 @@ if __name__ == '__main__':
                            path_plot=args.path_plot,
                            max_iterations=args.max_iterations,
                            sigma=args.cma_sigma)
-        print(f'Parameters:\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}\nSentinel nodes: {args.size_subset}')
+        print(f'Parameters:\nSentinel nodes: {args.size_subset}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}')
         print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
         print(f'\nBest CMA-ES solutions, descending ')
 
@@ -102,7 +104,7 @@ if __name__ == '__main__':
                                                               total_budget=total_budget,
                                                               path_plot=args.path_plot)
 
-        print(f'Parameters:\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}\nSentinel nodes: {args.size_subset}')
+        print(f'Parameters:\nSentinel nodes: {args.size_subset}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}')
         print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
         best_parameters = np.array(list(best_parameters.values()))
         print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
@@ -118,7 +120,7 @@ if __name__ == '__main__':
                                   total_budget=total_budget,
                                   max_iterations=args.max_iterations)
 
-        print(f'Parameters:\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}\nSentinel nodes: {args.size_subset}')
+        print(f'Parameters:\nSentinel nodes: {args.size_subset}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}')
         print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
 
         best_parameters = np.array(list(best_parameters.values()))

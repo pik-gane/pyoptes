@@ -17,6 +17,14 @@ def choose_high_degree_nodes(node_degrees, n):
 
 
 def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
+    """
+    Map the values in an array x to an empty array of size n_nodes. The location of each xi is based on node_indices.
+    @param x: numpy array, output array to be extended to size n_nodes
+    @param n_nodes: int, defines size of output array
+    @param node_indices: list of integers
+    @return: numpy array of size n_node, with values of x at indices node_indices
+    """
+    # create a dummy vector to be filled with the values of x at the appropriate indices
     x_true = np.zeros(n_nodes)
     for i, xi in zip(node_indices, x):
         x_true[i] = xi

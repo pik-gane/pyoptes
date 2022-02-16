@@ -3,12 +3,10 @@ import numpy as np
 import numpy as np
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter
 
-# Import ConfigSpace and different types of parameters
 from smac.configspace import ConfigurationSpace
 from smac.facade.smac_bb_facade import SMAC4BB
 from smac.optimizer.acquisition import EI
 
-# Import SMAC-utilities
 from smac.scenario.scenario import Scenario
 
 
@@ -36,12 +34,10 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
     N_NODES = n_nodes
 
     def smac_objective_function(x):
-        """ The 2 dimensional Rosenbrock function as a toy model
-        The Rosenbrock function is well know in the optimization community and
-        often serves as a toy problem. It can be defined for arbitrary
-        dimensions. The minimium is always at x_i = 1 with a function value of
-        zero. All input parameters are continuous. The search domain for
-        all x's is the interval [-5, 10].
+        """
+
+        @param x:
+        @return:
         """
         assert np.shape(x) == np.shape(NODE_INDICES)
         # convert the smac dict to a numpy array
@@ -67,7 +63,7 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
     scenario = Scenario({"run_obj": "quality",
                          "runcount-limit": max_iterations,  # max. number of function evaluations
                          "cs": cs,  # configuration space
-                         "deterministic": "true"})
+                         "deterministic": "false"})
 
     # Optimize, using a SMAC-object
     smac = SMAC4BB(scenario=scenario,
