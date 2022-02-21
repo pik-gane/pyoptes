@@ -7,12 +7,12 @@ import numpy as np
 # TODO complete documentation for parameters
 # TODO sigma should be about 1/4th of the search space width e.g sigma 30 for budget 120
 def bo_cma(objective_function, initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-           bounds, path_plot, statistic, total_budget, sigma=0.4):
+           bounds, path_experiment, statistic, total_budget, sigma=0.4):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
     @param total_budget: float, the total budget that is to be distributed along the nodes of the graph
     @param statistic: function object,
-    @param path_plot: string,
+    @param path_experiment: string,
     @param objective_function: function object,
     @param eval_function: function object,
     @param bounds: list,
@@ -33,9 +33,10 @@ def bo_cma(objective_function, initial_population, max_iterations, n_simulations
     # TODO change x-axis in plot to iterations instead of function evals
     ea[-1].plot()
     cma.s.figsave = matplotlib.pyplot.savefig
-    cma.s.figsave(os.path.join(path_plot), dpi=400)
+    path_plot = os.path.join(path_experiment, 'cma_plot.png')
+    cma.s.figsave(path_plot, dpi=400)
 
-    return [ea[0]]#solutions    # contains the best solution found during the whole run
+    return [ea[0]] #solutions    # contains the best solution found during the whole run
 
 
 # TODO maybe enforce correct types of params ? To prevent floats where ints are expected
