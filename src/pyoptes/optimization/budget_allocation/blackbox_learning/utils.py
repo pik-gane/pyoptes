@@ -1,33 +1,22 @@
 import os
 import json
 import numpy as np
-import matplotlib.pyplot
 
 
-def test_function(x, n_simulations, node_indices, n_nodes, eval_function, statistic, total_budget):
+def save_results(best_parameter, eval_output, path_experiment):
     """
-
-    @param x:
-    @return:
+    Saves the evaluation of the output and the corresponding best parameter.
+    @param best_parameter:
+    @param eval_output:
+    @param path_experiment:
     """
-    return x[0]**2
+    if not os.path.isdir(path_experiment):
+        os.makedirs(path_experiment)
 
+    with open(os.path.join(path_experiment, 'evaluation_output.txt'), 'w') as f:
+        f.write(eval_output)
 
-def save_results(model_return, model_steps, model_hits, base_path):
-    """
-    Saves the results for a training run of a model,
-    Results are saved as numpy files.
-    Args:
-
-        model_return: list,
-        model_steps: list
-        model_hits: list
-        base_path: string, base path where the results are saved to
-    """
-    if not os.path.isdir(base_path):
-        os.makedirs(base_path)
-
-    np.save(os.path.join(base_path, 'model_steps'), model_steps)
+    np.save(os.path.join(path_experiment, 'best_parameter'), best_parameter)
 
 
 def save_parameters(parameters, base_path):
@@ -91,3 +80,12 @@ def baseline(x, eval_function, node_indices, n_nodes, statistic):
         y[f'{n_sim}'] = eval_function(x_true, n_simulations=n_sim, statistic=statistic)
 
     return y
+
+
+def test_function(x, n_simulations, node_indices, n_nodes, eval_function, statistic, total_budget):
+    """
+    Quadratic function just for test purposes
+    @param x:
+    @return:
+    """
+    return x[0]**2

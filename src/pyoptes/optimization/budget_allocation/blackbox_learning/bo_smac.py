@@ -103,7 +103,6 @@ def smac_objective_function(x, n_simulations, node_indices, n_nodes, eval_functi
     if 0 < x_true.sum() <= total_budget:
         return eval_function(x_true, n_simulations=n_simulations, statistic=statistic)
     else:
-        # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
         return np.NaN#1e10     # * x.sum(x)
 
 

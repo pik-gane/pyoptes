@@ -36,7 +36,7 @@ def bo_cma(objective_function, initial_population, max_iterations, n_simulations
     path_plot = os.path.join(path_experiment, 'cma_plot.png')
     cma.s.figsave(path_plot, dpi=400)
 
-    return [ea[0]] #solutions    # contains the best solution found during the whole run
+    return ea[0] #solutions    # contains the best solution found during the whole run
 
 
 # TODO maybe enforce correct types of params ? To prevent floats where ints are expected
@@ -67,7 +67,6 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     if 0 < x_true.sum() <= total_budget:
         return eval_function(x_true, n_simulations=n_simulations, statistic=statistic)
     else:
-        # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
         return np.NaN#1e10     # * x.sum(x)
 
 

@@ -9,14 +9,13 @@ from pyoptes.optimization.budget_allocation.blackbox_learning.bo_smac import bo_
 
 from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes, baseline
 from pyoptes.optimization.budget_allocation.blackbox_learning.utils import map_low_dim_x_to_high_dim, test_function
-from pyoptes.optimization.budget_allocation.blackbox_learning.utils import save_parameters
+from pyoptes.optimization.budget_allocation.blackbox_learning.utils import save_parameters, save_results
 
-import json
 import inspect
 import argparse
 import numpy as np
 import networkx as nx
-
+from time import time
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -108,33 +107,41 @@ if __name__ == '__main__':
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_parameters(experiment_params, path_experiment)
 
-        solutions = bo_cma(objective_function=cma_objective_function,
-                           initial_population=x,
-                           node_indices=node_indices,
-                           n_nodes=args.n_nodes,
-                           eval_function=f.evaluate,
-                           n_simulations=args.n_simulations,
-                           statistic=statistic,
-                           total_budget=total_budget,
-                           bounds=bounds,
-                           path_experiment=path_experiment,
-                           max_iterations=args.max_iterations,
-                           sigma=args.cma_sigma)
-        print(f'Parameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}')
-        print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
-        print(f'\nBest CMA-ES solutions:')
+        t0 = time()
+        best_parameter = bo_cma(objective_function=cma_objective_function,
+                                initial_population=x,
+                                node_indices=node_indices,
+                                n_nodes=args.n_nodes,
+                                eval_function=f.evaluate,
+                                n_simulations=args.n_simulations,
+                                statistic=statistic,
+                                total_budget=total_budget,
+                                bounds=bounds,
+                                path_experiment=path_experiment,
+                                max_iterations=args.max_iterations,
+                                sigma=args.cma_sigma)
 
-        for s in solutions:
-            print(f'x sum: {s.sum()} || Objective value: ', cma_objective_function(s,
-                                                                                   node_indices=node_indices,
-                                                                                   n_nodes=args.n_nodes,
-                                                                                   eval_function=f.evaluate,
-                                                                                   n_simulations=args.n_simulations,
-                                                                                   statistic=statistic,
-                                                                                   total_budget=total_budget),
-                  f'\n\tmin, max: {s.min()}, {s.max()}')#,
-                  # f'\n\t{s}')
+        eval_best_parameter = cma_objective_function(best_parameter,
+                                                     node_indices=node_indices,
+                                                     n_nodes=args.n_nodes,
+                                                     eval_function=f.evaluate,
+                                                     n_simulations=args.n_simulations,
+                                                     statistic=statistic,
+                                                     total_budget=total_budget)
+        p = f'Parameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}' \
+            f'\nTime for optimization: {(time() - t0) / 60}' \
+            f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\nBest CMA-ES solutions:' \
+            f'\nObjective value:  {eval_best_parameter}' \
+            f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
+
+        save_results(best_parameter, eval_output=p, base_path=path_experiment)
+        print(p)
+
     elif args.optimizer == 'alebo':
+        path_experiment = os.path.join(args.path_plot, args.name_experiment)
+        save_parameters(experiment_params, path_experiment)
+
         best_parameters, values, experiment, model = bo_alebo(n_nodes=args.n_nodes,
                                                               total_trials=args.max_iterations,
                                                               indices=node_indices,
@@ -151,6 +158,8 @@ if __name__ == '__main__':
         print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
 
     elif args.optimizer == 'smac':
+        path_experiment = os.path.join(args.path_plot, args.name_experiment)
+        save_parameters(experiment_params, path_experiment)
 
         best_parameters = bo_smac(initial_population=x,
                                   node_indices=node_indices,
