@@ -9,13 +9,19 @@ from pyoptes.optimization.budget_allocation.blackbox_learning.bo_smac import bo_
 
 from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes, baseline
 from pyoptes.optimization.budget_allocation.blackbox_learning.utils import map_low_dim_x_to_high_dim, test_function
-from pyoptes.optimization.budget_allocation.blackbox_learning.utils import save_parameters, save_results
+from pyoptes.optimization.budget_allocation.blackbox_learning.utils import save_hyperparameters, save_results
 
 import inspect
 import argparse
 import numpy as np
 import networkx as nx
 from time import time
+from scipy.stats import lognorm
+
+
+def caps(size):
+    return lognorm.rvs(s=2, scale=np.exp(4), size=size)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -31,7 +37,6 @@ if __name__ == '__main__':
                              "the variance of the output of the simulation. Default value is 1000.")
     parser.add_argument("--max_iterations", type=int, default=100,
                         help="The maximum number of iterations the algorithms run.")
-    # TODO rename size_subset to sentinels ?
     parser.add_argument("--sentinels", type=int, default=10,
                         help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes")
     parser.add_argument('--cma_sigma', type=float, default=30,
@@ -41,6 +46,8 @@ if __name__ == '__main__':
     # TODO rename to something more clear + clear up help
     parser.add_argument('--graph', choices=['waxman', 'barabasi-albert'], default='barabasi-albert',
                         help='Set the type of graph the ... . Either Waxman or Barabasi-Albert (ba) can be used')
+    parser.add_argument('--delta_t_symptoms', type=int, default=60, help='')
+    parser.add_argument('--p_infection_by_transmission', type=float, default=0.5, help='')
     args = parser.parse_args()
 
     # TODO add support for reading parameters from json-files // or save parameters + results in a json
@@ -59,20 +66,21 @@ if __name__ == '__main__':
         raise Exception(f'"{args.graph}" is an invalid choice for the graph.')
 
     # at the beginning, call prepare() once:
-    f.prepare(n_nodes=args.n_nodes, capacity_distribution=np.random.lognormal,
-              p_infection_by_transmission=0.5, static_network=static_network, delta_t_symptoms=60)
+    f.prepare(n_nodes=args.n_nodes,
+              capacity_distribution=np.random.lognormal,
+              p_infection_by_transmission=args.p_infection_by_transmission,
+              static_network=static_network,
+              delta_t_symptoms=args.delta_t_symptoms)
 
     total_budget = 1.0 * args.n_nodes  # i.e., on average, nodes will do one test per year
 
     if args.solution_initialisation == 'random':
-        # evaluate f once at a random input:
         weights = np.random.rand(args.sentinels)
         shares = weights / weights.sum()
         x = shares * total_budget
     elif args.solution_initialisation == 'uniform':
         # distribute total budget uniformly
         x = np.array([total_budget/args.sentinels for _ in range(args.sentinels)])
-    # TODO exponential distribution ?
     else:
         raise Exception('Invalid solution initialisation chosen.')
 
@@ -101,11 +109,10 @@ if __name__ == '__main__':
                                    },
                          'optimizer': {}}
 
-    # # TODO log the beste and baseline results somewhere
     if args.optimizer == 'cma':
         experiment_params['optimizer']['cma_sigma'] = args.cma_sigma
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
-        save_parameters(experiment_params, path_experiment)
+        save_hyperparameters(experiment_params, path_experiment)
 
         t0 = time()
         best_parameter = bo_cma(objective_function=cma_objective_function,
@@ -135,13 +142,14 @@ if __name__ == '__main__':
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 
-        save_results(best_parameter, eval_output=p, base_path=path_experiment)
+        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
         print(p)
 
     elif args.optimizer == 'alebo':
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
-        save_parameters(experiment_params, path_experiment)
+        save_hyperparameters(experiment_params, path_experiment)
 
+        t0 = time()
         best_parameters, values, experiment, model = bo_alebo(n_nodes=args.n_nodes,
                                                               total_trials=args.max_iterations,
                                                               indices=node_indices,
@@ -159,24 +167,34 @@ if __name__ == '__main__':
 
     elif args.optimizer == 'smac':
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
-        save_parameters(experiment_params, path_experiment)
+        save_hyperparameters(experiment_params, path_experiment)
 
-        best_parameters = bo_smac(initial_population=x,
-                                  node_indices=node_indices,
-                                  n_nodes=args.n_nodes,
-                                  eval_function=f.evaluate,
-                                  n_simulations=args.n_simulations,
-                                  statistic=statistic,
-                                  total_budget=total_budget,
-                                  max_iterations=args.max_iterations)
+        t0 = time()
+        best_parameter = bo_smac(initial_population=x,
+                                     node_indices=node_indices,
+                                     n_nodes=args.n_nodes,
+                                     eval_function=f.evaluate,
+                                     n_simulations=args.n_simulations,
+                                     statistic=statistic,
+                                     total_budget=total_budget,
+                                     max_iterations=args.max_iterations,
+                                     node_mapping_func=map_low_dim_x_to_high_dim,
+                                     path_experiment=path_experiment)
 
-        print(f'Parameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}')
-        print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
+        best_parameter = np.array(list(best_parameter.values()))
+        best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
 
-        best_parameters = np.array(list(best_parameters.values()))
-        best_parameters = map_low_dim_x_to_high_dim(best_parameters, args.n_nodes, node_indices)
-        print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
-        print(f'Objective value: {f.evaluate(best_parameters, n_simulations=args.n_simulations, statistic=statistic)}')
+        eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic)
+
+        p = f'Parameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}' \
+            f'\nTime for optimization: {(time() - t0) / 60}' \
+            f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\nBest CMA-ES solutions:' \
+            f'\nObjective value:  {eval_best_parameter}' \
+            f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
+
+        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
+        print(p)
 
     else:
         print('Something went wrong with choosing the optimizer.')

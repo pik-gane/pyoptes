@@ -2,9 +2,9 @@ Parameters:
 Sentinel nodes: 10
 n_nodes: 120
 n_simulations: 1000
-Time for optimization: 0.33058263460795084
+Time for optimization: 0.29946402708689374
 
 Baseline for uniform budget distribution: 15349588.151084669
 Best CMA-ES solutions:
-Objective value:  15272219.619525356
-	min, max, x sum: 0.5392094681422872, 22.82239630727162, 119.8673905205242
+Objective value:  15244040.606187802
+x min, x max, x sum: 3.855997702974486, 23.654392369833424, 108.69761922364827

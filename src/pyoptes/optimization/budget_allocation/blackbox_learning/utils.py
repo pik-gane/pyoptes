@@ -19,12 +19,12 @@ def save_results(best_parameter, eval_output, path_experiment):
     np.save(os.path.join(path_experiment, 'best_parameter'), best_parameter)
 
 
-def save_parameters(parameters, base_path):
+def save_hyperparameters(hyperparameters, base_path):
     """
     Saves the parameters for a training run of a model,
     Parameters are saved as a json file.
     Args:
-        parameters: dict,
+        hyperparameters: dict,
         base_path: string, base path where the results are saved to
     """
     if not os.path.isdir(base_path):
@@ -33,7 +33,7 @@ def save_parameters(parameters, base_path):
     json_path = os.path.join(base_path, 'experiment_parameters.json')
 
     with open(json_path, 'w') as fp:
-        json.dump(parameters, fp, sort_keys=True, indent=4)
+        json.dump(hyperparameters, fp, sort_keys=True, indent=4)
 
 
 def choose_high_degree_nodes(node_degrees, n):
