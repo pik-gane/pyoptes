@@ -2,8 +2,7 @@ from torch import nn
 from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
 from torch.optim import Adam
 from ray import tune
-
-
+import torch.nn.functional as F
 
 class RNNetwork(nn.Module): #Recurrent Neural Network
     """Network with recurrent layers and ReLU activations."""    
@@ -23,8 +22,11 @@ class RNNetwork(nn.Module): #Recurrent Neural Network
 
     def forward(self, x):
         layer_1 = self.layer_1(x)
+        x = F.dropout(x, p=0.5, training=self.training)
         layer_2 = self.layer_2(layer_1)
+        x = F.dropout(x, p=0.5, training=self.training)
         layer_3 = self.layer_3(layer_2)
+        x = F.dropout(x, p=0.5, training=self.training)
         layer_4 = self.layer_4(layer_3)
         y_hat = self.layer_5(layer_4)   
         return y_hat
@@ -51,11 +53,20 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
         #self.layer_5 = nn.Linear(128, out_features, bias = bias)
                   
     def forward(self, x):
-        layer_1 = self.act_func(self.layer_1(x))
-        layer_2 = self.act_func(self.layer_2(layer_1))
+        
+        x = self.act_func(self.layer_1(x))
+        
+        #x = F.dropout(x, p=0.5, training=self.training)
+
+        x = self.act_func(self.layer_2(x))
         #y_hat = self.layer_3(layer_2)
-        layer_3 = self.act_func(self.layer_3(layer_2))
-        y_hat = self.layer_4(layer_3)
+        #x = F.dropout(x, p=0.5, training=self.training)
+
+        x = self.act_func(self.layer_3(x))
+
+        #x = F.dropout(x, p=0.5, training=self.training)
+
+        y_hat = self.layer_4(x)
         #y_hat = self.layer_5(layer_4)   
         return y_hat
 

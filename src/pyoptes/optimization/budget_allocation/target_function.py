@@ -14,7 +14,7 @@ Output: an estimate of the number of infected animals at the time the simulation
 import numpy as np
 from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions
 
-global model, capacities, network
+global model, capacities, network, transmissions_array, transmissions_time_covered
 
 
 def prepare(use_real_data=False, 
@@ -41,7 +41,7 @@ def prepare(use_real_data=False,
     infection should be detected automatically even without a test.
     """
 
-    global model, capacities, network
+    global model, capacities, network, transmissions_array, transmissions_time_covered
     
     if use_real_data:
         from pyoptes.networks.transmissions.hitier_schweine import load_transdataarray
