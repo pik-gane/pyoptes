@@ -30,7 +30,7 @@ def save_hyperparameters(hyperparameters, base_path):
     if not os.path.isdir(base_path):
         os.makedirs(base_path)
 
-    json_path = os.path.join(base_path, 'experiment_parameters.json')
+    json_path = os.path.join(base_path, 'experiment_hyperparameters.json')
 
     with open(json_path, 'w') as fp:
         json.dump(hyperparameters, fp, sort_keys=True, indent=4)

@@ -32,6 +32,7 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
     STATISTIC = statistic
     TOTAL_BUDGET = total_budget
     N_NODES = n_nodes
+    I = [0]
 
     # SMAC is not able to pass additional arguments to function
     def smac_objective_function(x):
@@ -41,15 +42,22 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
         @return:
         """
         assert np.shape(x) == np.shape(NODE_INDICES)
+        if I[0]!=0 and I[0]%10==0:
+            print(f'Iteration: {I[0]}')
+        I[0] = I[0]+1
+
         # convert the smac dict to a numpy array
         x = np.array(list(x.values()))
 
         x_true = node_mapping_func(x, N_NODES, NODE_INDICES)
+        #
+        x_true_normed = x_true/x_true.sum()
+        x_true_scaled = x_true_normed*total_budget
 
-        if 0 < x_true.sum() <= TOTAL_BUDGET:
-            return EVAL_FUNCTION(x_true, n_simulations=N_SIMULATIONS, statistic=STATISTIC)
-        else:
-            return 1e10  # * x.sum(x) # np.NaN doesn't work
+        sqr_diff_x = (x_true.sum()-x_true_scaled.sum())**2 # ~200k
+
+        return EVAL_FUNCTION(x_true_scaled, n_simulations=N_SIMULATIONS, statistic=STATISTIC)
+
 
     # Build Configuration Space which defines all parameters and their ranges
     cs = ConfigurationSpace()
@@ -61,8 +69,7 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
                          "runcount-limit": max_iterations,  # max. number of function evaluations
                          "cs": cs,  # configuration space
                          "deterministic": "True",
-                         "output_dir": 'smac3_output',
-                         "verbose_level": "18"})
+                         "output_dir": 'smac3_output'})
 
     # Optimize, using a SMAC-object
     smac = SMAC4BB(scenario=scenario,

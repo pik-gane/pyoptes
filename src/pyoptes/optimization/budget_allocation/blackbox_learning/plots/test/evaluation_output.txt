@@ -2,9 +2,9 @@ Parameters:
 Sentinel nodes: 10
 n_nodes: 120
 n_simulations: 1000
-Time for optimization: 0.29946402708689374
+Time for optimization: 6.403979627291362
 
-Baseline for uniform budget distribution: 15349588.151084669
-Best CMA-ES solutions:
-Objective value:  15244040.606187802
-x min, x max, x sum: 3.855997702974486, 23.654392369833424, 108.69761922364827
+Baseline for uniform budget distribution: 21890555.246352714
+Best SMAC solutions:
+Objective value:  18636856.423465874
+x min, x max, x sum: 0.0, 17.960986593936727, 120.0

@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     # at the beginning, call prepare() once:
     f.prepare(n_nodes=args.n_nodes,
-              capacity_distribution=np.random.lognormal,
+              capacity_distribution=caps,
               p_infection_by_transmission=args.p_infection_by_transmission,
               static_network=static_network,
               delta_t_symptoms=args.delta_t_symptoms)
@@ -98,16 +98,16 @@ if __name__ == '__main__':
     baseline = baseline(x, eval_function=f.evaluate, n_nodes=args.n_nodes, node_indices=node_indices, statistic=statistic)
 
     # save SI-model parameters as .json-file
-    experiment_params = {'model': {'node_initialisation': args.solution_initialisation,
-                                   'total_budget': total_budget,
-                                   'n_nodes': args.n_nodes,
-                                   'graph': args.graph,
-                                   'sentinels': args.sentinels,
-                                   'n_simulations': args.n_simulations,
-                                   'max_iterations': args.max_iterations,
-                                   'statistic': inspect.getsourcelines(statistic)[0][0][23:-1],
-                                   },
-                         'optimizer': {}}
+    experiment_params = {'model_hyperparameters': {'node_initialisation': args.solution_initialisation,
+                                                   'total_budget': total_budget,
+                                                   'n_nodes': args.n_nodes,
+                                                   'graph': args.graph,
+                                                   'sentinels': args.sentinels,
+                                                   'n_simulations': args.n_simulations,
+                                                   'max_iterations': args.max_iterations,
+                                                   'statistic': inspect.getsourcelines(statistic)[0][0][23:-1],
+                                                   },
+                         'optimizer_hyperparameters': {'optimizer': args.optimizer}}
 
     if args.optimizer == 'cma':
         experiment_params['optimizer']['cma_sigma'] = args.cma_sigma
@@ -171,25 +171,27 @@ if __name__ == '__main__':
 
         t0 = time()
         best_parameter = bo_smac(initial_population=x,
-                                     node_indices=node_indices,
-                                     n_nodes=args.n_nodes,
-                                     eval_function=f.evaluate,
-                                     n_simulations=args.n_simulations,
-                                     statistic=statistic,
-                                     total_budget=total_budget,
-                                     max_iterations=args.max_iterations,
-                                     node_mapping_func=map_low_dim_x_to_high_dim,
-                                     path_experiment=path_experiment)
+                                 node_indices=node_indices,
+                                 n_nodes=args.n_nodes,
+                                 eval_function=f.evaluate,
+                                 n_simulations=args.n_simulations,
+                                 statistic=statistic,
+                                 total_budget=total_budget,
+                                 max_iterations=args.max_iterations,
+                                 node_mapping_func=map_low_dim_x_to_high_dim,
+                                 path_experiment=path_experiment)
 
         best_parameter = np.array(list(best_parameter.values()))
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
+        best_parameter = best_parameter/best_parameter.sum()
+        best_parameter = best_parameter*total_budget
 
         eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic)
 
         p = f'Parameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization: {(time() - t0) / 60}' \
             f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
-            f'\nBest CMA-ES solutions:' \
+            f'\nBest SMAC solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 
