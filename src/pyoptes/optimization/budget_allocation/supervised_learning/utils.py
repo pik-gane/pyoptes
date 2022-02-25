@@ -60,6 +60,7 @@ class processing():
 
       #print(row_has_NaN)
 
+
       subset_training_input = train_input_data.iloc[split:]
 
       subset_training_targets = train_targets_data.iloc[split:]

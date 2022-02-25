@@ -38,17 +38,21 @@ from sklearn.metrics import explained_variance_score, mean_squared_error
 from prepare_conv import prepare_convolutions as prep_conv
 
 
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
+train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
+train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
 
 
-x, y = process.postprocessing(train_input_data, train_targets_data, split = 1000, grads = True)
+x, y = process.postprocessing(train_input_data, train_targets_data, split = 20000, grads = True)
 
 data_list = prep_conv(x,y)
 
-loader = DataLoader(data_list, batch_size = 1, shuffle = True)
+print(len(data_list))
+
+loader = DataLoader(data_list, batch_size = 256, shuffle = True)
 
 model = Net(16, dataset=data_list[0]).double() # gdc = gdc).double()
+
+#torch.load(model.state_dict(), "/Users/admin/pyoptes/src/gat_wax_120.pth")
 
 epochs = 500
 criterion = nn.L1Loss() 
@@ -94,24 +98,61 @@ def training(loader, model, criterion, optimizer):
     acc = explained_variance_score(true, pred)
     return np.mean(train_loss), acc
 
+def validate(loader, model):
+    model.eval()
+    true = []
+    pred = []
+    val_loss = []
+
+    for batch in loader:
+      
+      targets = batch.y.unsqueeze(-1) #= [32,1]
+      output = model(batch)
+
+      #print(targets.shape, output.shape)
+
+      loss = criterion(output, targets)
+      val_loss.append(loss.item())
+
+      for j, val in enumerate(output):
+        true.append(targets[j].item())
+        pred.append(output[j].item())
+
+    acc = explained_variance_score(true, pred)
+    return np.mean(val_loss), acc
+
+val_loss = []
+val_acc = []
+
 total_loss = []
 total_acc = []
-train_loss_prev = np.inf
+
+val_loss_prev = np.inf
 for epoch in range(epochs):
   train_loss, train_acc = training(loader, model, criterion, optimizer) 
   total_loss.append(train_loss)
   total_acc.append(train_acc)
-  if train_loss < train_loss_prev:
+
+
+  valloss, valacc = validate(loader, model)
+  val_loss.append(valloss)
+  val_acc.append(valacc)
+
+  if valloss < val_loss_prev:
     train_loss_prev = train_loss
-    print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}')
+    print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {valloss}, val acc: {valacc}')
+    torch.save(model.state_dict(), "/Users/admin/pyoptes/src/gat_wax_120.pth")
+
 
 plt.figure()
 plt.plot(np.arange(epochs), total_loss, label = "training loss")
+plt.plot(np.arange(epochs), val_loss, label = "validation loss")
 plt.xlabel("epochs")
 plt.ylabel("loss")
 
 plt.figure()
 plt.plot(np.arange(epochs), total_acc, label = "training acc")
+plt.plot(np.arange(epochs), val_acc, label = "validation acc")
 plt.xlabel("epochs")
 plt.ylabel("accuracy")
 
