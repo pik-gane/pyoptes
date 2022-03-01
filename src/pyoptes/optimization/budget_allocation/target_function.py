@@ -13,6 +13,7 @@ Output: an estimate of the number of infected animals at the time the simulation
 
 import numpy as np
 from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions
+from multiprocessing import cpu_count, Pool
 
 global model, capacities, network
 
@@ -133,10 +134,18 @@ def get_n_inputs():
     return model.n_nodes
 
 
+def simulate_infection(x):
+    model.reset()
+    # run until detection:
+    model.run()
+    # store simulation result:
+    return (capacities * model.is_infected[model.t,:]).sum()
+
+
 def evaluate(budget_allocation, 
              n_simulations=1, 
-             statistic=np.mean  # any function converting an array into a number
-             ):
+             statistic=np.mean,  # any function converting an array into a number
+             parallel=True):
     """Run the SIModelOnTransmissions a single time, using the given budget 
     allocation, and return the number of nodes infected at the time the 
     simulation is stopped. Since the simulated process is a stochastic
@@ -149,7 +158,8 @@ def evaluate(budget_allocation,
     - np.max
     - lambda a: np.percentile(a, 95)
     
-    @param budget_allocation: (array of floats) expected number of tests per 
+    @param parallel: (bool) Sets whether the simulations runs are computed in parallel. Default is set to True.
+    @param budget_allocation: (array of floats) expected number of tests per
     year, indexed by node
     @param n_simulations: (optional int) number of epidemic simulation runs the 
     evaluation should be based on (default: 1)
@@ -168,12 +178,17 @@ def evaluate(budget_allocation,
     model.daily_test_probabilities = budget_allocation / 365
     
     n_infected_when_stopped = np.zeros(n_simulations)
-    for sim in range(n_simulations):
-        model.reset()
-        # run until detection:
-        model.run()
-        # store simulation result:
-        n_infected_when_stopped[sim] = (capacities * model.is_infected[model.t,:]).sum()
+
+    if parallel:
+        pool = Pool(cpu_count())
+        n_infected_when_stopped = pool.map(simulate_infection, n_infected_when_stopped)
+    else:
+        for sim in range(n_simulations):
+            model.reset()
+            # run until detection:
+            model.run()
+            # store simulation result:
+            n_infected_when_stopped[sim] = (capacities * model.is_infected[model.t, :]).sum()
 
     # return the requested statistic:
     return statistic(n_infected_when_stopped)
