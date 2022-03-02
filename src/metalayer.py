@@ -55,8 +55,6 @@ from ray import tune
 from ray.tune import CLIReporter
 from ray.tune.schedulers import ASHAScheduler
 from tqdm import tqdm
-<<<<<<< HEAD
-<<<<<<< HEAD
 from torch.utils.tensorboard import SummaryWriter
 
 writer = SummaryWriter(log_dir = "/Users/admin/pyoptes_graphs/metalayer")
@@ -69,9 +67,6 @@ x, y = process.postprocessing(train_input_data, train_targets_data, split = 2000
 data_list = prep_conv(x,y)
 train_loader = DataLoader(data_list[5000:], batch_size = 128, shuffle = True)
 test_loader = DataLoader(data_list[:5000], batch_size = 128, shuffle = True)
-=======
-=======
->>>>>>> 7d652ef (commit)
 
 train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
 train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
@@ -79,17 +74,10 @@ train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
 x, y = process.postprocessing(train_input_data, train_targets_data, split = 20000, grads = True)
 
 data_list = prep_conv(x,y)
-<<<<<<< HEAD
 train_loader = DataLoader(data_list[:700], batch_size = 32, shuffle = True)
 test_loader = DataLoader(data_list[700:], batch_size = 32, shuffle = True)
-<<<<<<< HEAD
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
 train_loader = DataLoader(data_list[5000:], batch_size = 128, shuffle = True)
 test_loader = DataLoader(data_list[:5000], batch_size = 128, shuffle = True)
->>>>>>> 6395484 (commit)
 
 class Edge_Model(torch.nn.Module):
 
@@ -136,15 +124,6 @@ class Node_Model(torch.nn.Module):
         out = torch.cat([x[src], edge_attr], dim=1) #updated edge // stack all edge features 
         
         #print(out.shape, x[src].shape, x[dest].shape)
-<<<<<<< HEAD
-<<<<<<< HEAD
-###
-=======
-
->>>>>>> 7d652ef (commit)
-=======
-
->>>>>>> 7d652ef (commit)
         out = self.node_mlp_1(out) #updated feature of our edges
 
         out = scatter_mean(out, dest, dim=0, dim_size=x.size(0)) #new target feature 
@@ -152,16 +131,9 @@ class Node_Model(torch.nn.Module):
         u = u.view(-1,1)
         out = torch.cat([x, out, u[batch]], dim=1) 
         
-<<<<<<< HEAD
-<<<<<<< HEAD
         out = self.node_mlp_2(out)  #updated feature of target node
- ###
-=======
         out = self.node_mlp_2(out) #updated feature of target node
->>>>>>> 7d652ef (commit)
-=======
         out = self.node_mlp_2(out) #updated feature of target node
->>>>>>> 7d652ef (commit)
         #if self.residuals:
         #    out = out + edge_attr
         return out  
@@ -219,8 +191,6 @@ class meta_layer(nn.Module):
     # Defining the forward pass    
     def forward(self, x, edge_attr, u, edge_index, batch):
         
-<<<<<<< HEAD
-<<<<<<< HEAD
         hx_1, h1_edge_attr, hu_1 = self.layer_1(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
 
         hx_2, h2_edge_attr, hu_2 = self.layer_2(x=hx_1, edge_attr=h1_edge_attr, edge_index=edge_index, u=hu_1, batch=batch)
@@ -244,37 +214,16 @@ optimizer = optim.AdamW(model.parameters(), **optimizer_params)
 print(model)
 #model.load_state_dict(torch.load("/Users/admin/pyoptes/src/meta_layer.pth"))
 
-=======
-=======
->>>>>>> 7d652ef (commit)
-        x, edge_attr, u = self.layer_1(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
-        x, edge_attr, u = self.layer_2(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
-        x, edge_attr, u = self.layer_3(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
-        x, edge_attr, u = self.layer_4(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
-
-        #print(x.shape, edge_attr.shape, u.shape)
-        #x, edge_attr, u = self.layer_5(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
-        #print(x.shape, edge_attr.shape, u.shape)
-        return u
-
 model = meta_layer(ins_nodes = 2, ins_edges = 1, ins_graphs = 6, hiddens= 16, outs = 6).double() # gdc = gdc).double()
 epochs = 10000
 criterion = nn.L1Loss() 
 
 optimizer_params = {"lr": 0.001, "weight_decay": 0.005, "betas": (0.9, 0.999)}
 optimizer = optim.AdamW(model.parameters(), **optimizer_params)
-<<<<<<< HEAD
-#
-<<<<<<< HEAD
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
 
 
 #model.load_state_dict(torch.load("/Users/admin/pyoptes/src/meta_layer.pth"))
 
->>>>>>> 6395484 (commit)
 #optimizer_params = {"lr": 0.1, "weight_decay": 0.0005}
 #optimizer = optim.Adam(model.parameters(), **optimizer_params)
 
@@ -328,8 +277,6 @@ def validate(valloader: DataLoader, model: torchvision.models):
             u = model.forward(x = x, edge_attr = edge_weight, u = u, edge_index = edge_index, batch = batch)
             
             loss = criterion(u, targets)
-        
-            #print(u[0].item(), targets[0].item())
 
             val_loss.append(loss.item())
 
@@ -360,8 +307,6 @@ for epoch in range(epochs):
   _val_loss.append(val_loss)
   _val_acc.append(val_acc)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
   writer.add_scalar(f'Loss/test nodes', val_loss, epoch)
   writer.add_scalar(f'Accuracy/test nodes', val_acc, epoch)
 
@@ -370,26 +315,18 @@ for epoch in range(epochs):
     val_loss_prev = val_loss
     torch.save(model.state_dict(), "/Users/admin/pyoptes/src/meta_layer20T.pth")
     print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {val_loss_prev}, val acc: {val_acc}')
-=======
-=======
->>>>>>> 7d652ef (commit)
 
-<<<<<<< HEAD
   #if train_loss < train_loss_prev:
   train_loss_prev = train_loss
   val_loss_prev = val_loss
   print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {val_loss_prev}, val acc: {val_acc}')
-<<<<<<< HEAD
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
+
   if train_loss < train_loss_prev:
     train_loss_prev = train_loss
     val_loss_prev = val_loss
     torch.save(model.state_dict(), "/Users/admin/pyoptes/src/meta_layer20T.pth")
     print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {val_loss_prev}, val acc: {val_acc}')
->>>>>>> 6395484 (commit)
+
 
 plt.figure()
 plt.plot(np.arange(epochs), np.sqrt(total_loss), label = "training loss")

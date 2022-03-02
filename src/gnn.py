@@ -26,29 +26,13 @@ from torch_geometric.utils import from_networkx
 import torch_geometric
 import torch_geometric.nn as geom_nn
 import torch_geometric.data as geom_data
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 from torch_geometric.nn import GATv2Conv, LEConv, GCN2Conv, FAConv, MetaLayer, GraphConv, GINEConv, ARMAConv, SGConv, EdgeConv, GCN, GAT, GATConv, ChebConv, DenseGCNConv, GCNConv, global_mean_pool,global_add_pool, global_max_pool, SAGEConv, global_sort_pool, MLP
-=======
 from torch_geometric.nn import LEConv, GCN2Conv, FAConv, MetaLayer, GraphConv, GINEConv, ARMAConv, SGConv, EdgeConv, GCN, GAT, GATConv, ChebConv, DenseGCNConv, GCNConv, global_mean_pool,global_add_pool, global_max_pool, SAGEConv, global_sort_pool, MLP
->>>>>>> 7d652ef (commit)
-=======
 from torch_geometric.nn import LEConv, GCN2Conv, FAConv, MetaLayer, GraphConv, GINEConv, ARMAConv, SGConv, EdgeConv, GCN, GAT, GATConv, ChebConv, DenseGCNConv, GCNConv, global_mean_pool,global_add_pool, global_max_pool, SAGEConv, global_sort_pool, MLP
->>>>>>> 7d652ef (commit)
-=======
 from torch_geometric.nn import GATv2Conv, LEConv, GCN2Conv, FAConv, MetaLayer, GraphConv, GINEConv, ARMAConv, SGConv, EdgeConv, GCN, GAT, GATConv, ChebConv, DenseGCNConv, GCNConv, global_mean_pool,global_add_pool, global_max_pool, SAGEConv, global_sort_pool, MLP
->>>>>>> 6395484 (commit)
 from torch.nn import Sequential as Seq, Linear as Lin, ReLU
 from torch_scatter import scatter_mean
 from torch_geometric.nn import MetaLayer
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 7d652ef (commit)
 
 class EdgeModel(torch.nn.Module):
     def __init__(self):
@@ -83,6 +67,7 @@ class NodeModel(torch.nn.Module):
         out = self.node_mlp_1(out)
         out = scatter_mean(out, col, dim=0, dim_size=x.size(0))
         out = torch.cat([x, out, u[batch]], dim=1)
+
         return self.node_mlp_2(out)
 
 class GlobalModel(torch.nn.Module):
@@ -97,15 +82,9 @@ class GlobalModel(torch.nn.Module):
         # u: [B, F_u]
         # batch: [N] with max entry B - 1.
         out = torch.cat([u, scatter_mean(x, batch, dim=0)], dim=1)
+        
         return self.global_mlp(out)
 
-
-<<<<<<< HEAD
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 0b4e3eb (commit)
 def get_features(transmissions, capacities, G, time_covered):
     #print(time_covered)# 180
     edge_features = transmissions.groupby([2, 3]).size()
@@ -132,29 +111,15 @@ class Net(torch.nn.Module):
         #torch.manual_seed(12345)
     
         #self.nn = MLP()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6395484 (commit)
+
         self.conv1 = GATv2Conv(2, 16, edge_dim = 1) #simple message passing layer
         self.conv2 = GATv2Conv(16, 32, edge_dim = 1) #simple message passing layer
         self.conv3 = GATv2Conv(32, 64, edge_dim = 1) #simple message passing layer
         self.conv4 = GATv2Conv(64, 128, edge_dim = 1) #simple message passing layer
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 7d652ef (commit)
         #self.conv1 = LEConv(2, 8) #simple message passing layer
         #self.conv2 = LEConv(8, 16) #simple message passing layer
         #self.conv3 = LEConv(16, 32) #simple message passing layer
         #self.conv4 = LEConv(32, 64) #simple message passing layer
-<<<<<<< HEAD
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 6395484 (commit)
 
         #The edge convolutional layer processes graphs or point clouds
 
@@ -179,40 +144,18 @@ class Net(torch.nn.Module):
         self.cheb1 = ChebConv(dataset.num_features, 18, K=2)
         self.cheb2 = ChebConv(16, 8, K=2)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
         self.linear1 = nn.Linear(128,1)
-=======
         self.linear1 = nn.Linear(8,1)
->>>>>>> 7d652ef (commit)
-=======
         self.linear1 = nn.Linear(8,1)
->>>>>>> 7d652ef (commit)
-=======
         self.linear1 = nn.Linear(128,1)
->>>>>>> 6395484 (commit)
-
         #self.mlp = MLP([8, 16, 8])
 
     def forward(self, data):
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-        graph_features = data.edge_attr
-        x, edge_index, edge_weight, u, batch = data.x, data.edge_index, data.weight, graph_features, data.batch
-=======
 
         x, edge_index, edge_weight, u, batch = data.x, data.edge_index, data.weight, data.edge_attr, data.batch
->>>>>>> 7d652ef (commit)
-=======
-
         x, edge_index, edge_weight, u, batch = data.x, data.edge_index, data.weight, data.edge_attr, data.batch
->>>>>>> 7d652ef (commit)
-=======
         graph_features = data.edge_attr
         x, edge_index, edge_weight, u, batch = data.x, data.edge_index, data.weight, graph_features, data.batch
->>>>>>> 6395484 (commit)
         
         #Data(edge_index=[2, 430], weight=[430], num_nodes=120, x=[120, 2], y=[1], num_features=2, edge_attr=[6], num_edges=430)
     
@@ -224,11 +167,6 @@ class Net(torch.nn.Module):
 
         #edge_attr = meta_layer(x, edge_index, edge_weight, u, batch)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6395484 (commit)
         x, (edge_index, edge_weight) = self.conv1(x, edge_index, edge_weight, return_attention_weights=True)
         x, (edge_index, edge_weight) = self.conv2(x, edge_index, edge_weight, return_attention_weights=True)
         x, (edge_index, edge_weight) = self.conv3(x, edge_index, edge_weight, return_attention_weights=True)
@@ -238,17 +176,11 @@ class Net(torch.nn.Module):
         #x, edges = self.conv3(x, edge_index, edge_weight, return_attention_weights=True)
         #x, e  = self.conv4(x, edge_index, edge_weight, return_attention_weights=True)
 
-<<<<<<< HEAD
-=======
         x  = self.conv1(x, edge_index = edge_index, edge_weight = edge_weight)
         x = self.relu(x)
->>>>>>> 7d652ef (commit)
-=======
         x  = self.conv1(x, edge_index = edge_index, edge_weight = edge_weight)
         x = self.relu(x)
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 6395484 (commit)
+
         #x = self.conv2(x, edge_index = edge_index, edge_weight = edge_weight)
         #x = self.relu(x)
         #x = self.conv3(x, edge_index = edge_index, edge_weight = edge_weight)

@@ -37,10 +37,6 @@ from torch import optim
 from sklearn.metrics import explained_variance_score, mean_squared_error
 from prepare_conv import prepare_convolutions as prep_conv
 
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
 train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
 
@@ -55,38 +51,6 @@ loader = DataLoader(data_list, batch_size = 256, shuffle = True)
 
 model = Net(16, dataset=data_list[0]).double() # gdc = gdc).double()
 
-#torch.load(model.state_dict(), "/Users/admin/pyoptes/src/gat_wax_120.pth")
-
-=======
-=======
->>>>>>> 7d652ef (commit)
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
-=======
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
->>>>>>> 6395484 (commit)
-
-
-x, y = process.postprocessing(train_input_data, train_targets_data, split = 20000, grads = True)
-
-data_list = prep_conv(x,y)
-
-print(len(data_list))
-
-loader = DataLoader(data_list, batch_size = 256, shuffle = True)
-
-model = Net(16, dataset=data_list[0]).double() # gdc = gdc).double()
-
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
-#torch.load(model.state_dict(), "/Users/admin/pyoptes/src/gat_wax_120.pth")
-
->>>>>>> 6395484 (commit)
 epochs = 500
 criterion = nn.L1Loss() 
 
@@ -131,11 +95,7 @@ def training(loader, model, criterion, optimizer):
     acc = explained_variance_score(true, pred)
     return np.mean(train_loss), acc
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6395484 (commit)
+
 def validate(loader, model):
     model.eval()
     true = []
@@ -162,44 +122,22 @@ def validate(loader, model):
 val_loss = []
 val_acc = []
 
-<<<<<<< HEAD
+train_loss_prev = np.inf
 total_loss = []
 total_acc = []
 
 val_loss_prev = np.inf
-=======
-total_loss = []
-total_acc = []
-train_loss_prev = np.inf
->>>>>>> 7d652ef (commit)
-=======
-total_loss = []
-total_acc = []
-train_loss_prev = np.inf
->>>>>>> 7d652ef (commit)
-=======
-total_loss = []
-total_acc = []
 
-val_loss_prev = np.inf
->>>>>>> 6395484 (commit)
 for epoch in range(epochs):
   train_loss, train_acc = training(loader, model, criterion, optimizer) 
   total_loss.append(train_loss)
   total_acc.append(train_acc)
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 6395484 (commit)
-
-
   valloss, valacc = validate(loader, model)
   val_loss.append(valloss)
   val_acc.append(valacc)
 
   if valloss < val_loss_prev:
-<<<<<<< HEAD
+  #if train_loss < train_loss_prev:
     train_loss_prev = train_loss
     print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {valloss}, val acc: {valacc}')
     torch.save(model.state_dict(), "/Users/admin/pyoptes/src/gat_wax_120.pth")
@@ -207,44 +145,13 @@ for epoch in range(epochs):
 
 plt.figure()
 plt.plot(np.arange(epochs), total_loss, label = "training loss")
-plt.plot(np.arange(epochs), val_loss, label = "validation loss")
-=======
-=======
->>>>>>> 7d652ef (commit)
-  if train_loss < train_loss_prev:
-=======
->>>>>>> 6395484 (commit)
-    train_loss_prev = train_loss
-    print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {valloss}, val acc: {valacc}')
-    torch.save(model.state_dict(), "/Users/admin/pyoptes/src/gat_wax_120.pth")
 
-
-plt.figure()
-plt.plot(np.arange(epochs), total_loss, label = "training loss")
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
 plt.plot(np.arange(epochs), val_loss, label = "validation loss")
->>>>>>> 6395484 (commit)
 plt.xlabel("epochs")
 plt.ylabel("loss")
-
 plt.figure()
 plt.plot(np.arange(epochs), total_acc, label = "training acc")
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 plt.plot(np.arange(epochs), val_acc, label = "validation acc")
-=======
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
-plt.plot(np.arange(epochs), val_acc, label = "validation acc")
->>>>>>> 6395484 (commit)
 plt.xlabel("epochs")
 plt.ylabel("accuracy")
 

@@ -58,19 +58,6 @@ class processing():
       is_NaN = train_input_data.isnull()
       row_has_NaN = is_NaN.any(axis=1)
 
-      #print(row_has_NaN)
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> 7d652ef (commit)
-=======
->>>>>>> 7d652ef (commit)
-=======
-
->>>>>>> 6395484 (commit)
       subset_training_input = train_input_data.iloc[split:]
 
       subset_training_targets = train_targets_data.iloc[split:]

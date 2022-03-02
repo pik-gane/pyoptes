@@ -30,79 +30,21 @@ from pyoptes.optimization.budget_allocation.supervised_learning.utils import tra
 from torch.utils.tensorboard import SummaryWriter
 from ray import tune
 
+random.seed(10)
+
 writer = SummaryWriter(log_dir = "/Users/admin/pyoptes/src")
 
 device = get_device()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 train_input_data = "/Users/admin/pyoptes/src/inputs_ba_120_sent_sci.csv"
 train_targets_data = "/Users/admin/pyoptes/src/targets_ba_120_sent_sci.csv"
 
 model_state = "/Users/admin/pyoptes/src/ba_120_sci.pth"
 
-#train_input_data = "/Users/admin/pyoptes/src/input_data_waxman_fast.csv"
-#train_targets_data = "/Users/admin/pyoptes/src/label_data_waxman_fast.csv"
-
-#test_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_round.csv"
-#test_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_round.csv"
-
-#print(f'\n\nSize of training inputs, targets: {len(train_data)} \n\nSize of test inputs, targets: {len(val_input)}\n\n')
-
 train_data, test_data = process.postprocessing(train_input_data, train_targets_data, split = 5000, grads = False)
 
 inputs_train_data = DataLoader(train_data, batch_size = 128, shuffle=True)
 targets_test_data = DataLoader(test_data, batch_size = 128, shuffle=True)
-
-
-=======
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
-=======
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
->>>>>>> 6395484 (commit)
-
-model_state = "/Users/admin/pyoptes/src/waxman_120_sci2.pth"
-
-#train_input_data = "/Users/admin/pyoptes/src/input_data_waxman_fast.csv"
-#train_targets_data = "/Users/admin/pyoptes/src/label_data_waxman_fast.csv"
-
-#test_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_round.csv"
-#test_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_round.csv"
-
-#print(f'\n\nSize of training inputs, targets: {len(train_data)} \n\nSize of test inputs, targets: {len(val_input)}\n\n')
-
-train_data, test_data = process.postprocessing(train_input_data, train_targets_data, split = 5000, grads = False)
-
-inputs_train_data = DataLoader(train_data, batch_size = 128, shuffle=True)
-targets_test_data = DataLoader(test_data, batch_size = 128, shuffle=True)
-
-
->>>>>>> 7d652ef (commit)
-=======
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
-
-model_state = "/Users/admin/pyoptes/src/barabasi_120.pth"
-
-#train_input_data = "/Users/admin/pyoptes/src/input_data_waxman_fast.csv"
-#train_targets_data = "/Users/admin/pyoptes/src/label_data_waxman_fast.csv"
-
-#test_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_round.csv"
-#test_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_round.csv"
-
-#print(f'\n\nSize of training inputs, targets: {len(train_data)} \n\nSize of test inputs, targets: {len(val_input)}\n\n')
-
-train_data, test_data = process.postprocessing(train_input_data, train_targets_data, split = 500, grads = False)
-
-inputs_train_data = DataLoader(train_data, batch_size = 32, shuffle=True)
-targets_test_data = DataLoader(test_data, batch_size = 32, shuffle=True)
-
-
->>>>>>> 7d652ef (commit)
-random.seed(10)
 
 epochs = 200
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -116,7 +58,7 @@ pick = "RNN"
 
 model = model_selection.set_model(pick, dim = nodes, hidden_dims = hidden_dims)
 model.to(device)
-model.load_state_dict(torch.load("/Users/admin/pyoptes/src/ba_120_sci.pth"))
+model.load_state_dict(torch.load(model_state))
 
 #criterion = nn.MSELoss() 
 criterion = nn.L1Loss() #mean absolut error
@@ -137,7 +79,6 @@ optimizer = optim.AdamW(model.parameters(), **optimizer_params)
 and slower for parameters infrequent parameter."""
 #optimizer = optim.Adagrad(model.parameters(), **optimizer_params)
 
-
 plotter_train_loss = []
 plotter_test_loss = []
 
@@ -145,23 +86,18 @@ plotter_train_acc = []
 plotter_test_acc = []
 
 for epoch in range(1, epochs + 1):
-    
     train_loss, train_acc = train_nn.train(trainloader = inputs_train_data, model=model, device=device, optimizer = optimizer,
                                   criterion=criterion, verbose=50)
     val_loss, val_acc = train_nn.validate(valloader= targets_test_data, model=model, device=device, criterion=criterion, verbose=10)
-
+    
     #test_loss, test_acc =  validate(valloader= test_input_data, model=model, device=device, criterion=criterion, verbose=10)
-
     #writer.add_scalar(f'Loss/test {pick} {nodes} nodes {network}', val_loss, epoch)
-
     ##writer.add_scalar(f'Accuracy/test {pick} {nodes} nodes {network}', val_acc, epoch)
-
 
     plotter_train_loss.append(train_loss)
     plotter_test_loss.append(val_loss)
     plotter_train_acc.append(train_acc)
     plotter_test_acc.append(val_acc)
-
 
     if epoch%1==0 or epoch == 1:
       print(f"epoch {epoch}:, train loss: {train_loss:.4f}, train acc: {train_acc:.4f}, validation loss: {val_loss:.4f}, validation acc: {val_acc:.4f}")
