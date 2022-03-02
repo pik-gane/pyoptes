@@ -1,15 +1,16 @@
 {
-    "model": {
+    "model_hyperparameters": {
         "graph": "barabasi-albert",
-        "max_iterations": 100000,
+        "max_iterations": 1000,
         "n_nodes": 120,
         "n_simulations": 1000,
         "node_initialisation": "uniform",
-        "sentinels": 60,
+        "sentinels": 10,
         "statistic": "x: np.mean(x**2)",
         "total_budget": 120.0
     },
-    "optimizer": {
-        "cma_sigma": 30
+    "optimizer_hyperparameters": {
+        "cma_sigma": 30,
+        "optimizer": "cma"
     }
 }

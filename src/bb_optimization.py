@@ -15,7 +15,7 @@ import inspect
 import argparse
 import numpy as np
 import networkx as nx
-from time import time
+from time import time, localtime, strftime
 from scipy.stats import lognorm
 
 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_simulations", type=int, default=1000,
                         help=" Sets the number of runs the for the SI-model. Higher values of n_simulations lower "
                              "the variance of the output of the simulation. Default value is 1000.")
-    parser.add_argument("--max_iterations", type=int, default=100,
+    parser.add_argument("--max_iterations", type=int, default=1000,
                         help="The maximum number of iterations the algorithms run.")
     parser.add_argument("--sentinels", type=int, default=10,
                         help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes")
@@ -110,10 +110,11 @@ if __name__ == '__main__':
                          'optimizer_hyperparameters': {'optimizer': args.optimizer}}
 
     if args.optimizer == 'cma':
-        experiment_params['optimizer']['cma_sigma'] = args.cma_sigma
+        experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
-
+        print('saved hyperparameters')
+        print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
         best_parameter = bo_cma(objective_function=cma_objective_function,
                                 initial_population=x,
@@ -135,8 +136,9 @@ if __name__ == '__main__':
                                                      n_simulations=args.n_simulations,
                                                      statistic=statistic,
                                                      total_budget=total_budget)
-        p = f'Parameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}' \
-            f'\nTime for optimization: {(time() - t0) / 60}' \
+        p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
+            f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
+            f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
             f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
             f'\nBest CMA-ES solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
@@ -158,8 +160,9 @@ if __name__ == '__main__':
                                                               statistic=statistic,
                                                               total_budget=total_budget,
                                                               path_plot=args.path_plot)
+        print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
-        print(f'Parameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\n'
+        print(f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\n'
               f'n_simulations: {args.n_simulations}\nNetwork type: {args.graph}')
         print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
         best_parameters = np.array(list(best_parameters.values()))
@@ -168,7 +171,8 @@ if __name__ == '__main__':
     elif args.optimizer == 'smac':
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
-
+        print('saved hyperparameters')
+        print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
         best_parameter = bo_smac(initial_population=x,
                                  node_indices=node_indices,
@@ -180,6 +184,7 @@ if __name__ == '__main__':
                                  max_iterations=args.max_iterations,
                                  node_mapping_func=map_low_dim_x_to_high_dim,
                                  path_experiment=path_experiment)
+        print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
         best_parameter = np.array(list(best_parameter.values()))
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
@@ -188,8 +193,9 @@ if __name__ == '__main__':
 
         eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic)
 
-        p = f'Parameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\nn_simulations: {args.n_simulations}' \
-            f'\nTime for optimization: {(time() - t0) / 60}' \
+        p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
+            f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
+            f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
             f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
             f'\nBest SMAC solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \

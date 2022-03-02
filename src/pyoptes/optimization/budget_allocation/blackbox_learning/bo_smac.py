@@ -56,7 +56,7 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
 
         sqr_diff_x = (x_true.sum()-x_true_scaled.sum())**2 # ~200k
 
-        return EVAL_FUNCTION(x_true_scaled, n_simulations=N_SIMULATIONS, statistic=STATISTIC)
+        return EVAL_FUNCTION(x_true_scaled, n_simulations=N_SIMULATIONS, statistic=STATISTIC) + sqr_diff_x*10
 
 
     # Build Configuration Space which defines all parameters and their ranges
@@ -85,6 +85,7 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
         config = rh.ids_config[config_id]
         ys.append(smac_objective_function(config))
 
+    # TODO add info to the plot whether the current test strategy violates the sum constraint
     plt.plot(range(len(ys)), ys)
     plt.title('SMAC')
     plt.xlabel('Iteration')
