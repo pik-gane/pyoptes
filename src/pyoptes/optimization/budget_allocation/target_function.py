@@ -15,7 +15,7 @@ import numpy as np
 from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions
 from multiprocessing import cpu_count, Pool
 
-global model, capacities, network
+global model, capacities, network, pool
 
 
 def prepare(use_real_data=False, 
@@ -24,7 +24,8 @@ def prepare(use_real_data=False,
             max_t=365, 
             expected_time_of_first_infection=30, 
             capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
-            delta_t_symptoms=30
+            delta_t_symptoms=30,
+            parallel=False
             ):
     """Prepare the target function before being able to evaluate it for the 
     first time.
@@ -42,7 +43,7 @@ def prepare(use_real_data=False,
     infection should be detected automatically even without a test.
     """
 
-    global model, capacities, network
+    global model, capacities, network, pool
     
     if use_real_data:
         from pyoptes.networks.transmissions.hitier_schweine import load_transdataarray
@@ -126,6 +127,8 @@ def prepare(use_real_data=False,
         verbose = False,
         )
 
+    pool = Pool(cpu_count()) if parallel else None
+    
         
 def get_n_inputs():
     """Get the length of the input vector needed for evaluate(),
@@ -134,17 +137,26 @@ def get_n_inputs():
     return model.n_nodes
 
 
-def simulate_infection(x):
+def simulate_infection():
     model.reset()
     # run until detection:
     model.run()
-    # store simulation result:
-    return (capacities * model.is_infected[model.t,:]).sum()
+    # return a vector of bools stating which farms are infected at the end:
+    return model.is_infected[model.t,:]
 
+def n_infected_animals(is_infected):
+    return np.sum(capacities * is_infected)
+    
+def mean_square_and_stderr(n_infected_animals):
+    values = n_infected_animals**2
+    estimate = np.mean(values, axis=0)
+    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
+    return (estimate, stderr)
 
 def evaluate(budget_allocation, 
              n_simulations=1, 
-             statistic=np.mean,  # any function converting an array into a number
+             aggregation=n_infected_animals,  # any function converting an array of infection bools into an aggregated "damage"
+             statistic=mean_square_and_stderr,  # any function converting an array of aggregated results into one or more overall indicators
              parallel=True):
     """Run the SIModelOnTransmissions a single time, using the given budget 
     allocation, and return the number of nodes infected at the time the 
@@ -176,20 +188,15 @@ def evaluate(budget_allocation,
     assert budget_allocation.size == model.daily_test_probabilities.size
     
     model.daily_test_probabilities = budget_allocation / 365
-    
-    n_infected_when_stopped = np.zeros(n_simulations)
 
-    if parallel:
-        pool = Pool(cpu_count())
-        n_infected_when_stopped = pool.map(simulate_infection, n_infected_when_stopped)
+    def task(unused_simulation_index):
+        return aggregation(simulate_infection())
+    
+    if parallel and (pool is not None):
+        results = pool.map(task, range(n_simulations))
     else:
-        for sim in range(n_simulations):
-            model.reset()
-            # run until detection:
-            model.run()
-            # store simulation result:
-            n_infected_when_stopped[sim] = (capacities * model.is_infected[model.t, :]).sum()
+        results = [task(sim) for sim in range(n_simulations)]
 
     # return the requested statistic:
-    return statistic(n_infected_when_stopped)
+    return statistic(np.array(results))
     # Note: other indicators are available via target_function.model
