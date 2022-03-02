@@ -23,7 +23,7 @@ def prepare(use_real_data=False,
             max_t=365, 
             expected_time_of_first_infection=30, 
             capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
-            delta_t_symptoms=30
+            delta_t_symptoms=60
             ):
     """Prepare the target function before being able to evaluate it for the 
     first time.
@@ -37,7 +37,7 @@ def prepare(use_real_data=False,
     (if not use_real_data and static_network is None) (default: 60000)
     @param max_t: (optional int) Maximal simulation time in days (default: 365)
     @param expected_time_of_first_infection: (optional int, default: 30)
-    @param delta_t_symptoms: (optional int, default: 30) After what time the 
+    @param delta_t_symptoms: (optional int, default: 60) After what time the 
     infection should be detected automatically even without a test.
     """
 
@@ -135,7 +135,7 @@ def get_n_inputs():
 
 def evaluate(budget_allocation, 
              n_simulations=1, 
-             statistic=np.mean  # any function converting an array into a number
+             statistic=np.mean  # any function converting an array into a number or tuple of numbers
              ):
     """Run the SIModelOnTransmissions a single time, using the given budget 
     allocation, and return the number of nodes infected at the time the 
@@ -148,6 +148,7 @@ def evaluate(budget_allocation,
     - np.median
     - np.max
     - lambda a: np.percentile(a, 95)
+    - lambda a: np.mean(a**2)
     
     @param budget_allocation: (array of floats) expected number of tests per 
     year, indexed by node

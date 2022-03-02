@@ -50,7 +50,7 @@ nx.draw(waxman, node_color=[[0,0,0,xi/xmax] for xi in x], pos=pos)
 y = f.evaluate(
         x, 
         n_simulations=100, 
-        statistic=lambda a: np.percentile(a, 95)  # to focus on the tail of the distribution
+        statistic=lambda a: np.mean(a**2)  # to focus on the tail of the distribution
         )
 
 print("\nOne evaluation at random x:", y)
@@ -69,7 +69,7 @@ def stderr(a):
 
 # evaluate f a number of times at the same input:
 ys = np.array([f.evaluate(x, **evaluation_parms) for it in range(n_trials)])
-logys = np.log(ys)
+logys = np.log(ys+1e-10)
 print("Mean and std.err. of", n_trials, "evaluations at the same random x:", ys.mean(), stderr(ys))
 print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys.mean(), stderr(logys))
 
@@ -86,7 +86,7 @@ nx.draw(waxman, node_color=[[0,0,0,xi/x2max] for xi in x2], pos=pos)
 #plt.show()
 
 ys2 = np.array([f.evaluate(x2, **evaluation_parms) for it in range(n_trials)])
-logys2 = np.log(ys2)
+logys2 = np.log(ys2+1e-10)
 print("\nMean and std.err. of", n_trials, "evaluations at a capacity-based x:", ys2.mean(), stderr(ys2))
 print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys2.mean(), stderr(logys2))
 
@@ -107,7 +107,7 @@ nx.draw(waxman, node_color=[[0,0,0,xi/x3max] for xi in x3], pos=pos)
 #plt.show()
 
 ys3 = np.array([f.evaluate(x3, **evaluation_parms) for it in range(n_trials)])
-logys3 = np.log(ys3)
+logys3 = np.log(ys3+1e-10)
 print("\nMean and std.err. of", n_trials, "evaluations at a transmissions-based x:", ys3.mean(), stderr(ys3))
 print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys3.mean(), stderr(logys3))
 
