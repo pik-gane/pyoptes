@@ -34,10 +34,10 @@ writer = SummaryWriter(log_dir = "/Users/admin/pyoptes/src")
 
 device = get_device()
 
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
+train_input_data = "/Users/admin/pyoptes/src/inputs_ba_120_sent_sci.csv"
+train_targets_data = "/Users/admin/pyoptes/src/targets_ba_120_sent_sci.csv"
 
-model_state = "/Users/admin/pyoptes/src/waxman_120_sci2.pth"
+model_state = "/Users/admin/pyoptes/src/ba_120_sci.pth"
 
 #train_input_data = "/Users/admin/pyoptes/src/input_data_waxman_fast.csv"
 #train_targets_data = "/Users/admin/pyoptes/src/label_data_waxman_fast.csv"
@@ -67,6 +67,7 @@ pick = "RNN"
 
 model = model_selection.set_model(pick, dim = nodes, hidden_dims = hidden_dims)
 model.to(device)
+model.load_state_dict(torch.load("/Users/admin/pyoptes/src/ba_120_sci.pth"))
 
 #criterion = nn.MSELoss() 
 criterion = nn.L1Loss() #mean absolut error
@@ -115,9 +116,11 @@ for epoch in range(1, epochs + 1):
 
     if epoch%1==0 or epoch == 1:
       print(f"epoch {epoch}:, train loss: {train_loss:.4f}, train acc: {train_acc:.4f}, validation loss: {val_loss:.4f}, validation acc: {val_acc:.4f}")
+      torch.save(model.state_dict(), model_state)
 
+plt_train_acc = np.array(plotter_train_acc)*100
+plt_test_acc = np.array(plotter_test_acc)*100
 
-torch.save(model.state_dict(), model_state)
 
 plt.figure(figsize=(5,5))
 plt.plot(np.arange(epochs), plotter_train_loss, label = "training loss")
@@ -126,9 +129,6 @@ plt.xlabel("Epochs")
 plt.ylabel("Loss")
 plt.title(f"{pick}")
 plt.legend()
-
-plt_train_acc = np.array(plotter_train_acc)*100
-plt_test_acc = np.array(plotter_test_acc)*100
 
 plt.figure(figsize=(5,5))
 plt.axis([0, epochs, 0, 100])

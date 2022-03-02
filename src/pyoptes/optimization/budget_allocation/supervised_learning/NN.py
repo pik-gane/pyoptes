@@ -15,20 +15,31 @@ class RNNetwork(nn.Module): #Recurrent Neural Network
 
         """Recurrent Network architecture"""
         self.layer_1 = nn.RNNCell(in_features, hidden_dims[0], nonlinearity = 'relu', bias = bias) 
+
         self.layer_2 = nn.RNNCell(hidden_dims[0], hidden_dims[1], nonlinearity = 'relu', bias = bias)
+
         self.layer_3 = nn.RNNCell(hidden_dims[1], hidden_dims[2], nonlinearity = 'relu', bias = bias)
+
         self.layer_4 = nn.RNNCell(hidden_dims[2], hidden_dims[3], nonlinearity = 'relu', bias = bias)
+        
         self.layer_5 = nn.Linear(hidden_dims[3], 1)
 
     def forward(self, x):
-        layer_1 = self.layer_1(x)
-        x = F.dropout(x, p=0.5, training=self.training)
-        layer_2 = self.layer_2(layer_1)
-        x = F.dropout(x, p=0.5, training=self.training)
-        layer_3 = self.layer_3(layer_2)
-        x = F.dropout(x, p=0.5, training=self.training)
-        layer_4 = self.layer_4(layer_3)
-        y_hat = self.layer_5(layer_4)   
+        out_1 = self.layer_1(x)
+        
+        out = F.dropout(out_1, p=0.5, training=self.training)
+
+        out_2 = self.layer_2(out)
+
+        out_2 = F.dropout(out_2, p=0.5, training=self.training)
+
+        out_3 = self.layer_3(out_2)
+
+        out_3 = F.dropout(out_3, p=0.5, training=self.training)
+
+        out_4 = self.layer_4(out_3)
+
+        y_hat = self.layer_5(out_4)   
         return y_hat
 
 
@@ -58,7 +69,8 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
         
         #x = F.dropout(x, p=0.5, training=self.training)
 
-        x = self.act_func(self.layer_2(x))
+        x = self.act_func(self.layer_2(x)) #10x 
+
         #y_hat = self.layer_3(layer_2)
         #x = F.dropout(x, p=0.5, training=self.training)
 

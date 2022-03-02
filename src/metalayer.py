@@ -55,6 +55,9 @@ from ray import tune
 from ray.tune import CLIReporter
 from ray.tune.schedulers import ASHAScheduler
 from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
+
+writer = SummaryWriter(log_dir = "/Users/admin/pyoptes_graphs/metalayer")
 
 train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
 train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
@@ -110,7 +113,7 @@ class Node_Model(torch.nn.Module):
         out = torch.cat([x[src], edge_attr], dim=1) #updated edge // stack all edge features 
         
         #print(out.shape, x[src].shape, x[dest].shape)
-
+###
         out = self.node_mlp_1(out) #updated feature of our edges
 
         out = scatter_mean(out, dest, dim=0, dim_size=x.size(0)) #new target feature 
@@ -118,7 +121,8 @@ class Node_Model(torch.nn.Module):
         u = u.view(-1,1)
         out = torch.cat([x, out, u[batch]], dim=1) 
         
-        out = self.node_mlp_2(out) #updated feature of target node
+        out = self.node_mlp_2(out)  #updated feature of target node
+ ###
         #if self.residuals:
         #    out = out + edge_attr
         return out  
@@ -176,24 +180,27 @@ class meta_layer(nn.Module):
     # Defining the forward pass    
     def forward(self, x, edge_attr, u, edge_index, batch):
         
-        x, edge_attr, u = self.layer_1(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
-        x, edge_attr, u = self.layer_2(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
-        x, edge_attr, u = self.layer_3(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
-        x, edge_attr, u = self.layer_4(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
+        hx_1, h1_edge_attr, hu_1 = self.layer_1(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
+
+        hx_2, h2_edge_attr, hu_2 = self.layer_2(x=hx_1, edge_attr=h1_edge_attr, edge_index=edge_index, u=hu_1, batch=batch)
+        ##for loop
+        hx_3, h3_edge_attr, hu_3 = self.layer_3(x=hx_2, edge_attr=h2_edge_attr, edge_index=edge_index, u=hu_2, batch=batch)
+
+        hx_4, h4_edge_attr, hu_4 = self.layer_4(x=hx_3, edge_attr=h3_edge_attr, edge_index=edge_index, u=hu_3, batch=batch)
 
         #print(x.shape, edge_attr.shape, u.shape)
         #x, edge_attr, u = self.layer_5(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
         #print(x.shape, edge_attr.shape, u.shape)
-        return u
+        return hu_4
 
 model = meta_layer(ins_nodes = 2, ins_edges = 1, ins_graphs = 6, hiddens= 16, outs = 6).double() # gdc = gdc).double()
 epochs = 10000
 criterion = nn.L1Loss() 
 
-optimizer_params = {"lr": 0.001, "weight_decay": 0.005, "betas": (0.9, 0.999)}
+optimizer_params = {"lr": 0.01, "weight_decay": 0.005, "betas": (0.9, 0.999)}
 optimizer = optim.AdamW(model.parameters(), **optimizer_params)
 
-
+print(model)
 #model.load_state_dict(torch.load("/Users/admin/pyoptes/src/meta_layer.pth"))
 
 #optimizer_params = {"lr": 0.1, "weight_decay": 0.0005}
@@ -281,6 +288,8 @@ for epoch in range(epochs):
   _val_loss.append(val_loss)
   _val_acc.append(val_acc)
 
+  writer.add_scalar(f'Loss/test nodes', val_loss, epoch)
+  writer.add_scalar(f'Accuracy/test nodes', val_acc, epoch)
 
   if train_loss < train_loss_prev:
     train_loss_prev = train_loss
