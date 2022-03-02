@@ -62,11 +62,15 @@ class processing():
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> 7d652ef (commit)
 =======
 >>>>>>> 7d652ef (commit)
+=======
+
+>>>>>>> 6395484 (commit)
       subset_training_input = train_input_data.iloc[split:]
 
       subset_training_targets = train_targets_data.iloc[split:]

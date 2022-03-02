@@ -52,6 +52,7 @@ f.prepare(
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 n_trials = 100
 =======
 n_trials = 10
@@ -59,10 +60,14 @@ n_trials = 10
 =======
 n_trials = 10
 >>>>>>> 7d652ef (commit)
+=======
+n_trials = 100
+>>>>>>> 6395484 (commit)
 n_inputs = f.get_n_inputs()
 total_budget = n_inputs
 
 evaluation_parms = { 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         'n_simulations': 1000, 
@@ -100,6 +105,9 @@ print(f'\n\nloss of model: {val_loss}, accuray of model: {val_acc}\n\n')
 =======
 >>>>>>> 7d652ef (commit)
         'n_simulations': 100, 
+=======
+        'n_simulations': 1000, 
+>>>>>>> 6395484 (commit)
         'statistic': lambda a: np.mean(a**2) #lambda a: np.percentile(a, 95)
         }
 
@@ -146,8 +154,8 @@ test_x, test_y = process.postprocessing(train_input_data, train_targets_data, sp
 >>>>>>> 7d652ef (commit)
 criterion = nn.L1Loss() #mean absolut error
 
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
+train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci.csv"
+train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci.csv"
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -159,7 +167,7 @@ pick = "RNN"
 model = model_selection.set_model(pick, dim = nodes, hidden_dims = hidden_dims)
 model.to(device)
 
-model.load_state_dict(torch.load("/Users/admin/pyoptes/src/barabasi_120.pth"))
+model.load_state_dict(torch.load("/Users/admin/pyoptes/src/waxman_120_sci.pth"))
 #for param_tensor in model.state_dict():
 #    print(param_tensor, "\t", model.state_dict()[param_tensor].size())
 
@@ -201,6 +209,7 @@ test_y = torch.tensor(np.zeros_like(test_y[0]))
 # 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 optimiser = optim.AdamW([test_x], lr= 0.01)
 =======
 optimiser = optim.AdamW([test_x], lr= 0.1)
@@ -208,6 +217,9 @@ optimiser = optim.AdamW([test_x], lr= 0.1)
 =======
 optimiser = optim.AdamW([test_x], lr= 0.1)
 >>>>>>> 7d652ef (commit)
+=======
+optimiser = optim.AdamW([test_x], lr= 0.01)
+>>>>>>> 6395484 (commit)
 
 epochs = 1000000
 opt_input = []
@@ -250,7 +262,7 @@ for epoch in range(1, epochs + 1):
         print("\n")
         si_out_0 = si_out
         opt_input = grads
-        pd.DataFrame(grads).T.to_csv("/Users/admin/pyoptes/src/optimal_budget_120_waxman.csv", header = True)
+        pd.DataFrame(grads).T.to_csv("/Users/admin/pyoptes/src/optimal_budget_120_waxman_sent_sci.csv", header = True)
     if epoch%1000==0:
         print(f'\nreached {epoch} epochs')
 #print(f'dloss/dx:\n {grads[0][0][0].shape}')
