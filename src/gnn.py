@@ -41,6 +41,7 @@ from torch_geometric.nn import MetaLayer
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 7d652ef (commit)
@@ -99,6 +100,8 @@ class GlobalModel(torch.nn.Module):
 >>>>>>> 7d652ef (commit)
 =======
 >>>>>>> 7d652ef (commit)
+=======
+>>>>>>> 0b4e3eb (commit)
 def get_features(transmissions, capacities, G, time_covered):
     #print(time_covered)# 180
     edge_features = transmissions.groupby([2, 3]).size()
