@@ -39,6 +39,7 @@ from prepare_conv import prepare_convolutions as prep_conv
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
 train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
 
@@ -56,6 +57,8 @@ model = Net(16, dataset=data_list[0]).double() # gdc = gdc).double()
 #torch.load(model.state_dict(), "/Users/admin/pyoptes/src/gat_wax_120.pth")
 
 =======
+=======
+>>>>>>> 7d652ef (commit)
 train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
 train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
 
@@ -68,6 +71,9 @@ loader = DataLoader(data_list, batch_size = 1, shuffle = True)
 
 model = Net(16, dataset=data_list[0]).double() # gdc = gdc).double()
 
+<<<<<<< HEAD
+>>>>>>> 7d652ef (commit)
+=======
 >>>>>>> 7d652ef (commit)
 epochs = 500
 criterion = nn.L1Loss() 
@@ -114,6 +120,7 @@ def training(loader, model, criterion, optimizer):
     return np.mean(train_loss), acc
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def validate(loader, model):
     model.eval()
     true = []
@@ -149,10 +156,16 @@ total_loss = []
 total_acc = []
 train_loss_prev = np.inf
 >>>>>>> 7d652ef (commit)
+=======
+total_loss = []
+total_acc = []
+train_loss_prev = np.inf
+>>>>>>> 7d652ef (commit)
 for epoch in range(epochs):
   train_loss, train_acc = training(loader, model, criterion, optimizer) 
   total_loss.append(train_loss)
   total_acc.append(train_acc)
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 
@@ -170,12 +183,17 @@ plt.figure()
 plt.plot(np.arange(epochs), total_loss, label = "training loss")
 plt.plot(np.arange(epochs), val_loss, label = "validation loss")
 =======
+=======
+>>>>>>> 7d652ef (commit)
   if train_loss < train_loss_prev:
     train_loss_prev = train_loss
     print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}')
 
 plt.figure()
 plt.plot(np.arange(epochs), total_loss, label = "training loss")
+<<<<<<< HEAD
+>>>>>>> 7d652ef (commit)
+=======
 >>>>>>> 7d652ef (commit)
 plt.xlabel("epochs")
 plt.ylabel("loss")
@@ -183,7 +201,10 @@ plt.ylabel("loss")
 plt.figure()
 plt.plot(np.arange(epochs), total_acc, label = "training acc")
 <<<<<<< HEAD
+<<<<<<< HEAD
 plt.plot(np.arange(epochs), val_acc, label = "validation acc")
+=======
+>>>>>>> 7d652ef (commit)
 =======
 >>>>>>> 7d652ef (commit)
 plt.xlabel("epochs")

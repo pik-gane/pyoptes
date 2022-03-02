@@ -81,8 +81,12 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
         #x = F.dropout(x, p=0.5, training=self.training)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         x = self.act_func(self.layer_2(x)) #10x 
 
+=======
+        x = self.act_func(self.layer_2(x))
+>>>>>>> 7d652ef (commit)
 =======
         x = self.act_func(self.layer_2(x))
 >>>>>>> 7d652ef (commit)

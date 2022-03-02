@@ -27,7 +27,11 @@ import torch_geometric
 import torch_geometric.nn as geom_nn
 import torch_geometric.data as geom_data
 <<<<<<< HEAD
+<<<<<<< HEAD
 from torch_geometric.nn import GATv2Conv, LEConv, GCN2Conv, FAConv, MetaLayer, GraphConv, GINEConv, ARMAConv, SGConv, EdgeConv, GCN, GAT, GATConv, ChebConv, DenseGCNConv, GCNConv, global_mean_pool,global_add_pool, global_max_pool, SAGEConv, global_sort_pool, MLP
+=======
+from torch_geometric.nn import LEConv, GCN2Conv, FAConv, MetaLayer, GraphConv, GINEConv, ARMAConv, SGConv, EdgeConv, GCN, GAT, GATConv, ChebConv, DenseGCNConv, GCNConv, global_mean_pool,global_add_pool, global_max_pool, SAGEConv, global_sort_pool, MLP
+>>>>>>> 7d652ef (commit)
 =======
 from torch_geometric.nn import LEConv, GCN2Conv, FAConv, MetaLayer, GraphConv, GINEConv, ARMAConv, SGConv, EdgeConv, GCN, GAT, GATConv, ChebConv, DenseGCNConv, GCNConv, global_mean_pool,global_add_pool, global_max_pool, SAGEConv, global_sort_pool, MLP
 >>>>>>> 7d652ef (commit)
@@ -36,7 +40,10 @@ from torch_scatter import scatter_mean
 from torch_geometric.nn import MetaLayer
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 7d652ef (commit)
 
 class EdgeModel(torch.nn.Module):
     def __init__(self):
@@ -88,6 +95,9 @@ class GlobalModel(torch.nn.Module):
         return self.global_mlp(out)
 
 
+<<<<<<< HEAD
+>>>>>>> 7d652ef (commit)
+=======
 >>>>>>> 7d652ef (commit)
 def get_features(transmissions, capacities, G, time_covered):
     #print(time_covered)# 180
@@ -116,15 +126,21 @@ class Net(torch.nn.Module):
     
         #self.nn = MLP()
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.conv1 = GATv2Conv(2, 16, edge_dim = 1) #simple message passing layer
         self.conv2 = GATv2Conv(16, 32, edge_dim = 1) #simple message passing layer
         self.conv3 = GATv2Conv(32, 64, edge_dim = 1) #simple message passing layer
         self.conv4 = GATv2Conv(64, 128, edge_dim = 1) #simple message passing layer
 =======
+=======
+>>>>>>> 7d652ef (commit)
         #self.conv1 = LEConv(2, 8) #simple message passing layer
         #self.conv2 = LEConv(8, 16) #simple message passing layer
         #self.conv3 = LEConv(16, 32) #simple message passing layer
         #self.conv4 = LEConv(32, 64) #simple message passing layer
+<<<<<<< HEAD
+>>>>>>> 7d652ef (commit)
+=======
 >>>>>>> 7d652ef (commit)
 
         #The edge convolutional layer processes graphs or point clouds
@@ -151,7 +167,11 @@ class Net(torch.nn.Module):
         self.cheb2 = ChebConv(16, 8, K=2)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.linear1 = nn.Linear(128,1)
+=======
+        self.linear1 = nn.Linear(8,1)
+>>>>>>> 7d652ef (commit)
 =======
         self.linear1 = nn.Linear(8,1)
 >>>>>>> 7d652ef (commit)
@@ -160,8 +180,13 @@ class Net(torch.nn.Module):
 
     def forward(self, data):
 <<<<<<< HEAD
+<<<<<<< HEAD
         graph_features = data.edge_attr
         x, edge_index, edge_weight, u, batch = data.x, data.edge_index, data.weight, graph_features, data.batch
+=======
+
+        x, edge_index, edge_weight, u, batch = data.x, data.edge_index, data.weight, data.edge_attr, data.batch
+>>>>>>> 7d652ef (commit)
 =======
 
         x, edge_index, edge_weight, u, batch = data.x, data.edge_index, data.weight, data.edge_attr, data.batch
@@ -178,6 +203,7 @@ class Net(torch.nn.Module):
         #edge_attr = meta_layer(x, edge_index, edge_weight, u, batch)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         x, (edge_index, edge_weight) = self.conv1(x, edge_index, edge_weight, return_attention_weights=True)
         x, (edge_index, edge_weight) = self.conv2(x, edge_index, edge_weight, return_attention_weights=True)
         x, (edge_index, edge_weight) = self.conv3(x, edge_index, edge_weight, return_attention_weights=True)
@@ -187,6 +213,10 @@ class Net(torch.nn.Module):
         #x, edges = self.conv3(x, edge_index, edge_weight, return_attention_weights=True)
         #x, e  = self.conv4(x, edge_index, edge_weight, return_attention_weights=True)
 
+=======
+        x  = self.conv1(x, edge_index = edge_index, edge_weight = edge_weight)
+        x = self.relu(x)
+>>>>>>> 7d652ef (commit)
 =======
         x  = self.conv1(x, edge_index = edge_index, edge_weight = edge_weight)
         x = self.relu(x)

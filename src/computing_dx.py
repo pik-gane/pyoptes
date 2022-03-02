@@ -51,7 +51,11 @@ f.prepare(
   )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 n_trials = 100
+=======
+n_trials = 10
+>>>>>>> 7d652ef (commit)
 =======
 n_trials = 10
 >>>>>>> 7d652ef (commit)
@@ -59,6 +63,7 @@ n_inputs = f.get_n_inputs()
 total_budget = n_inputs
 
 evaluation_parms = { 
+<<<<<<< HEAD
 <<<<<<< HEAD
         'n_simulations': 1000, 
         'statistic': lambda a: (np.mean(a**2), np.std(a**2)/np.sqrt(a.size)) #lambda a: np.percentile(a, 95)
@@ -92,10 +97,15 @@ print(f'\n\nloss of model: {val_loss}, accuray of model: {val_acc}\n\n')
 
 
 =======
+=======
+>>>>>>> 7d652ef (commit)
         'n_simulations': 100, 
         'statistic': lambda a: np.mean(a**2) #lambda a: np.percentile(a, 95)
         }
 
+<<<<<<< HEAD
+>>>>>>> 7d652ef (commit)
+=======
 >>>>>>> 7d652ef (commit)
 degree_values = sorted(waxman.degree, key=lambda x: x[1], reverse=True)
 
@@ -104,8 +114,11 @@ for i in range(10):
   hd.append(degree_values[i][0])
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 print(f'nodes with highest degree: {hd}\n')
 
+=======
+>>>>>>> 7d652ef (commit)
 =======
 >>>>>>> 7d652ef (commit)
 sentinels = hd
@@ -124,10 +137,13 @@ x4 = shares * total_budget
 #    )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 model.requires_grad_(False)
 
 test_x, test_y = process.postprocessing(train_input_data, train_targets_data, split = 5000, grads = True)
 =======
+=======
+>>>>>>> 7d652ef (commit)
 criterion = nn.L1Loss() #mean absolut error
 
 train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
@@ -150,12 +166,16 @@ model.load_state_dict(torch.load("/Users/admin/pyoptes/src/barabasi_120.pth"))
 model.requires_grad_(False)
 
 test_x, test_y = process.postprocessing(train_input_data, train_targets_data, split = 1000, grads = True)
+<<<<<<< HEAD
+>>>>>>> 7d652ef (commit)
+=======
 >>>>>>> 7d652ef (commit)
 
 test_x = test_x.to_numpy()
 test_y = test_y.to_numpy()
 initial_budget = test_x[10] #?makes a difference wether I use a.e. Sentinel based BudDist as Init or a a.e. random BD
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 f_eval, si_out_sq_err = f.evaluate(x4, **evaluation_parms)
 si_out,  si_out_err = np.sqrt(f_eval), si_out_sq_err/(2*np.sqrt(f_eval)) #
@@ -168,6 +188,10 @@ print(f'std error baseline top 10 highest degree nodes: {si_out_err}\n')
 print(f'initial budget: {initial_budget[:5]} ...')
 print(f'baseline top 1 highest degree nodes: {np.sqrt(np.mean(np.array([f.evaluate(x4, **evaluation_parms) for it in range(n_trials)])))}')
 >>>>>>> 7d652ef (commit)
+=======
+print(f'initial budget: {initial_budget[:5]} ...')
+print(f'baseline top 1 highest degree nodes: {np.sqrt(np.mean(np.array([f.evaluate(x4, **evaluation_parms) for it in range(n_trials)])))}')
+>>>>>>> 7d652ef (commit)
 test_x = torch.tensor(initial_budget).requires_grad_(True)
 test_y = torch.tensor(np.zeros_like(test_y[0]))
 
@@ -176,7 +200,11 @@ test_y = torch.tensor(np.zeros_like(test_y[0]))
 #{"params": test_x.requires_grad_(True), "lr": 0.01}]
 # 
 <<<<<<< HEAD
+<<<<<<< HEAD
 optimiser = optim.AdamW([test_x], lr= 0.01)
+=======
+optimiser = optim.AdamW([test_x], lr= 0.1)
+>>>>>>> 7d652ef (commit)
 =======
 optimiser = optim.AdamW([test_x], lr= 0.1)
 >>>>>>> 7d652ef (commit)
@@ -193,8 +221,12 @@ for epoch in range(1, epochs + 1):
     #print(f"epoch: {epoch}, loss: {val_loss}") # accuracy: {val_acc}")
     nn_out = train_nn.evaluate(grads, model = model, device = device)
 <<<<<<< HEAD
+<<<<<<< HEAD
     f_eval, si_out_sq_err = f.evaluate(x4, **evaluation_parms)
     si_out,  si_out_err = np.sqrt(f_eval), si_out_sq_err/(2*np.sqrt(f_eval)) #
+=======
+    si_out = np.sqrt(np.mean(np.array([f.evaluate(grads, **evaluation_parms) for it in range(n_trials)])))
+>>>>>>> 7d652ef (commit)
 =======
     si_out = np.sqrt(np.mean(np.array([f.evaluate(grads, **evaluation_parms) for it in range(n_trials)])))
 >>>>>>> 7d652ef (commit)
@@ -202,6 +234,7 @@ for epoch in range(1, epochs + 1):
     if si_out < si_out_0:
         print(f"epoch: {epoch}, predicted no. of infected animals for optimised budget NN: {nn_out}")
         print(f"epoch: {epoch}, predicted no. of infected animals for optimised budget SI: {si_out}")
+<<<<<<< HEAD
 <<<<<<< HEAD
         print(f"epoch: {epoch}, std err predicted no. of infected animals for optimised budget SI: {si_out_err}")
         print("\n")
@@ -212,6 +245,8 @@ for epoch in range(1, epochs + 1):
         print(f'\nreached {epoch} epochs')
 #print(f'dloss/dx:\n {grads[0][0][0].shape}')
 =======
+=======
+>>>>>>> 7d652ef (commit)
         print("\n")
         si_out_0 = si_out
         opt_input = grads
@@ -220,5 +255,8 @@ for epoch in range(1, epochs + 1):
         print(f'\nreached {epoch} epochs')
 #print(f'dloss/dx:\n {grads[0][0][0].shape}')
 
+<<<<<<< HEAD
+>>>>>>> 7d652ef (commit)
+=======
 >>>>>>> 7d652ef (commit)
 print(opt_input)

@@ -35,6 +35,7 @@ writer = SummaryWriter(log_dir = "/Users/admin/pyoptes/src")
 device = get_device()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 train_input_data = "/Users/admin/pyoptes/src/inputs_ba_120_sent_sci.csv"
 train_targets_data = "/Users/admin/pyoptes/src/targets_ba_120_sent_sci.csv"
 
@@ -54,6 +55,27 @@ inputs_train_data = DataLoader(train_data, batch_size = 128, shuffle=True)
 targets_test_data = DataLoader(test_data, batch_size = 128, shuffle=True)
 
 
+=======
+train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
+train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
+
+model_state = "/Users/admin/pyoptes/src/barabasi_120.pth"
+
+#train_input_data = "/Users/admin/pyoptes/src/input_data_waxman_fast.csv"
+#train_targets_data = "/Users/admin/pyoptes/src/label_data_waxman_fast.csv"
+
+#test_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_round.csv"
+#test_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_round.csv"
+
+#print(f'\n\nSize of training inputs, targets: {len(train_data)} \n\nSize of test inputs, targets: {len(val_input)}\n\n')
+
+train_data, test_data = process.postprocessing(train_input_data, train_targets_data, split = 500, grads = False)
+
+inputs_train_data = DataLoader(train_data, batch_size = 32, shuffle=True)
+targets_test_data = DataLoader(test_data, batch_size = 32, shuffle=True)
+
+
+>>>>>>> 7d652ef (commit)
 =======
 train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
 train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
