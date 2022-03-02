@@ -30,8 +30,13 @@ def postprocessing(input_data, target_data, split):
 #input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/input_data_full.csv"
 #target_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/targets_data_full.csv"
 
+<<<<<<< HEAD:src/plot_data.py
 input_data = "/Users/admin/pyoptes/src/inputs_ba_120_sent_sci.csv"
 target_data = "/Users/admin/pyoptes/src/targets_ba_120_sent_sci.csv"
+=======
+input_data = "/Users/admin/pyoptes/src/inputs_waxman_120.csv"
+target_data = "/Users/admin/pyoptes/src/targets_waxman_120.csv"
+>>>>>>> 7d652ef (commit):src/pyoptes/optimization/budget_allocation/supervised_learning/plot_data.py
 
 train_input, train_targets, test_input, test_targets = postprocessing(input_data, target_data, split = 1000)
 

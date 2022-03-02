@@ -60,7 +60,10 @@ class processing():
 
       #print(row_has_NaN)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7d652ef (commit)
       subset_training_input = train_input_data.iloc[split:]
 
       subset_training_targets = train_targets_data.iloc[split:]
