@@ -12,7 +12,9 @@ from sklearn.metrics import explained_variance_score, mean_squared_error
 from torch.autograd import grad
 from torch import optim
 
+
 class device():
+  """cpu or gpu"""
   def get_device():
       if torch.cuda.is_available():
           device = 'cuda:0'
@@ -20,10 +22,9 @@ class device():
           device = 'cpu'
       return device
 
-
 class Loader(Dataset):
+    """Custom DataLoader"""
     def __init__(self, input_path, targets_path, path):
-
         if path == True:
           self.inputs = pd.read_csv(input_path, header = None, sep = ',')
           self.targets = pd.read_csv(targets_path, header = None, sep = ',')
@@ -39,12 +40,11 @@ class Loader(Dataset):
         targets = np.sqrt(self.targets.iloc[idx])
         return np.array(inputs), np.array(targets)
 
-
 class processing():
-  def postprocessing(train_input, train_targets, split, grads):
+    """Ignore rows with NaN, """
+    def postprocessing(train_input, train_targets, split, grads):
 
       train_input_data = pd.read_csv(train_input, header = None, sep = ',')
-
       train_targets_data = pd.read_csv(train_targets, header = None, sep = ',')
       
       is_NaN = train_input_data.isnull()
@@ -59,7 +59,6 @@ class processing():
       row_has_NaN = is_NaN.any(axis=1)
 
       subset_training_input = train_input_data.iloc[split:]
-
       subset_training_targets = train_targets_data.iloc[split:]
 
       subset_val_input = train_input_data.iloc[0: split]

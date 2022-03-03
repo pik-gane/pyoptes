@@ -13,37 +13,24 @@ class RNNetwork(nn.Module): #Recurrent Neural Network
         #self.act_func = nn.ReLU()
         self.act_func = nn.Sigmoid()
 
-        """Recurrent Network architecture"""
+        """Recurrent Network architecture - Cells based on Elman Networks"""
         self.layer_1 = nn.RNNCell(in_features, hidden_dims[0], nonlinearity = 'relu', bias = bias) 
-
         self.layer_2 = nn.RNNCell(hidden_dims[0], hidden_dims[1], nonlinearity = 'relu', bias = bias)
-
         self.layer_3 = nn.RNNCell(hidden_dims[1], hidden_dims[2], nonlinearity = 'relu', bias = bias)
-
         self.layer_4 = nn.RNNCell(hidden_dims[2], hidden_dims[3], nonlinearity = 'relu', bias = bias)
-        
         self.layer_5 = nn.Linear(hidden_dims[3], 1)
 
     def forward(self, x):
-        out_1 = self.layer_1(x)
-        out_1 = F.dropout(out_1, p=0.5, training=self.training)
-        
-        out_2 = self.layer_2(out_1)
-        out_2 = F.dropout(out_2, p=0.5, training=self.training)
-        
-        out_3 = self.layer_3(out_2)
-        out_3 = F.dropout(out_3, p=0.5, training=self.training)
-        
-        out_4 = self.layer_4(out_3)
-        y_hat = self.layer_5(out_4)   
-        
+        h_1 = self.layer_1(x)
+        h_2 = self.layer_2(h_1)
+        h_3 = self.layer_3(h_2)
+        h_4 = self.layer_4(h_3)
+        y_hat = self.layer_5(h_4)  
         return y_hat
-
 
 class FCNetwork(nn.Module): #Fully Connected Neural Network
     """Fully Connected Network with Linear layers and non-linear activation."""    
     def __init__(self, in_features: int, out_features: int, bias: bool, hidden_dims):
-        
         super(FCNetwork, self).__init__()
 
         """activation functions"""
@@ -52,57 +39,23 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
 
         """Linear Network architecture"""
         self.layer_1 = nn.Linear(in_features, hidden_dims[0], bias = bias) 
-        #self.drop_outs = nn.Dropout()
-        #self.layer_2 = nn.Linear(256, 256, bias = bias)
-        #self.layer_3 = nn.Linear(256, out_features, bias = bias)
         self.layer_2 = nn.Linear(hidden_dims[0], hidden_dims[1], bias = bias)
-        self.layer_3 = nn.Linear(hidden_dims[1], hidden_dims[3], bias = bias)
-        self.layer_4 = nn.Linear(hidden_dims[3], out_features, bias = bias)
+        self.layer_3 = nn.Linear(hidden_dims[1], hidden_dims[2], bias = bias)
+        self.layer_4 = nn.Linear(hidden_dims[2], hidden_dims[3], bias = bias)
+        self.layer_5 = nn.Linear(hidden_dims[3], 1, bias = bias)
         #self.layer_5 = nn.Linear(128, out_features, bias = bias)
                   
     def forward(self, x):
-        
-        x = self.act_func(self.layer_1(x))
-        
-        #x = F.dropout(x, p=0.5, training=self.training)
-
-        x = self.act_func(self.layer_2(x))
-        x = self.act_func(self.layer_2(x))
-        #y_hat = self.layer_3(layer_2)
-        #x = F.dropout(x, p=0.5, training=self.training)
-
-        x = self.act_func(self.layer_3(x))
-
-        #x = F.dropout(x, p=0.5, training=self.training)
-
-        y_hat = self.layer_4(x)
-        #y_hat = self.layer_5(layer_4)   
+        """h_i denotes the hidden states, y_hat the prediction"""
+        h_1 = self.act_func(self.layer_1(x))
+        #for i in range(5):
+        #    h_2 = self.act_func(self.layer_2(h_1))
+        #    h_1 = h_2
+        h_2 = self.act_func(self.layer_2(h_1))
+        h_3 = self.act_func(self.layer_3(h_2))
+        h_4 = self.act_func(self.layer_4(h_3))
+        y_hat = self.layer_5(h_4)
         return y_hat
-
-class LinearNetwork(nn.Module): #Linear Neural Network
-    """Fully Connected Network with Linear layers and non-linear activation."""    
-    def __init__(self, in_features: int, out_features: int, bias: bool, hidden_dim: int):
-        
-        super(LinearNetwork, self).__init__()
-        #activation functions
-        #self.act_func = nn.ReLU()
-        self.act_func = nn.Sigmoid()
-        #Linear Network architecture
-        self.layer_1 = nn.Linear(in_features, hidden_dim, bias = bias) 
-        #self.drop_outs = nn.Dropout()
-        #self.layer_2 = nn.Linear(256, 256, bias = bias)
-        self.layer_2 = nn.Linear(hidden_dim, out_features, bias = bias)
-        #self.layer_4 = nn.Linear(256, 128, bias = bias)
-        #self.layer_5 = nn.Linear(128, out_features, bias = bias)
-                                 
-    def forward(self, x):
-        layer_1 = self.layer_1(x)
-        y_hat = self.layer_2(layer_1)
-        #layer_3 = self.act_func(self.layer_3(layer_2))
-        #layer_4 = self.act_func(self.layer_4(layer_3))
-        #y_hat = self.layer_5(layer_4)   
-        return y_hat
-
 
 class CNN(nn.Module):
     """Convolutional Netural Network"""
