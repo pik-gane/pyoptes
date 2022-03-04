@@ -163,7 +163,8 @@ def evaluate(budget_allocation,
              n_simulations=1,
              aggregation=n_infected_animals,
              statistic=mean_square_and_stderr,
-             parallel=False):
+             parallel=False,
+             num_cpu_cores=2):
     """Run the SIModelOnTransmissions a single time, using the given budget 
     allocation, and return the number of nodes infected at the time the 
     simulation is stopped. Since the simulated process is a stochastic
@@ -177,6 +178,7 @@ def evaluate(budget_allocation,
     - lambda a: np.percentile(a, 95)
     - lambda a: np.mean(a**2)
     
+    @param num_cpu_cores: int, specifies the number of cpus for parallelization. Use -1 to use all cpus.
     @param aggregation: any function converting an array of infection bools into an aggregated "damage"
     @param parallel: (bool) Sets whether the simulations runs are computed in parallel. Default is set to True.
     @param budget_allocation: (array of floats) expected number of tests per
@@ -198,7 +200,13 @@ def evaluate(budget_allocation,
     model.daily_test_probabilities = budget_allocation / 365
 
     if parallel:
-        with Pool(cpu_count()) as pool:
+        # check whether the number of cpus are available
+        if num_cpu_cores > cpu_count():
+            num_cpu_cores = cpu_count()
+        # use all cpus available
+        elif num_cpu_cores == -1:
+            num_cpu_cores = cpu_count()
+        with Pool(num_cpu_cores) as pool:
             results = pool.map(partial(task, aggregation=aggregation), range(n_simulations))
     else:
         results = [task(sim, aggregation) for sim in range(n_simulations)]

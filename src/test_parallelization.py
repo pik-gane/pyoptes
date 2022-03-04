@@ -17,8 +17,7 @@ n_nodes = 120
 fp.prepare(
     n_nodes=n_nodes,  # instead of 60000, since this should suffice in the beginning
     capacity_distribution=np.random.lognormal,  # this is more realistic than a uniform distribution
-    delta_t_symptoms=60,  # instead of 30, since this gave a clearer picture in Sara's simulations
-    parallel=True)
+    delta_t_symptoms=60)  # instead of 30, since this gave a clearer picture in Sara's simulations)
 
 total_budget = 1.0 * n_nodes
 
@@ -38,7 +37,7 @@ print(f'y: {y}')
 
 a = time()
 # y = np.mean([fp.evaluate(x, n_simulations=n_simulations) for _ in range(100)])
-y = fp.evaluate(x, n_simulations=n_simulations, parallel=True)
+y = fp.evaluate(x, n_simulations=n_simulations, parallel=True, num_cpu_cores=-1)
 b = time()-a
 print('Parallel simulation')
 print(f'Time for {n_simulations} simulations of: {b}')
@@ -57,7 +56,7 @@ for s in tqdm(n):
     tl.append(time() - a)
 
     a = time()
-    ylp.append(fp.evaluate(x, n_simulations=s, parallel=True))
+    ylp.append(fp.evaluate(x, n_simulations=s, parallel=True, num_cpu_cores=-1))
     tlp.append(time() - a)
 
 plt.plot(n, yl, label='y non-parallel')
