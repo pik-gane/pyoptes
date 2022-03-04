@@ -8,6 +8,8 @@ import networkx as nx
 import numpy as np
 from scipy.stats import gaussian_kde as kde
 import pylab as plt
+from progressbar import progressbar
+
 from pyoptes import set_seed
 from pyoptes.optimization.budget_allocation import target_function as f
 
@@ -28,7 +30,8 @@ static_network = nx.DiGraph(nx.to_numpy_array(waxman))
 f.prepare(
     static_network=static_network,  
     capacity_distribution=np.random.lognormal,  # this is more realistic than a uniform distribution
-    delta_t_symptoms=60
+    delta_t_symptoms=60,
+#    parallel=True
     )
 n_inputs = f.get_n_inputs()
 print("n_inputs (=number of network nodes):", n_inputs)
@@ -47,32 +50,36 @@ nx.draw(waxman, node_color=[[0,0,0,xi/xmax] for xi in x], pos=pos)
 #plt.show()
 
 # evaluate f once at that input:
-y = f.evaluate(
-        x, 
-        n_simulations=100, 
-        statistic=lambda a: np.mean(a**2)  # to focus on the tail of the distribution
-        )
+ms_est, ms_stderr = f.evaluate(x, n_simulations=100)
 
-print("\nOne evaluation at random x:", y)
+rms_est = np.sqrt(ms_est)
+rms_stderr = ms_stderr / (2 * np.sqrt(ms_est))  # std.err. of the square root of ms_est = std.err. of ms_est * derivative of the square root function
 
+print("\nOne evaluation at random x:", rms_est, rms_stderr)
+
+# for Malte:
+    
+def est_prob_and_stderr(is_infected):
+    ps = np.mean(is_infected, axis=0)
+    stderrs = np.sqrt(ps * (1-ps) / is_infected.shape[0])
+    return (ps, stderrs)
+
+# use a "non-aggregating" aggregation function plus the above statistic, to get node-specific infection probabilities:
+ps, stderrs = f.evaluate(x, n_simulations=100, aggregation=lambda a: a, statistic=est_prob_and_stderr)
+
+print("node infection probabilities:", ps)
+print("corresponding std.errs.:     ", stderrs)
 
 evaluation_parms = { 
-        'n_simulations': 100, 
-        'statistic': np.mean #lambda a: np.percentile(a, 95)
+        'n_simulations': 100
         }
 
 n_trials = 1000
 
-def stderr(a):
-    return np.std(a, ddof=1) / np.sqrt(np.size(a))
-
-
 # evaluate f a number of times at the same input:
-ys = np.array([f.evaluate(x, **evaluation_parms) for it in range(n_trials)])
-logys = np.log(ys+1e-10)
-print("Mean and std.err. of", n_trials, "evaluations at the same random x:", ys.mean(), stderr(ys))
-print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys.mean(), stderr(logys))
-
+ys = np.array([np.sqrt(f.evaluate(x, **evaluation_parms)[0]) for it in progressbar(range(n_trials))])
+logys = np.log(ys)
+print("Mean and std.dev. of", n_trials, "evaluations at the same random x:", ys.mean(), ys.std())
 
 # do the same for an x that is based on the total capacity of a node:
 
@@ -85,11 +92,9 @@ plt.figure()
 nx.draw(waxman, node_color=[[0,0,0,xi/x2max] for xi in x2], pos=pos)
 #plt.show()
 
-ys2 = np.array([f.evaluate(x2, **evaluation_parms) for it in range(n_trials)])
-logys2 = np.log(ys2+1e-10)
-print("\nMean and std.err. of", n_trials, "evaluations at a capacity-based x:", ys2.mean(), stderr(ys2))
-print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys2.mean(), stderr(logys2))
-
+ys2 = np.array([np.sqrt(f.evaluate(x, **evaluation_parms)[0]) for it in range(n_trials)])
+logys2 = np.log(ys2)
+print("Mean and std.dev. of", n_trials, "evaluations at the same capacity-based x:", ys2.mean(), ys2.std())
 
 # do the same for an x that is based on the total number of incoming transmissions per node:
 
@@ -106,11 +111,9 @@ plt.figure()
 nx.draw(waxman, node_color=[[0,0,0,xi/x3max] for xi in x3], pos=pos)
 #plt.show()
 
-ys3 = np.array([f.evaluate(x3, **evaluation_parms) for it in range(n_trials)])
-logys3 = np.log(ys3+1e-10)
-print("\nMean and std.err. of", n_trials, "evaluations at a transmissions-based x:", ys3.mean(), stderr(ys3))
-print("Mean and std.err. of the log of", n_trials, "evaluations at that x:", logys3.mean(), stderr(logys3))
-
+ys3 = np.array([np.sqrt(f.evaluate(x, **evaluation_parms)[0]) for it in range(n_trials)])
+logys3 = np.log(ys3)
+print("Mean and std.dev. of", n_trials, "evaluations at the same transmissions-based x:", ys3.mean(), ys3.std())
 
 xs = np.linspace(ys3.min(), ys.max())
 plt.figure()

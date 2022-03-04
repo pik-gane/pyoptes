@@ -13,6 +13,8 @@ Output: an estimate of the number of infected animals at the time the simulation
 
 import numpy as np
 from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions
+from functools import partial
+from multiprocessing import cpu_count, Pool
 
 global model, capacities, network
 
@@ -125,7 +127,7 @@ def prepare(use_real_data=False,
         stopping_delay = 1,
         verbose = False,
         )
-
+    
         
 def get_n_inputs():
     """Get the length of the input vector needed for evaluate(),
@@ -134,10 +136,34 @@ def get_n_inputs():
     return model.n_nodes
 
 
+def simulate_infection():
+    model.reset()
+    # run until detection:
+    model.run()
+    # return a vector of bools stating which farms are infected at the end:
+    return model.is_infected[model.t, :]
+
+
+def n_infected_animals(is_infected):
+    return np.sum(capacities * is_infected)
+
+
+def mean_square_and_stderr(n_infected_animals):
+    values = n_infected_animals**2
+    estimate = np.mean(values, axis=0)
+    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
+    return estimate, stderr
+
+
+def task(unused_simulation_index, aggregation):
+    return aggregation(simulate_infection())
+
+
 def evaluate(budget_allocation, 
-             n_simulations=1, 
-             statistic=np.mean  # any function converting an array into a number or tuple of numbers
-             ):
+             n_simulations=1,
+             aggregation=n_infected_animals,
+             statistic=mean_square_and_stderr,
+             parallel=False):
     """Run the SIModelOnTransmissions a single time, using the given budget 
     allocation, and return the number of nodes infected at the time the 
     simulation is stopped. Since the simulated process is a stochastic
@@ -151,7 +177,9 @@ def evaluate(budget_allocation,
     - lambda a: np.percentile(a, 95)
     - lambda a: np.mean(a**2)
     
-    @param budget_allocation: (array of floats) expected number of tests per 
+    @param aggregation: any function converting an array of infection bools into an aggregated "damage"
+    @param parallel: (bool) Sets whether the simulations runs are computed in parallel. Default is set to True.
+    @param budget_allocation: (array of floats) expected number of tests per
     year, indexed by node
     @param n_simulations: (optional int) number of epidemic simulation runs the 
     evaluation should be based on (default: 1)
@@ -168,15 +196,13 @@ def evaluate(budget_allocation,
     assert budget_allocation.size == model.daily_test_probabilities.size
     
     model.daily_test_probabilities = budget_allocation / 365
-    
-    n_infected_when_stopped = np.zeros(n_simulations)
-    for sim in range(n_simulations):
-        model.reset()
-        # run until detection:
-        model.run()
-        # store simulation result:
-        n_infected_when_stopped[sim] = (capacities * model.is_infected[model.t,:]).sum()
+
+    if parallel:
+        with Pool(cpu_count()) as pool:
+            results = pool.map(partial(task, aggregation=aggregation), range(n_simulations))
+    else:
+        results = [task(sim, aggregation) for sim in range(n_simulations)]
 
     # return the requested statistic:
-    return statistic(n_infected_when_stopped)
+    return statistic(np.array(results))
     # Note: other indicators are available via target_function.model
