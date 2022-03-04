@@ -25,7 +25,8 @@ def prepare(use_real_data=False,
             max_t=365, 
             expected_time_of_first_infection=30, 
             capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
-            delta_t_symptoms=30,
+            delta_t_symptoms=60,
+            p_infection_by_transmission=0.5
             ):
     """Prepare the target function before being able to evaluate it for the 
     first time.
@@ -39,7 +40,7 @@ def prepare(use_real_data=False,
     (if not use_real_data and static_network is None) (default: 60000)
     @param max_t: (optional int) Maximal simulation time in days (default: 365)
     @param expected_time_of_first_infection: (optional int, default: 30)
-    @param delta_t_symptoms: (optional int, default: 30) After what time the 
+    @param delta_t_symptoms: (optional int, default: 60) After what time the 
     infection should be detected automatically even without a test.
     """
 
@@ -115,7 +116,7 @@ def prepare(use_real_data=False,
         daily_test_probabilities = np.zeros(n_nodes),
         
         p_infection_from_outside = p_infection_from_outside,
-        p_infection_by_transmission = 0.9,
+        p_infection_by_transmission = p_infection_by_transmission,
         p_test_positive = 0.99,
         delta_t_testable = 1,
         delta_t_infectious = 1,
@@ -159,7 +160,7 @@ def task(unused_simulation_index, aggregation):
 
 
 def evaluate(budget_allocation, 
-             n_simulations=1, 
+             n_simulations=1,
              aggregation=n_infected_animals,
              statistic=mean_square_and_stderr,
              parallel=False):
@@ -174,6 +175,7 @@ def evaluate(budget_allocation,
     - np.median
     - np.max
     - lambda a: np.percentile(a, 95)
+    - lambda a: np.mean(a**2)
     
     @param aggregation: any function converting an array of infection bools into an aggregated "damage"
     @param parallel: (bool) Sets whether the simulations runs are computed in parallel. Default is set to True.

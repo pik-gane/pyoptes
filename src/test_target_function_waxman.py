@@ -96,7 +96,6 @@ ys2 = np.array([np.sqrt(f.evaluate(x, **evaluation_parms)[0]) for it in range(n_
 logys2 = np.log(ys2)
 print("Mean and std.dev. of", n_trials, "evaluations at the same capacity-based x:", ys2.mean(), ys2.std())
 
-
 # do the same for an x that is based on the total number of incoming transmissions per node:
 
 target_list = f.model.transmissions_array[:, 3]
@@ -115,8 +114,6 @@ nx.draw(waxman, node_color=[[0,0,0,xi/x3max] for xi in x3], pos=pos)
 ys3 = np.array([np.sqrt(f.evaluate(x, **evaluation_parms)[0]) for it in range(n_trials)])
 logys3 = np.log(ys3)
 print("Mean and std.dev. of", n_trials, "evaluations at the same transmissions-based x:", ys3.mean(), ys3.std())
-
-
 
 xs = np.linspace(ys3.min(), ys.max())
 plt.figure()
