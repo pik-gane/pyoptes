@@ -56,8 +56,11 @@ class Transmissions (object):
 
     def __init__(self, time_covered, events):
         self.time_covered = time_covered
-        self.events = events
-
+        if isinstance(events[0], TransmissionEvent):
+            self.events = events
+        else:
+            self.events = [TransmissionEvent(t_sent, t_received, source, target, size) for (t_sent, t_received, source, target, size) in events]
+            
     @property
     def events_by_time_sent(self):
         """(iterator for TransmissionEvents) ordered ascendingly by t_sent"""
@@ -73,10 +76,14 @@ class Transmissions (object):
         """maximum difference between t_received and t_sent"""
         return max([e.t_received - e.t_sent for e in self.events])
         
-    def get_data_array(self):
+    def get_data_array(self, include_size=False):
         """returns the data in array form suitable for SIModelOnTransmissions"""
-        return np.array([[ev.t_sent, ev.t_received, ev.source, ev.target]
-                         for ev in self.events_by_time_received])
+        if include_size:
+            return np.array([[ev.t_sent, ev.t_received, ev.source, ev.target, ev.size]
+                             for ev in self.events_by_time_received])
+        else:
+            return np.array([[ev.t_sent, ev.t_received, ev.source, ev.target]
+                             for ev in self.events_by_time_received])
                          
     def __str__(self):
         return "Transmissions:\n" + "\n".join([

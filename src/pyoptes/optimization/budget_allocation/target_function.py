@@ -13,6 +13,8 @@ Output: an estimate of the number of infected animals at the time the simulation
 
 import numpy as np
 from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions
+from functools import partial
+from multiprocessing import cpu_count, Pool
 
 global model, capacities, network, transmissions_array, transmissions_time_covered
 
@@ -23,7 +25,8 @@ def prepare(use_real_data=False,
             max_t=365, 
             expected_time_of_first_infection=30, 
             capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
-            delta_t_symptoms=30
+            delta_t_symptoms=60,
+            p_infection_by_transmission=0.5
             ):
     """Prepare the target function before being able to evaluate it for the 
     first time.
@@ -37,7 +40,7 @@ def prepare(use_real_data=False,
     (if not use_real_data and static_network is None) (default: 60000)
     @param max_t: (optional int) Maximal simulation time in days (default: 365)
     @param expected_time_of_first_infection: (optional int, default: 30)
-    @param delta_t_symptoms: (optional int, default: 30) After what time the 
+    @param delta_t_symptoms: (optional int, default: 60) After what time the 
     infection should be detected automatically even without a test.
     """
 
@@ -113,7 +116,7 @@ def prepare(use_real_data=False,
         daily_test_probabilities = np.zeros(n_nodes),
         
         p_infection_from_outside = p_infection_from_outside,
-        p_infection_by_transmission = 0.9,
+        p_infection_by_transmission = p_infection_by_transmission,
         p_test_positive = 0.99,
         delta_t_testable = 1,
         delta_t_infectious = 1,
@@ -124,7 +127,7 @@ def prepare(use_real_data=False,
         stopping_delay = 1,
         verbose = False,
         )
-
+    
         
 def get_n_inputs():
     """Get the length of the input vector needed for evaluate(),
@@ -133,10 +136,35 @@ def get_n_inputs():
     return model.n_nodes
 
 
+def simulate_infection():
+    model.reset()
+    # run until detection:
+    model.run()
+    # return a vector of bools stating which farms are infected at the end:
+    return model.is_infected[model.t, :]
+
+
+def n_infected_animals(is_infected):
+    return np.sum(capacities * is_infected)
+
+
+def mean_square_and_stderr(n_infected_animals):
+    values = n_infected_animals**2
+    estimate = np.mean(values, axis=0)
+    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
+    return estimate, stderr
+
+
+def task(unused_simulation_index, aggregation):
+    return aggregation(simulate_infection())
+
+
 def evaluate(budget_allocation, 
-             n_simulations=1, 
-             statistic=np.mean  # any function converting an array into a number
-             ):
+             n_simulations=1,
+             aggregation=n_infected_animals,
+             statistic=mean_square_and_stderr,
+             parallel=False,
+             num_cpu_cores=2):
     """Run the SIModelOnTransmissions a single time, using the given budget 
     allocation, and return the number of nodes infected at the time the 
     simulation is stopped. Since the simulated process is a stochastic
@@ -148,8 +176,12 @@ def evaluate(budget_allocation,
     - np.median
     - np.max
     - lambda a: np.percentile(a, 95)
+    - lambda a: np.mean(a**2)
     
-    @param budget_allocation: (array of floats) expected number of tests per 
+    @param num_cpu_cores: int, specifies the number of cpus for parallelization. Use -1 to use all cpus.
+    @param aggregation: any function converting an array of infection bools into an aggregated "damage"
+    @param parallel: (bool) Sets whether the simulations runs are computed in parallel. Default is set to True.
+    @param budget_allocation: (array of floats) expected number of tests per
     year, indexed by node
     @param n_simulations: (optional int) number of epidemic simulation runs the 
     evaluation should be based on (default: 1)
@@ -166,15 +198,19 @@ def evaluate(budget_allocation,
     assert budget_allocation.size == model.daily_test_probabilities.size
     
     model.daily_test_probabilities = budget_allocation / 365
-    
-    n_infected_when_stopped = np.zeros(n_simulations)
-    for sim in range(n_simulations):
-        model.reset()
-        # run until detection:
-        model.run()
-        # store simulation result:
-        n_infected_when_stopped[sim] = (capacities * model.is_infected[model.t,:]).sum()
+
+    if parallel:
+        # check whether the number of cpus are available
+        if num_cpu_cores > cpu_count():
+            num_cpu_cores = cpu_count()
+        # use all cpus available
+        elif num_cpu_cores == -1:
+            num_cpu_cores = cpu_count()
+        with Pool(num_cpu_cores) as pool:
+            results = pool.map(partial(task, aggregation=aggregation), range(n_simulations))
+    else:
+        results = [task(sim, aggregation) for sim in range(n_simulations)]
 
     # return the requested statistic:
-    return statistic(n_infected_when_stopped)
+    return statistic(np.array(results))
     # Note: other indicators are available via target_function.model

@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# ignore bbo output
+/*/smac3*
+/*/outcmaes
+.idea
+
 # C extensions
 *.so
 
