@@ -6,7 +6,7 @@ from time import time
 import numpy as np
 import pylab as plt
 from pyoptes import set_seed
-from pyoptes.optimization.budget_allocation import target_function as fp
+from pyoptes.optimization.budget_allocation.target_function import TargetFunction
 from tqdm import tqdm
 
 set_seed(2)
@@ -14,10 +14,10 @@ set_seed(2)
 n_simulations = 10000
 n_nodes = 120
 
-fp.prepare(
-    n_nodes=n_nodes,  # instead of 60000, since this should suffice in the beginning
-    capacity_distribution=np.random.lognormal,  # this is more realistic than a uniform distribution
-    delta_t_symptoms=60)  # instead of 30, since this gave a clearer picture in Sara's simulations)
+fp= TargetFunction(n_nodes=n_nodes,  # instead of 60000, since this should suffice in the beginning
+                   capacity_distribution=np.random.lognormal,  # this is more realistic than a uniform distribution
+                   delta_t_symptoms=60)  # instead of 30, since this gave a clearer picture in Sara's simulations)
+
 
 total_budget = 1.0 * n_nodes
 
