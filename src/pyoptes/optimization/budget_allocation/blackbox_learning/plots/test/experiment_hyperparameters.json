@@ -1,7 +1,7 @@
 {
     "model_hyperparameters": {
         "graph": "barabasi-albert",
-        "max_iterations": 1000,
+        "max_iterations": 10,
         "n_nodes": 120,
         "n_simulations": 1000,
         "node_initialisation": "uniform",
