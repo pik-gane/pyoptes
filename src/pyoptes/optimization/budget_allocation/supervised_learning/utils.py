@@ -37,7 +37,7 @@ class Loader(Dataset):
 
     def __getitem__(self, idx):
         inputs = self.inputs.iloc[idx]
-        targets = np.sqrt(self.targets.iloc[idx])
+        targets = np.sqrt(np.sqrt(self.targets.iloc[idx]))
         return np.array(inputs), np.array(targets)
 
 class processing():
@@ -102,7 +102,6 @@ class training_process():
 
       for i, (inputs, targets) in enumerate(trainloader, 1):
           inputs, targets = inputs.to(device).float(), targets.to(device).float()
-
           optimizer.zero_grad()
           output = model.forward(inputs)
           #print(output[0], targets[0])
@@ -128,7 +127,7 @@ class training_process():
         with torch.no_grad():
 
             for i, (inputs, targets) in enumerate(valloader, 1):
-                inputs, targets = inputs.to(device).float(), targets.to(device).float()
+                inputs, targets = inputs.to(device).float(), targets.to(device).float()                
                 output = model.forward(inputs)
                 loss = criterion(output, targets)
                 
@@ -175,12 +174,17 @@ class training_process():
 
       #acc = explained_variance_score(output.detach(), targets.detach()) 
 
-      return loss, softmax(grads)*120#acc
+      return loss, softmax(grads)*120 #acc
   
 
-  def evaluate(budget: torch.tensor, model: torchvision.models, device: torch.device):
+  def evaluate(inputs, model, device):
+
     model.eval()
-    input_budget = torch.reshape(budget, (1,budget.shape[0])) #clamp(0,121)
-    budget = input_budget.to(device).float()
-    output = model.forward(budget).to(device)
+
+    inputs = inputs.to(device).float()
+
+    inputs = inputs.unsqueeze(0)
+
+    output = model.forward(inputs)
+
     return output.item()

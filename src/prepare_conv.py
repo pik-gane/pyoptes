@@ -8,6 +8,9 @@ import pandas as pd
 from torch_geometric.utils import from_networkx
 import torch
 
+from pyoptes import set_seed
+
+set_seed(1)
 
 def prepare_convolutions(x,y):
     #print(test_x.shape)
@@ -21,8 +24,6 @@ def prepare_convolutions(x,y):
             }
 
     # set some seed to get reproducible results:
-    set_seed(1)
-
     # generate a Waxman graph:
     waxman = nx.waxman_graph(120)
     pos = dict(waxman.nodes.data('pos'))

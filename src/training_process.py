@@ -30,23 +30,24 @@ from pyoptes.optimization.budget_allocation.supervised_learning.utils import tra
 from torch.utils.tensorboard import SummaryWriter
 from ray import tune
 
-random.seed(10)
+set_seed(1)
 
-writer = SummaryWriter(log_dir = "/Users/admin/pyoptes/src")
+#writer = SummaryWriter(log_dir = "/Users/admin/pyoptes/src")
 
 device = get_device()
 
-inputs = "/Users/admin/pyoptes/src/inputs_ba_120_sent_sci.csv"
-targets = "/Users/admin/pyoptes/src/targets_ba_120_sent_sci.csv"
+inputs = "/Users/admin/pyoptes/src/inputs_ba_120_final.csv"
+targets = "/Users/admin/pyoptes/src/targets_ba_120_final.csv"
 
-model_state = "/Users/admin/pyoptes/src/ba_120_sci.pth"
+model_state = "/Users/admin/pyoptes/src/ba_120_rnn.pth"
 
-train_data, test_data = process.postprocessing(inputs, targets, split = 5000, grads = False)
+train_data, test_data = process.postprocessing(inputs, targets, split = 10000, grads = False)
 
-trainset = DataLoader(train_data, batch_size = 128, shuffle=True)
-testset = DataLoader(test_data, batch_size = 128, shuffle=True)
+trainset = DataLoader(train_data, batch_size = 256, shuffle=True)
+testset = DataLoader(test_data, batch_size = 256, shuffle=True)
 
-epochs = 200
+epochs = 50
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #network = "Waxman" #"lattice" #"Barabasi-Albert"
@@ -54,7 +55,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 network = "Barabasi-Albert"
 hidden_dims = (128, 64, 32, 16)
 nodes = 120
-pick = "RNN"
+pick = "FCN"
 
 model = model_selection.set_model(pick, dim = nodes, hidden_dims = hidden_dims)
 model.to(device)
@@ -64,7 +65,7 @@ model.to(device)
 criterion = nn.L1Loss() #mean absolut error
 #learning_rate = 3.5
 """opt_params for Adam/W"""
-optimizer_params = {"lr": 0.001, "weight_decay": 0.01, "betas": (0.9, 0.999)}
+optimizer_params = {"lr": 0.001, "weight_decay": 0.001, "betas": (0.9, 0.999)}
 """opt_params for SGD"""
 #optimizer_params = {"lr": 0.02, "weight_decay": 0.0005, "momentum": True}
 """opt_params for Adagrad"""

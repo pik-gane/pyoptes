@@ -20,7 +20,7 @@ import torch
 import pandas as pd
 from torch_geometric.data import InMemoryDataset, Data
 from torch_geometric.data import HeteroData
-from pyoptes.optimization.budget_allocation.supervised_learning.utils import Loader as Loader
+from pyoptes.optimization.budget_allocation.supervised_learning.utils import Loader as Loader, device
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import processing as process
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import model_selection as model_selection
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import device as get_device
@@ -57,12 +57,14 @@ from ray.tune.schedulers import ASHAScheduler
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
+set_seed(1)
+
 writer = SummaryWriter(log_dir = "/Users/admin/pyoptes_graphs/metalayer")
 
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
+train_input_data = "/Users/admin/pyoptes/src_node/inputs_ba_120_sent_sci.csv"
+train_targets_data = "/Users/admin/pyoptes/src_node/targets_ba_120_sent_sci.csv"
 
-x, y = process.postprocessing(train_input_data, train_targets_data, split = 20000, grads = True)
+x, y = process.postprocessing(train_input_data, train_targets_data, split = 5000, grads = True)
 
 data_list = prep_conv(x,y)
 
@@ -81,11 +83,11 @@ class Edge_Model(torch.nn.Module):
             nn.ReLU(),
             nn.Linear(hiddens, ins))
 
-    def forward(self, src, dst, edge_attr, u, batch):  #source attribute, destination attribute,edge features, 
+    def forward(self, src_node, dst_node, edge_attr, u, batch):  #source attribute, destination attribute,edge features, 
         u = u.view(-1, 1)   
         edge_attr = edge_attr.view(-1, 1) 
         #(u.shape, edge_attr.shape)
-        out = torch.cat([src, dst, edge_attr, u[batch]], 1)
+        out = torch.cat([src_node, dst_node, edge_attr, u[batch]], 1)
         out = self.edge_mlp(out)
         #if self.residuals:
         #    out = out + edge_attr
@@ -109,11 +111,11 @@ class Node_Model(torch.nn.Module):
 
 
     def forward(self, x, edge_index, edge_attr, u, batch):
-        src, dest = edge_index
+        src_node, dest = edge_index
         
-        out = torch.cat([x[src], edge_attr], dim=1) #updated edge // stack all edge features 
+        out = torch.cat([x[src_node], edge_attr], dim=1) #updated edge // stack all edge features 
         
-        #print(out.shape, x[src].shape, x[dest].shape)
+        #print(out.shape, x[src_node].shape, x[dest].shape)
         out = self.node_mlp_1(out) #updated feature of our edges
 
         out = scatter_mean(out, dest, dim=0, dim_size=x.size(0)) #new target feature 
@@ -121,14 +123,12 @@ class Node_Model(torch.nn.Module):
         u = u.view(-1,1)
         out = torch.cat([x, out, u[batch]], dim=1) 
         
-        out = self.node_mlp_2(out)  #updated feature of target node
-        out = self.node_mlp_2(out) #updated feature of target node
         out = self.node_mlp_2(out) #updated feature of target node
         #if self.residuals:
         #    out = out + edge_attr
         return out  
 
-#src = source, dest = target, node_model = target node model, 
+#src_node = source, dest = target, node_model = target node model, 
 
 class Global_Model(torch.nn.Module):
 
@@ -183,10 +183,13 @@ class meta_layer(nn.Module):
         
         hx_1, h1_edge_attr, hu_1 = self.layer_1(x=x, edge_attr=edge_attr, edge_index=edge_index, u=u, batch=batch)
 
+        
         hx_2, h2_edge_attr, hu_2 = self.layer_2(x=hx_1, edge_attr=h1_edge_attr, edge_index=edge_index, u=hu_1, batch=batch)
-        ##for loop
+
+
         hx_3, h3_edge_attr, hu_3 = self.layer_3(x=hx_2, edge_attr=h2_edge_attr, edge_index=edge_index, u=hu_2, batch=batch)
 
+        
         hx_4, h4_edge_attr, hu_4 = self.layer_4(x=hx_3, edge_attr=h3_edge_attr, edge_index=edge_index, u=hu_3, batch=batch)
 
         #print(x.shape, edge_attr.shape, u.shape)
@@ -194,15 +197,16 @@ class meta_layer(nn.Module):
         #print(x.shape, edge_attr.shape, u.shape)
         return hu_4
 
-model = meta_layer(ins_nodes = 2, ins_edges = 1, ins_graphs = 6, hiddens= 16, outs = 6).double() # gdc = gdc).double()
+model = meta_layer(ins_nodes = 2, ins_edges = 1, ins_graphs = 6, hiddens= 16, outs = 6).double()
+model.to(device)
+ # gdc = gdc).double()
 epochs = 10000
 criterion = nn.L1Loss() 
 
 optimizer_params = {"lr": 0.01, "weight_decay": 0.005, "betas": (0.9, 0.999)}
 optimizer = optim.AdamW(model.parameters(), **optimizer_params)
 
-print(model)
-#model.load_state_dict(torch.load("/Users/admin/pyoptes/src/meta_layer.pth"))
+#model.load_state_dict(torch.load("/Users/admin/pyoptes/src_node/meta_layer.pth"))
 
 #optimizer_params = {"lr": 0.1}
 #optimizer = optim.Adagrad(model.parameters(), **optimizer_params)
@@ -215,9 +219,10 @@ def training(loader, model, criterion, optimizer):
     for batch in loader:
         optimizer.zero_grad()
         targets = batch.y.unsqueeze(-1) #= [32,1]
+        targets = targets.to(device)
 
         x, edge_index, edge_weight, u, batch = batch.x, batch.edge_index, batch.weight, batch.edge_attr, batch.batch
-        
+        x, edge_index, edge_weight, u, batch = x.to(device), edge_index.to(device), edge_weight.to(device), u.to(device), batch.to(device)
         u = model.forward(x = x, edge_attr = edge_weight, u = u, edge_index = edge_index, batch = batch)
         
         #print(u.shape)
@@ -246,10 +251,12 @@ def validate(valloader: DataLoader, model: torchvision.models):
     with torch.no_grad():
 
         for batch in valloader:
+            
             targets = batch.y.unsqueeze(-1) #= [32,1]
+            targets = targets.to(device)
 
             x, edge_index, edge_weight, u, batch = batch.x, batch.edge_index, batch.weight, batch.edge_attr, batch.batch
-            
+            x, edge_index, edge_weight, u, batch = x.to(device), edge_index.to(device), edge_weight.to(device), u.to(device), batch.to(device)
             u = model.forward(x = x, edge_attr = edge_weight, u = u, edge_index = edge_index, batch = batch)
             
             loss = criterion(u, targets)
@@ -288,13 +295,8 @@ for epoch in range(epochs):
   if train_loss < train_loss_prev:
     train_loss_prev = train_loss
     val_loss_prev = val_loss
-    torch.save(model.state_dict(), "/Users/admin/pyoptes/src/meta_layer20T.pth")
+    torch.save(model.state_dict(), "/Users/admin/pyoptes/src_node/meta_layer20T.pth")
     print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {val_loss_prev}, val acc: {val_acc}')
-
-  #if train_loss < train_loss_prev:
-  train_loss_prev = train_loss
-  val_loss_prev = val_loss
-  print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {val_loss_prev}, val acc: {val_acc}')
 
 plt.figure()
 plt.plot(np.arange(epochs), np.sqrt(total_loss), label = "training loss")

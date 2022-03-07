@@ -39,19 +39,21 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
 
         """Linear Network architecture"""
         self.layer_1 = nn.Linear(in_features, hidden_dims[0], bias = bias) 
-        self.layer_2 = nn.Linear(hidden_dims[0], hidden_dims[1], bias = bias)
-        self.layer_3 = nn.Linear(hidden_dims[1], hidden_dims[2], bias = bias)
-        self.layer_4 = nn.Linear(hidden_dims[2], hidden_dims[3], bias = bias)
+        self.layer_2 = nn.Linear(hidden_dims[0], hidden_dims[0], bias = bias)
+        self.layer_3 = nn.Linear(hidden_dims[0], hidden_dims[1], bias = bias)
+        self.layer_4 = nn.Linear(hidden_dims[1], hidden_dims[3], bias = bias)
         self.layer_5 = nn.Linear(hidden_dims[3], 1, bias = bias)
         #self.layer_5 = nn.Linear(128, out_features, bias = bias)
                   
     def forward(self, x):
         """h_i denotes the hidden states, y_hat the prediction"""
         h_1 = self.act_func(self.layer_1(x))
-        #for i in range(5):
-        #    h_2 = self.act_func(self.layer_2(h_1))
-        #    h_1 = h_2
-        h_2 = self.act_func(self.layer_2(h_1))
+        
+        for i in range(5):
+            h_2 = self.act_func(self.layer_2(h_1))
+            h_1 = h_2
+        
+        #h_2 = self.act_func(self.layer_2(h_1))
         h_3 = self.act_func(self.layer_3(h_2))
         h_4 = self.act_func(self.layer_4(h_3))
         y_hat = self.layer_5(h_4)
