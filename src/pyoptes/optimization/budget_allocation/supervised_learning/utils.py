@@ -12,7 +12,6 @@ from sklearn.metrics import explained_variance_score, mean_squared_error
 from torch.autograd import grad
 from torch import optim
 
-
 class device():
   """cpu or gpu"""
   def get_device():

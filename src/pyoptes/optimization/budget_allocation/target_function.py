@@ -145,7 +145,7 @@ def simulate_infection():
 
 
 def n_infected_animals(is_infected):
-    return np.sum(capacities * is_infected)
+    return capacities * is_infected
 
 
 def mean_square_and_stderr(n_infected_animals):

@@ -126,6 +126,7 @@ pos = dict(waxman.nodes.data('pos'))
 # convert into a directed graph:
 static_network = nx.DiGraph(nx.to_numpy_array(waxman))
 
+
 # at the beginning, call prepare() once:
 f.prepare(
   use_real_data=False, 
@@ -140,11 +141,36 @@ f.prepare(
 n_inputs = f.get_n_inputs()
 total_budget = n_inputs
 
+n_simulations = 5
+num_cpu_cores = -1
+
 evaluation_parms = { 
-        'n_simulations': 100000, 
-        'statistic': lambda a: (np.mean(a**2), np.std(a**2)/np.sqrt(a.size)) #lambda a: np.percentile(a, 95)
+        'n_simulations': n_simulations, 
+        'parallel': True,
+        'num_cpu_cores': num_cpu_cores
         }
 
+degree_values = sorted(static_network.degree, key=lambda x: x[1], reverse=True)
+
+hd = []
+for i in range(10):
+  hd.append(degree_values[i][0])
+
+print(f'nodes with highest degree: {hd}\n')
+
+sentinels = hd
+weights = np.zeros(n_inputs)
+weights[sentinels] = 1
+shares = weights / weights.sum()
+x4 = shares * total_budget
+
+(dmg_node, se_node) = f.evaluate(x4, **evaluation_parms)
+print(dmg_node)
+print(se_node)
+
+#print(damage_per_node)
+
+"""
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 hidden_dims = (128, 64, 32, 16)
@@ -220,3 +246,4 @@ si_out_base,  si_out_err = np.sqrt(f_eval), si_out_sq_err/(2*np.sqrt(f_eval)) #
 nn_out = evaluate(test_x, model, device = device)
 nn_out = nn_out**2
 print(f'\nloss of model: {si_out_base, nn_out}')
+"""
