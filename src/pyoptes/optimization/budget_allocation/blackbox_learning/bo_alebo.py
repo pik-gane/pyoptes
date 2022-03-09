@@ -48,7 +48,6 @@ def bo_alebo(n_nodes, total_trials,
         if 0 < x_true.sum() <= total_budget:
             return eval_function(x_true, n_simulations=n_simulations, statistic=statistic)
         else:
-            # TODO change to numpy.NaN. CMA-ES handles that as explicit rejection of x
             return 1e10  # * x.sum(x)
 
     # define parameter space and bounds for the objective functin

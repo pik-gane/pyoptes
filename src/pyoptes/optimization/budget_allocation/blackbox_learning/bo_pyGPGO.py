@@ -45,18 +45,21 @@ def bo_pyGPGO(max_iterations, n_simulations, node_indices, n_nodes, eval_functio
     # log_level defines the percentage of iterations for which a log message appears
     # LOG_INTERVAL is then the number of iteration between two log messages
     LOG_INTERVAL = int(max_iterations/100*log_level)
-    print(LOG_INTERVAL)
 
     T_START = time.time()
 
     def pyGPGO_objective_function(**kwargs):
+        """
 
+        @param kwargs:
+        @return:
+        """
         x = np.array(list(kwargs.values()))
         assert np.shape(x) == np.shape(NODE_INDICES)
 
         if LOG_ITERATOR[0] != 0 and LOG_ITERATOR[0] % LOG_INTERVAL == 0:
             print(f'\nIteration: {LOG_ITERATOR[0]}/{MAX_ITERATIONS}. '
-                  f'Minutes elapsed since start: {(time.time()-T_START)/60}')
+                  f'Minutes elapsed since start: {(time.time()-T_START)/60}\n')
         LOG_ITERATOR[0] = LOG_ITERATOR[0]+1
 
         # create a dummy vector to be filled with the values of x at the appropriate indices
@@ -64,6 +67,7 @@ def bo_pyGPGO(max_iterations, n_simulations, node_indices, n_nodes, eval_functio
 
         x = map_low_dim_x_to_high_dim(x, N_NODES, NODE_INDICES)
 
+        # GPGO maximises a function, therefore the minus is added in front of the eva_function
         return -EVAL_FUNCTION(x, n_simulations=N_SIMULATIONS, statistic=STATISTIC,
                               parallel=PARALLEL, num_cpu_cores=CPU_COUNT)
 
@@ -79,8 +83,9 @@ def bo_pyGPGO(max_iterations, n_simulations, node_indices, n_nodes, eval_functio
     gpgo = GPGO(gp, acq, pyGPGO_objective_function, parameters)
     gpgo.run(max_iter=max_iterations)
 
-    plt.plot(range(len(gpgo.history)), gpgo.history)
-    plt.title('SMAC')
+    # reverse the sign change of optimizer history to egt a more readable plot
+    plt.plot(range(len(gpgo.history)), -np.array(gpgo.history))
+    plt.title(f'GPGO, {n_nodes} nodes, {len(node_indices)} sentinels')
     plt.xlabel('Iteration')
     plt.ylabel('SI-model output')
     plt.savefig(os.path.join(path_experiment, 'GPGO_plot.png'))

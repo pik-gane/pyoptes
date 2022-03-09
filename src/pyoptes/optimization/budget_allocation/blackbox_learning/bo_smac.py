@@ -1,4 +1,5 @@
 import os
+import time
 import numpy as np
 import pylab as plt
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter
@@ -8,8 +9,6 @@ from smac.facade.smac_bb_facade import SMAC4BB
 from smac.optimizer.acquisition import EI
 
 from smac.scenario.scenario import Scenario
-
-import time
 
 
 def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
@@ -46,6 +45,8 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
     # LOG_INTERVAL is then the number of iteration between two log messages
     LOG_INTERVAL = int(max_iterations/100*10)
 
+    # T_START = time.time()
+
     # SMAC is not able to pass additional arguments to function
     def smac_objective_function(x):
         """
@@ -57,7 +58,8 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
 
         # create progress messages every llog_interval iteration
         if LOG_ITERATOR[0] != 0 and LOG_ITERATOR[0] % LOG_INTERVAL == 0:
-            print(f'Iteration: {LOG_ITERATOR[0]}/{MAX_ITERATIONS}. {time.time()/60}')
+            print(f'\nIteration: {LOG_ITERATOR[0]}/{MAX_ITERATIONS}. '
+                  f'Minutes elapsed since start: {(time.time()-T_START)/60}\n')
         LOG_ITERATOR[0] = LOG_ITERATOR[0]+1
 
         # convert the smac dict to a numpy array

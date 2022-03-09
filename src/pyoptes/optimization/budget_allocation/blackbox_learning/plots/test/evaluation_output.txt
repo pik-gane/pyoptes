@@ -1,12 +1,12 @@
 
 Parameters:
-Sentinel nodes: 15
+Sentinel nodes: 10
 n_nodes: 120
 iterations: 20
 n_simulations: 1000
-Time for optimization (in minutes): 0.09553455511728923
+Time for optimization (in hours): 0.0012473604414198133
 
-Baseline for uniform budget distribution: 18324031.600853845
+Baseline for uniform budget distribution: 21890555.246352714
 Best GPGO solutions:
-Objective value:  29983388.139028687
-x min, x max, x sum: 0.0, 77.85736512690642, 120.00000000000001
+Objective value:  23371320.0304345
+x min, x max, x sum: 0.0, 56.40602168790655, 120.00000000000001

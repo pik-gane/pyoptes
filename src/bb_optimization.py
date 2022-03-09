@@ -272,7 +272,7 @@ if __name__ == '__main__':
 
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
-            f'\nTime for optimization (in minutes): {(time() - t0) / 3600}' \
+            f'\nTime for optimization (in hours): {(time() - t0) / 3600}' \
             f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
             f'\nBest GPGO solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
