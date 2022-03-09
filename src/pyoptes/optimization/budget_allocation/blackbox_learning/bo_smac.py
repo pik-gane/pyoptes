@@ -9,9 +9,11 @@ from smac.optimizer.acquisition import EI
 
 from smac.scenario.scenario import Scenario
 
+import time
+
 
 def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-            statistic, total_budget, node_mapping_func, path_experiment):
+            statistic, total_budget, node_mapping_func, path_experiment, parallel, cpu_count, log_level=10):
     """
 
 
@@ -26,13 +28,23 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
     @param total_budget:
     @return:
     """
+    # variables in upppercase are used in the objective function
+    # this is just done to keep them visually distinct from variables used inside the function
+    # as the optimizer doesn't allow passing of arguments to a function
     EVAL_FUNCTION = eval_function
     N_SIMULATIONS = n_simulations
     NODE_INDICES = node_indices
     STATISTIC = statistic
     TOTAL_BUDGET = total_budget
     N_NODES = n_nodes
-    I = [0]
+    PARALLEL = parallel
+    CPU_COUNT = cpu_count
+    MAX_ITERATIONS = max_iterations
+
+    LOG_ITERATOR = [0]  # has to be a list, normal ints are not updated in this
+    # log_level defines the percentage of iterations for which a log message appears
+    # LOG_INTERVAL is then the number of iteration between two log messages
+    LOG_INTERVAL = int(max_iterations/100*10)
 
     # SMAC is not able to pass additional arguments to function
     def smac_objective_function(x):
@@ -42,22 +54,25 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
         @return:
         """
         assert np.shape(x) == np.shape(NODE_INDICES)
-        if I[0]!=0 and I[0]%10==0:
-            print(f'Iteration: {I[0]}')
-        I[0] = I[0]+1
+
+        # create progress messages every llog_interval iteration
+        if LOG_ITERATOR[0] != 0 and LOG_ITERATOR[0] % LOG_INTERVAL == 0:
+            print(f'Iteration: {LOG_ITERATOR[0]}/{MAX_ITERATIONS}. {time.time()/60}')
+        LOG_ITERATOR[0] = LOG_ITERATOR[0]+1
 
         # convert the smac dict to a numpy array
         x = np.array(list(x.values()))
 
         x_true = node_mapping_func(x, N_NODES, NODE_INDICES)
-        #
-        x_true_normed = x_true/x_true.sum()
+
+        # compute a penalty for violating sum constraint
+        x_true_normed = x_true/x_true.sum() #total_budget * np.exp(x) / sum(np.exp(x))
         x_true_scaled = x_true_normed*total_budget
 
         sqr_diff_x = (x_true.sum()-x_true_scaled.sum())**2 # ~200k
 
-        return EVAL_FUNCTION(x_true_scaled, n_simulations=N_SIMULATIONS, statistic=STATISTIC) + sqr_diff_x*10
-
+        return EVAL_FUNCTION(x_true_scaled, n_simulations=N_SIMULATIONS, statistic=STATISTIC,
+                             parallel=PARALLEL, num_cpu_cores=CPU_COUNT) + sqr_diff_x*10
 
     # Build Configuration Space which defines all parameters and their ranges
     cs = ConfigurationSpace()
@@ -70,6 +85,8 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
                          "cs": cs,  # configuration space
                          "deterministic": "True",
                          "output_dir": 'smac3_output'})
+                         # "shared_model": True,
+                         # "input_psmac_dirs": 'smac3_output2'})
 
     # Optimize, using a SMAC-object
     smac = SMAC4BB(scenario=scenario,

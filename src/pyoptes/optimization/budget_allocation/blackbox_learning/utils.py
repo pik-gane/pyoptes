@@ -68,6 +68,7 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
 def baseline(x, eval_function, node_indices, n_nodes, statistic):
     # TODO generate initial values here instead of outside the function
     # TODO include baseline with no testing
+    # TODO make this more useful somehow ??
 
     simulations = [100, 1000, 10000]
 

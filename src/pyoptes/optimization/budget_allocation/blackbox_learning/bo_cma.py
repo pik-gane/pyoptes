@@ -7,7 +7,7 @@ import numpy as np
 # TODO complete documentation for parameters
 # TODO sigma should be about 1/4th of the search space width e.g sigma 30 for budget 120
 def bo_cma(objective_function, initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-           bounds, path_experiment, statistic, total_budget, sigma=0.4):
+           bounds, path_experiment, statistic, total_budget, parallel, cpu_count, sigma=0.4):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
     @param total_budget: float, the total budget that is to be distributed along the nodes of the graph
@@ -26,7 +26,8 @@ def bo_cma(objective_function, initial_population, max_iterations, n_simulations
     """
     ea = cma.fmin(objective_function, initial_population, sigma0=sigma,
                   options={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds},
-                  args=(n_simulations, node_indices, n_nodes, eval_function, statistic, total_budget))
+                  args=(n_simulations, node_indices, n_nodes, eval_function,
+                        statistic, total_budget, parallel, cpu_count))
 
     solutions = ea[-2].pop_sorted   # pop_sorted is the population after stopping CMA ||
 
@@ -40,7 +41,8 @@ def bo_cma(objective_function, initial_population, max_iterations, n_simulations
 
 
 # TODO maybe enforce correct types of params ? To prevent floats where ints are expected
-def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function, statistic, total_budget):
+def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function,
+                           statistic, total_budget, parallel, cpu_count):
     """
     An optimizeable objective function.
     Maps a lower dimensional x to their corresponding indices in the input vector of the given objective function.
@@ -65,7 +67,8 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     for i, xi in zip(node_indices, x):
         x_true[i] = xi
     if 0 < x_true.sum() <= total_budget:
-        return eval_function(x_true, n_simulations=n_simulations, statistic=statistic)
+        return eval_function(x_true, n_simulations=n_simulations, statistic=statistic,
+                             parallel=parallel, num_cpu_cores=cpu_count)
     else:
         return np.NaN#1e10     # * x.sum(x)
 

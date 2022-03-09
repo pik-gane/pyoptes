@@ -3,51 +3,78 @@ import os.path
 from pyoptes import set_seed
 from pyoptes.optimization.budget_allocation import target_function as f
 
-from pyoptes.optimization.budget_allocation.blackbox_learning.bo_cma import bo_cma, cma_objective_function
-from pyoptes.optimization.budget_allocation.blackbox_learning.bo_alebo import bo_alebo
-from pyoptes.optimization.budget_allocation.blackbox_learning.bo_smac import bo_smac
+from pyoptes import bo_smac
+from pyoptes import bo_alebo
+from pyoptes import bo_cma, cma_objective_function
+from pyoptes.optimization.budget_allocation.blackbox_learning.bo_pyGPGO import bo_pyGPGO
 
-from pyoptes.optimization.budget_allocation.blackbox_learning.utils import choose_high_degree_nodes, baseline
-from pyoptes.optimization.budget_allocation.blackbox_learning.utils import map_low_dim_x_to_high_dim, test_function
-from pyoptes.optimization.budget_allocation.blackbox_learning.utils import save_hyperparameters, save_results
+from pyoptes import choose_high_degree_nodes, baseline
+from pyoptes import map_low_dim_x_to_high_dim, test_function
+from pyoptes import save_hyperparameters, save_results
 
 import inspect
 import argparse
 import numpy as np
 import networkx as nx
-from time import time, localtime, strftime
 from scipy.stats import lognorm
+from time import time, localtime, strftime
 
 
+#
 def caps(size):
     return lognorm.rvs(s=2, scale=np.exp(4), size=size)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("optimizer", choices=['cma', 'alebo', 'smac'],
+    parser.add_argument("optimizer", choices=['cma', 'alebo', 'smac', 'gpgo'],
                         help="Choose the optimizer to run on the SI-model. Choose between CMA-ES and ALEBO")
     parser.add_argument("name_experiment", help="")
-    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
-                        help="location the results of the optimizers are saved to.")
+
+    parser.add_argument("--sentinels", type=int, default=10,
+                        help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes. "
+                             "Default is 10 nodes.")
     parser.add_argument("--n_nodes", type=int, default=120,
-                        help="Defines the number of nodes used by the SI-model. Default value is 120.")
-    parser.add_argument("--n_simulations", type=int, default=1000,
-                        help=" Sets the number of runs the for the SI-model. Higher values of n_simulations lower "
-                             "the variance of the output of the simulation. Default value is 1000.")
+                        help="Si-simulation parameter. Defines the number of nodes used by the SI-model to create a graph. "
+                             "Default value is 120 nodes.")
+
     parser.add_argument("--max_iterations", type=int, default=1000,
                         help="The maximum number of iterations the algorithms run.")
-    parser.add_argument("--sentinels", type=int, default=10,
-                        help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes")
     parser.add_argument('--cma_sigma', type=float, default=30,
-                        help="Defines the variance in objective function parameters from which new population is sampled")
+                        help="Optimizer parameter. Defines the variance in objective function parameters "
+                             "from which new population is sampled")
+    # TODO rename, solution sounds wrong
+    # TODO fix missing help
     parser.add_argument('--solution_initialisation', choices=['uniform', 'random'], default='uniform',
                         help="")
-    # TODO rename to something more clear + clear up help
+    parser.add_argument("--n_simulations", type=int, default=1000,
+                        help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
+                             "Higher values of n_simulations lower the variance of the output of the simulation. "
+                             "Default value is 1000.")
+    # TODO rename to something more clear ??
     parser.add_argument('--graph', choices=['waxman', 'barabasi-albert'], default='barabasi-albert',
-                        help='Set the type of graph the ... . Either Waxman or Barabasi-Albert (ba) can be used')
-    parser.add_argument('--delta_t_symptoms', type=int, default=60, help='')
-    parser.add_argument('--p_infection_by_transmission', type=float, default=0.5, help='')
+                        help='Si-simulation parameter. Set the type of graph the simulation uses.'
+                             ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
+    parser.add_argument('--delta_t_symptoms', type=int, default=60,
+                        help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
+                             ' automatically. Default is 60 days')
+    parser.add_argument('--p_infection_by_transmission', type=float, default=0.5,
+                        help='Si-simulation parameter. The probability of how likely a trade animal '
+                             'infects other animals. Default is 0.5.')
+    parser.add_argument('--parallel', type=bool, default=True,
+                        help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
+                             'or sequentially. Default is set to parallel computation.')
+    parser.add_argument("--cpu_count", type=int, default=12,
+                        help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
+                             'parallelization. If more cpus are chosen than available, the max available are selected.'
+                             '-1 selects all available cpus. Default are 12 cpus.')
+
+    parser.add_argument("--log_level", type=int, default=10, choices=range(0, 101), metavar="[0-100]",
+                        help="")
+    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
+                        help="Optimizer parameter. Location where all the individual results"
+                             " of the optimizers are saved to. "
+                             "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
     args = parser.parse_args()
 
     # TODO add support for reading parameters from json-files // or save parameters + results in a json
@@ -77,10 +104,10 @@ if __name__ == '__main__':
     if args.solution_initialisation == 'random':
         weights = np.random.rand(args.sentinels)
         shares = weights / weights.sum()
-        x = shares * total_budget
+        initial_x = shares * total_budget
     elif args.solution_initialisation == 'uniform':
         # distribute total budget uniformly
-        x = np.array([total_budget/args.sentinels for _ in range(args.sentinels)])
+        initial_x = np.array([total_budget/args.sentinels for _ in range(args.sentinels)])
     else:
         raise Exception('Invalid solution initialisation chosen.')
 
@@ -92,10 +119,10 @@ if __name__ == '__main__':
 
     # define function to average the results of the simulation
     # the mean of the squared ys is taken to emphasise the tail of the distribution of y
-    statistic = lambda x: np.mean(x**2)
+    statistic = lambda x: np.mean(x**2, axis=0)
 
     # compute the baseline value for y
-    baseline = baseline(x, eval_function=f.evaluate, n_nodes=args.n_nodes, node_indices=node_indices, statistic=statistic)
+    baseline = baseline(initial_x, eval_function=f.evaluate, n_nodes=args.n_nodes, node_indices=node_indices, statistic=statistic)
 
     # save SI-model parameters as .json-file
     experiment_params = {'model_hyperparameters': {'node_initialisation': args.solution_initialisation,
@@ -117,7 +144,7 @@ if __name__ == '__main__':
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
         best_parameter = bo_cma(objective_function=cma_objective_function,
-                                initial_population=x,
+                                initial_population=initial_x,
                                 node_indices=node_indices,
                                 n_nodes=args.n_nodes,
                                 eval_function=f.evaluate,
@@ -127,7 +154,12 @@ if __name__ == '__main__':
                                 bounds=bounds,
                                 path_experiment=path_experiment,
                                 max_iterations=args.max_iterations,
-                                sigma=args.cma_sigma)
+                                sigma=args.cma_sigma,
+                                parallel=args.parallel,
+                                cpu_count=args.cpu_count)
+
+        print('------------------------------------------------------')
+        print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
         eval_best_parameter = cma_objective_function(best_parameter,
                                                      node_indices=node_indices,
@@ -135,7 +167,9 @@ if __name__ == '__main__':
                                                      eval_function=f.evaluate,
                                                      n_simulations=args.n_simulations,
                                                      statistic=statistic,
-                                                     total_budget=total_budget)
+                                                     total_budget=total_budget,
+                                                     parallel=args.parallel,
+                                                     cpu_count=args.cpu_count)
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
@@ -174,7 +208,7 @@ if __name__ == '__main__':
         print('saved hyperparameters')
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
-        best_parameter = bo_smac(initial_population=x,
+        best_parameter = bo_smac(initial_population=initial_x,
                                  node_indices=node_indices,
                                  n_nodes=args.n_nodes,
                                  eval_function=f.evaluate,
@@ -183,7 +217,9 @@ if __name__ == '__main__':
                                  total_budget=total_budget,
                                  max_iterations=args.max_iterations,
                                  node_mapping_func=map_low_dim_x_to_high_dim,
-                                 path_experiment=path_experiment)
+                                 path_experiment=path_experiment,
+                                 parallel=args.parallel,
+                                 cpu_count=args.cpu_count)
         print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
         best_parameter = np.array(list(best_parameter.values()))
@@ -191,13 +227,54 @@ if __name__ == '__main__':
         best_parameter = best_parameter/best_parameter.sum()
         best_parameter = best_parameter*total_budget
 
-        eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic)
+        eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic,
+                                         parallel=args.parallel, num_cpu_cores=args.cpu_count)
 
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
             f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
             f'\nBest SMAC solutions:' \
+            f'\nObjective value:  {eval_best_parameter}' \
+            f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
+
+        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
+        print(p)
+
+    elif args.optimizer == 'gpgo':
+        experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
+        path_experiment = os.path.join(args.path_plot, args.name_experiment)
+        save_hyperparameters(experiment_params, path_experiment)
+        print('saved hyperparameters')
+        print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
+        t0 = time()
+
+        best_parameter = bo_pyGPGO(node_indices=node_indices,
+                                   n_nodes=args.n_nodes,
+                                   eval_function=f.evaluate,
+                                   n_simulations=args.n_simulations,
+                                   statistic=statistic,
+                                   total_budget=total_budget,
+                                   path_experiment=path_experiment,
+                                   max_iterations=args.max_iterations,
+                                   parallel=args.parallel,
+                                   cpu_count=args.cpu_count,
+                                   log_level=args.log_level)
+        print('------------------------------------------------------')
+        print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
+
+        best_parameter = list(best_parameter[0].values())
+        best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
+        best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
+
+        eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic,
+                                         parallel=args.parallel, num_cpu_cores=args.cpu_count)
+
+        p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
+            f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
+            f'\nTime for optimization (in minutes): {(time() - t0) / 3600}' \
+            f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\nBest GPGO solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 

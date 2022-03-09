@@ -17,5 +17,5 @@ dependencies:
   - pip:
 #    - git+https://github.com/uber-research/TuRBO
 #    - dragonfly-opt == 0.1.4
-    - smac
+    - smac_sentinels_10
     - ax-platform
