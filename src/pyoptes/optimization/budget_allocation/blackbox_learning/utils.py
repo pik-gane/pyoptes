@@ -83,7 +83,7 @@ def baseline(x, eval_function, node_indices, n_nodes, statistic):
     return y
 
 
-def test_function(x, n_simulations, node_indices, n_nodes, eval_function, statistic, total_budget):
+def test_function(x, **kwargs):
     """
     Quadratic function just for test purposes
     @param x:

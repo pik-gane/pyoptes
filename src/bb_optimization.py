@@ -69,7 +69,7 @@ if __name__ == '__main__':
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 12 cpus.')
 
-    parser.add_argument("--log_level", type=int, default=10, choices=range(0, 101), metavar="[0-100]",
+    parser.add_argument("--log_level", type=int, default=1, choices=range(1, 6), metavar="[1-5]",
                         help="")
     parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
                         help="Optimizer parameter. Location where all the individual results"
@@ -211,15 +211,15 @@ if __name__ == '__main__':
         best_parameter = bo_smac(initial_population=initial_x,
                                  node_indices=node_indices,
                                  n_nodes=args.n_nodes,
-                                 eval_function=f.evaluate,
+                                 eval_function=test_function,
                                  n_simulations=args.n_simulations,
                                  statistic=statistic,
                                  total_budget=total_budget,
                                  max_iterations=args.max_iterations,
-                                 node_mapping_func=map_low_dim_x_to_high_dim,
                                  path_experiment=path_experiment,
                                  parallel=args.parallel,
-                                 cpu_count=args.cpu_count)
+                                 cpu_count=args.cpu_count,
+                                 log_level=args.log_level)
         print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
         best_parameter = np.array(list(best_parameter.values()))

@@ -3,6 +3,7 @@ import matplotlib.pyplot
 import os
 import numpy as np
 
+from .utils import map_low_dim_x_to_high_dim
 
 # TODO complete documentation for parameters
 # TODO sigma should be about 1/4th of the search space width e.g sigma 30 for budget 120
@@ -52,6 +53,8 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     If this constraint is violated the function return 1e10, otherwise the output of the eva function
     (the evaluate function of the SI-model) for n_simulations is returned.
 
+    @param cpu_count:
+    @param parallel:
     @param total_budget: float,
     @param statistic: function object,
     @param x: numpy array,
@@ -62,12 +65,11 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     @return: float, objective function value at x
     """
     assert np.shape(x) == np.shape(node_indices)
-    # create a dummy vector to be filled with the values of x at the appropriate indices
-    x_true = np.zeros(n_nodes)
-    for i, xi in zip(node_indices, x):
-        x_true[i] = xi
-    if 0 < x_true.sum() <= total_budget:
-        return eval_function(x_true, n_simulations=n_simulations, statistic=statistic,
+
+    x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
+
+    if 0 < x.sum() <= total_budget:
+        return eval_function(x, n_simulations=n_simulations, statistic=statistic,
                              parallel=parallel, num_cpu_cores=cpu_count)
     else:
         return np.NaN#1e10     # * x.sum(x)

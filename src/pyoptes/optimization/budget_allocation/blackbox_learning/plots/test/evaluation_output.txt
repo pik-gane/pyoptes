@@ -2,11 +2,11 @@
 Parameters:
 Sentinel nodes: 10
 n_nodes: 120
-iterations: 20
+iterations: 100
 n_simulations: 1000
-Time for optimization (in hours): 0.0012473604414198133
+Time for optimization (in minutes): 1.7396548549334208
 
 Baseline for uniform budget distribution: 21890555.246352714
-Best GPGO solutions:
-Objective value:  23371320.0304345
-x min, x max, x sum: 0.0, 56.40602168790655, 120.00000000000001
+Best SMAC solutions:
+Objective value:  32074190.151671726
+x min, x max, x sum: 0.0, 77.15412276935436, 120.00000000000001

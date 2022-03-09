@@ -7,16 +7,21 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter
 from smac.configspace import ConfigurationSpace
 from smac.facade.smac_bb_facade import SMAC4BB
 from smac.optimizer.acquisition import EI
-
 from smac.scenario.scenario import Scenario
+
+from .utils import map_low_dim_x_to_high_dim
 
 
 def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-            statistic, total_budget, node_mapping_func, path_experiment, parallel, cpu_count, log_level=10):
+            statistic, total_budget, path_experiment, parallel, cpu_count, log_level):
     """
 
 
     Adapted from SMAC-tutorial: https://automl.github.io/SMAC3/master/pages/examples/python/plot_synthetic_function.html
+    @param log_level:
+    @param cpu_count:
+    @param parallel:
+    @param path_experiment:
     @param initial_population:
     @param max_iterations:
     @param n_simulations:
@@ -43,9 +48,9 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
     LOG_ITERATOR = [0]  # has to be a list, normal ints are not updated in this
     # log_level defines the percentage of iterations for which a log message appears
     # LOG_INTERVAL is then the number of iteration between two log messages
-    LOG_INTERVAL = int(max_iterations/100*10)
+    LOG_INTERVAL = int(max_iterations*(log_level*20)/100)
 
-    # T_START = time.time()
+    T_START = time.time()
 
     # SMAC is not able to pass additional arguments to function
     def smac_objective_function(x):
@@ -65,7 +70,7 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
         # convert the smac dict to a numpy array
         x = np.array(list(x.values()))
 
-        x_true = node_mapping_func(x, N_NODES, NODE_INDICES)
+        x_true = map_low_dim_x_to_high_dim(x, N_NODES, NODE_INDICES)
 
         # compute a penalty for violating sum constraint
         x_true_normed = x_true/x_true.sum() #total_budget * np.exp(x) / sum(np.exp(x))
@@ -100,7 +105,7 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
 
     rh = smac.get_runhistory()
     ys = []
-    for (config_id, instance_id, seed, budget), (cost, time, status, starttime, endtime, additional_info) in rh.data.items():
+    for (config_id, _, _, _), (_, _, _, _, _, additional_info) in rh.data.items():
         config = rh.ids_config[config_id]
         ys.append(smac_objective_function(config))
 

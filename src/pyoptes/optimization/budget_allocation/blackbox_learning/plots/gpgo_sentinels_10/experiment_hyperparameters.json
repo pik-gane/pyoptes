@@ -1,7 +1,7 @@
 {
     "model_hyperparameters": {
         "graph": "barabasi-albert",
-        "max_iterations": 100,
+        "max_iterations": 1000,
         "n_nodes": 120,
         "n_simulations": 1000,
         "node_initialisation": "uniform",
@@ -10,6 +10,7 @@
         "total_budget": 120.0
     },
     "optimizer_hyperparameters": {
-        "optimizer": "smac"
+        "cma_sigma": 30,
+        "optimizer": "gpgo"
     }
 }

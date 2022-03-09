@@ -16,6 +16,7 @@ def bo_pyGPGO(max_iterations, n_simulations, node_indices, n_nodes, eval_functio
               path_experiment, statistic, total_budget, parallel, cpu_count, log_level):
     """
 
+    @param log_level:
     @param max_iterations:
     @param n_simulations:
     @param node_indices:
@@ -28,7 +29,7 @@ def bo_pyGPGO(max_iterations, n_simulations, node_indices, n_nodes, eval_functio
     @param cpu_count:
     @return:
     """
-    # variables in upppercase are used in the objective function
+    # variables in uppercase are used in the objective function
     # this is just done to keep them visually distinct from variables used inside the function
     # as the optimizer doesn't allow passing of arguments to a function
     EVAL_FUNCTION = eval_function
@@ -41,10 +42,10 @@ def bo_pyGPGO(max_iterations, n_simulations, node_indices, n_nodes, eval_functio
     CPU_COUNT = cpu_count
     MAX_ITERATIONS = max_iterations
 
-    LOG_ITERATOR = [0]  # has to be a list, normal ints are not updated in this
+    LOG_ITERATOR = [1]  # has to be a list, normal ints are not updated in this
     # log_level defines the percentage of iterations for which a log message appears
     # LOG_INTERVAL is then the number of iteration between two log messages
-    LOG_INTERVAL = int(max_iterations/100*log_level)
+    LOG_INTERVAL = int(max_iterations*(log_level*20)/100)
 
     T_START = time.time()
 
@@ -57,12 +58,12 @@ def bo_pyGPGO(max_iterations, n_simulations, node_indices, n_nodes, eval_functio
         x = np.array(list(kwargs.values()))
         assert np.shape(x) == np.shape(NODE_INDICES)
 
-        if LOG_ITERATOR[0] != 0 and LOG_ITERATOR[0] % LOG_INTERVAL == 0:
+        if LOG_ITERATOR[0] != 1 and LOG_ITERATOR[0] % LOG_INTERVAL == 0:
             print(f'\nIteration: {LOG_ITERATOR[0]}/{MAX_ITERATIONS}. '
                   f'Minutes elapsed since start: {(time.time()-T_START)/60}\n')
         LOG_ITERATOR[0] = LOG_ITERATOR[0]+1
 
-        # create a dummy vector to be filled with the values of x at the appropriate indices
+        # rescale strategy such that it satifies sum constraint
         x = TOTAL_BUDGET * np.exp(x) / sum(np.exp(x))
 
         x = map_low_dim_x_to_high_dim(x, N_NODES, NODE_INDICES)
@@ -94,5 +95,4 @@ def bo_pyGPGO(max_iterations, n_simulations, node_indices, n_nodes, eval_functio
 
 
 if __name__ == '__main__':
-    bo_pyGPGO()
     print('success')
