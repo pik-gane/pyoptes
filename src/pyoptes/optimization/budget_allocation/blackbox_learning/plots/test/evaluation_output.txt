@@ -1,12 +1,12 @@
 
 Parameters:
-Sentinel nodes: 10
+Sentinel nodes: 15
 n_nodes: 120
-iterations: 10
+iterations: 20
 n_simulations: 1000
-Time for optimization (in minutes): 0.2888052980105082
+Time for optimization (in minutes): 0.09553455511728923
 
-Baseline for uniform budget distribution: 21890555.246352714
-Best CMA-ES solutions:
-Objective value:  18636249.850797832
-x min, x max, x sum: 1.4370676415380443, 27.886129336957175, 118.97121965398313
+Baseline for uniform budget distribution: 18324031.600853845
+Best GPGO solutions:
+Objective value:  29983388.139028687
+x min, x max, x sum: 0.0, 77.85736512690642, 120.00000000000001
