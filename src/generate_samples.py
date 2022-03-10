@@ -1,5 +1,5 @@
 """
-Simple test to illustrate how the target function could be used.
+Simple demonstration to illustrate how to generate training samples
 """
 
 from operator import xor
@@ -52,7 +52,7 @@ n_inputs = f.get_n_inputs() #number of nodes of our network
 print("n_inputs (=number of network nodes):", n_inputs)
 
 total_budget = 1.0 * n_inputs #total budget equals number of nodes
-samples = 1 #how many samples we want to generate
+n_samples = 1 #how many samples we want to generate
 n_simulations = 1000 #run n_simulations of our target function to reduce std error
 num_cpu_cores = -1 #use all cpu cores
 
@@ -62,10 +62,12 @@ evaluation_parms = {
         'parallel': True,
         'num_cpu_cores': num_cpu_cores
         }
-      
+    
+samples_per_iteration = 3
 
 # generate n_samples       
-for i in range(samples):
+for i in range(n_samples):
+
   #x that is based on sentinels
   no_sent = np.random.choice(np.arange(0, n_inputs), 1) #choose a number no_sent between 1 and number of nodes
   sentinels = list(np.random.choice(np.arange(0,n_inputs), no_sent, replace=False)) #decide which nodes are sentinels
@@ -90,6 +92,8 @@ for i in range(samples):
   (dmg_node_exp, se_node_exp) = f.evaluate(x_exp, **evaluation_parms)
   print(np.sum(se_node_exp)/n_nodes)
 
+
+  #write our inputs to csv
   f_1 = open ('/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/data_per_node/wx_inputs.csv', 'a')
   writer = csv.writer(f_1)
   writer.writerow(x_rnd)
@@ -97,6 +101,7 @@ for i in range(samples):
   writer.writerow(x_sent)
   f_1.close()
 
+  #write our targets to csv
   f_2 = open ('/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/data_per_node/wx_targets.csv', 'a')
   writer = csv.writer(f_2)
   writer.writerow(dmg_node_rnd)
@@ -105,6 +110,7 @@ for i in range(samples):
   #f_2.write(np.str(dmg_node_rnd) + "\n" + np.str(dmg_node_exp) + "\n" + np.str(dmg_node_sent) + "\n")
   f_2.close()
 
+  #write our standard errors to csv (optional)
   f_3 = open ('/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/data_per_node/wx_standard_errors.csv', 'a')
   writer = csv.writer(f_3)
   writer.writerow(se_node_rnd)
@@ -113,7 +119,7 @@ for i in range(samples):
   #f_3.write(np.str(se_node_rnd) + "\n" + np.str(se_node_exp) + "\n" + np.str(se_node_sent) + "\n")
   f_3.close()
 
-  print(f'\ngenerated: {(i+1)*3} pairs of datapoints x and y')
+  print(f'\ngenerated: {(i+1)*samples_per_iteration} pairs of datapoints x and y')
 
 """
 for i in tqdm(range(n_training_points)):

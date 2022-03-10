@@ -1,5 +1,6 @@
 from ast import Str
 from pickle import FALSE
+from re import A
 from xmlrpc.client import boolean
 import numpy as np
 import pandas as pd
@@ -11,6 +12,15 @@ import torchvision
 from sklearn.metrics import explained_variance_score, mean_squared_error
 from torch.autograd import grad
 from torch import optim
+from scipy.stats import lognorm
+
+
+class distribution():
+    def caps(size): 
+        return lognorm.rvs(s=2, scale=np.exp(4), size=size)
+
+
+
 
 class device():
   """cpu or gpu"""
@@ -36,7 +46,7 @@ class Loader(Dataset):
 
     def __getitem__(self, idx):
         inputs = self.inputs.iloc[idx]
-        targets = np.sqrt(np.sqrt(self.targets.iloc[idx]))
+        targets = self.targets.iloc[idx]
         return np.array(inputs), np.array(targets)
 
 class processing():
@@ -45,7 +55,7 @@ class processing():
 
       train_input_data = pd.read_csv(train_input, header = None, sep = ',')
       train_targets_data = pd.read_csv(train_targets, header = None, sep = ',')
-      
+
       is_NaN = train_input_data.isnull()
       row_has_NaN = is_NaN.any(axis=1)
       rows_with_NaN = train_input_data[row_has_NaN]
@@ -59,13 +69,14 @@ class processing():
 
       subset_training_input = train_input_data.iloc[split:]
       subset_training_targets = train_targets_data.iloc[split:]
-
+      
       subset_val_input = train_input_data.iloc[0: split]
       subset_val_targets = train_targets_data.iloc[0: split]
       
       print(f'training size: {len(subset_training_input)} {len(subset_training_targets)}, test size: {len(subset_val_input)} {len(subset_val_targets)}')
 
       if grads == False:
+
         training_set = Loader(input_path = subset_training_input, 
                         targets_path = subset_training_targets, path = False)
 
@@ -78,13 +89,11 @@ class processing():
         return subset_val_input, subset_val_targets
         
 class model_selection():
-  def set_model(model: str, dim: int, hidden_dims):
-      if model == "Linear":
-          model = nets.LinearNetwork(dim, 1, bias = True, hidden_dims = hidden_dims)
-      elif model == "RNN":
-          model = nets.RNNetwork(dim, 1, bias = True, hidden_dims = hidden_dims)
+  def set_model(model: str, dim: int, layer_dimensions: tuple):
+      if model == "RNN":
+          model = nets.RNNetwork(dim, 1, bias = True, layer_dimensions = layer_dimensions)
       elif model == "FCN":
-          model = nets.FCNetwork(dim, 1, bias = True, hidden_dims = hidden_dims)
+          model = nets.FCNetwork(dim, 1, bias = True, layer_dimensions = layer_dimensions)
       #elif model == "GRU":
       #    model = nets.GRU(dim, 1, bias = True)
       return model
@@ -98,23 +107,26 @@ class training_process():
       true = []
       pred = []
       train_loss = []
+      acc = []
 
       for i, (inputs, targets) in enumerate(trainloader, 1):
           inputs, targets = inputs.to(device).float(), targets.to(device).float()
           optimizer.zero_grad()
-          output = model.forward(inputs)
-          #print(output[0], targets[0])
+          output = model.forward(inputs) 
+
           loss = criterion(output, targets)
           loss.backward()
           optimizer.step()
           train_loss.append(loss.item())
-
+          #print(targets[0].detach())
+          #print(output[0].detach())
+          #print(explained_variance_score(targets[0].detach(), output[0].detach()))
           for j, val in enumerate(output):
-              true.append(targets[j].item())
-              pred.append(output[j].item())
-
-      acc = explained_variance_score(true, pred)
-      return np.mean(train_loss), acc
+              #true.append(targets[j].detach())
+              #pred.append(output[j].detach())
+              acc.append(explained_variance_score(targets[j].detach(), output[j].detach()))
+      #acc = explained_variance_score(true, pred) #1 - var(y-y_hat)/var(y) 
+      return np.mean(train_loss), np.mean(acc)
 
   def validate(valloader: DataLoader, model: torchvision.models,device: torch.device, 
               criterion: torch.nn, verbose: int = 20):
@@ -123,6 +135,8 @@ class training_process():
         true = []
         pred = []
         val_loss = []
+        acc = []
+
         with torch.no_grad():
 
             for i, (inputs, targets) in enumerate(valloader, 1):
@@ -132,17 +146,18 @@ class training_process():
                 
                 val_loss.append(loss.item())
                 for j, val in enumerate(output):
-                    true.append(targets[j].item())
-                    pred.append(output[j].item())
-                    
-        acc = explained_variance_score(true, pred) #1 - var(y-y_hat)/var(y) 
-        return np.mean(val_loss), acc
+                    #true.append(targets[j].detach())
+                    #pred.append(output[j].detach())
+                    acc.append(explained_variance_score(targets[j].detach(), output[j].detach()))
+
+        #acc = explained_variance_score(true, pred) #1 - var(y-y_hat)/var(y) 
+        return np.mean(val_loss), np.mean(acc)
       
   def optimise(input_budget, targets, model, optimiser, device: torch.device, criterion: torch.nn , verbose: int = 20):
-      model.train()
+      #model.train()
       
-      input_budget = torch.reshape(input_budget, (1,input_budget.shape[0]))
-      targets = torch.reshape(targets, (1,1))
+      input_budget = input_budget.unsqueeze(0)
+      targets = targets.unsqueeze(0)
       
       def softmax(x):
           out = np.exp(x)/sum(np.exp(x))
@@ -181,9 +196,9 @@ class training_process():
     model.eval()
 
     inputs = inputs.to(device).float()
-
+    
     inputs = inputs.unsqueeze(0)
 
     output = model.forward(inputs)
 
-    return output.item()
+    return output.detach()

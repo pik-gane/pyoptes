@@ -36,29 +36,30 @@ set_seed(1)
 
 device = get_device()
 
-inputs = "/Users/admin/pyoptes/src/inputs_ba_120_final.csv"
-targets = "/Users/admin/pyoptes/src/targets_ba_120_final.csv"
+#load inputs and targets
+inputs = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_inputs.csv"
+targets = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_targets.csv"
 
-model_state = "/Users/admin/pyoptes/src/ba_120_rnn.pth"
-
-train_data, test_data = process.postprocessing(inputs, targets, split = 10000, grads = False)
+#split data into training and test data
+train_data, test_data = process.postprocessing(inputs, targets, split = 5000, grads = False)
 
 trainset = DataLoader(train_data, batch_size = 256, shuffle=True)
 testset = DataLoader(test_data, batch_size = 256, shuffle=True)
 
-epochs = 50
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-#network = "Waxman" #"lattice" #"Barabasi-Albert"
-
-network = "Barabasi-Albert"
-hidden_dims = (128, 64, 32, 16)
+"""define some hyperparameters"""
 nodes = 120
-pick = "FCN"
-
-model = model_selection.set_model(pick, dim = nodes, hidden_dims = hidden_dims)
+output_dimensions = 120
+epochs = 100
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+network = "Barabasi-Albert"
+layer_dimensions = {'small': (128, 64, 32, 16, output_dimensions), 'medium' : (256, 128, 64, 32, output_dimensions), 'big' : (512, 256, 128, 64, output_dimensions)}
+pick = "FCN" #FCN or RNN
+model = model_selection.set_model(pick, dim = nodes, layer_dimensions = layer_dimensions["small"])
 model.to(device)
+
+#load pre-trained model
+model_state = f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/trained_nn_states/wx_120_{pick}_per_node.pth"
 #model.load_state_dict(torch.load(model_state))
 
 #criterion = nn.MSELoss() 
@@ -74,19 +75,22 @@ optimizer_params = {"lr": 0.001, "weight_decay": 0.001, "betas": (0.9, 0.999)}
 optimizer = optim.AdamW(model.parameters(), **optimizer_params)
 """Opt Adam performs like AdamW"""
 #optimizer = optim.Adam(model.parameters(), **optimizer_params)
-"""SGD not working"""
-#optimizer = optim.SGD(model.parameters(), **optimizer_params)
 """This algorithm performs best for sparse data because it decreases the learning rate faster for frequent parameters, 
 and slower for parameters infrequent parameter."""
 #optimizer = optim.Adagrad(model.parameters(), **optimizer_params)
 
+
+
+"""training process"""
+#variables for later storing
 plotter_train_loss = []
 plotter_test_loss = []
-
 plotter_train_acc = []
 plotter_test_acc = []
 
+#boundary
 val_loss_init = np.inf
+
 
 for epoch in range(1, epochs + 1):
 

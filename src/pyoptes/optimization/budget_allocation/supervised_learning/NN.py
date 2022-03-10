@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 class RNNetwork(nn.Module): #Recurrent Neural Network
     """Network with recurrent layers and ReLU activations."""    
-    def __init__(self, in_features: int, out_features: int, bias: bool, hidden_dims): 
+    def __init__(self, in_features: int, out_features: int, bias: bool, layer_dimensions: tuple): 
         super(RNNetwork, self).__init__()
             
         """activation functions"""
@@ -14,11 +14,11 @@ class RNNetwork(nn.Module): #Recurrent Neural Network
         self.act_func = nn.Sigmoid()
 
         """Recurrent Network architecture - Cells based on Elman Networks"""
-        self.layer_1 = nn.RNNCell(in_features, hidden_dims[0], nonlinearity = 'relu', bias = bias) 
-        self.layer_2 = nn.RNNCell(hidden_dims[0], hidden_dims[1], nonlinearity = 'relu', bias = bias)
-        self.layer_3 = nn.RNNCell(hidden_dims[1], hidden_dims[2], nonlinearity = 'relu', bias = bias)
-        self.layer_4 = nn.RNNCell(hidden_dims[2], hidden_dims[3], nonlinearity = 'relu', bias = bias)
-        self.layer_5 = nn.Linear(hidden_dims[3], 1)
+        self.layer_1 = nn.RNNCell(in_features, layer_dimensions[0], nonlinearity = 'relu', bias = bias) 
+        self.layer_2 = nn.RNNCell(layer_dimensions[0], layer_dimensions[1], nonlinearity = 'relu', bias = bias)
+        self.layer_3 = nn.RNNCell(layer_dimensions[1], layer_dimensions[2], nonlinearity = 'relu', bias = bias)
+        self.layer_4 = nn.RNNCell(layer_dimensions[2], layer_dimensions[3], nonlinearity = 'relu', bias = bias)
+        self.layer_5 = nn.Linear(layer_dimensions[3], layer_dimensions[4])
 
     def forward(self, x):
         h_1 = self.layer_1(x)
@@ -30,7 +30,7 @@ class RNNetwork(nn.Module): #Recurrent Neural Network
 
 class FCNetwork(nn.Module): #Fully Connected Neural Network
     """Fully Connected Network with Linear layers and non-linear activation."""    
-    def __init__(self, in_features: int, out_features: int, bias: bool, hidden_dims):
+    def __init__(self, in_features: int, out_features: int, bias: bool, layer_dimensions: tuple):
         super(FCNetwork, self).__init__()
 
         """activation functions"""
@@ -38,11 +38,11 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
         #self.act_func = nn.Sigmoid()
 
         """Linear Network architecture"""
-        self.layer_1 = nn.Linear(in_features, hidden_dims[0], bias = bias) 
-        self.layer_2 = nn.Linear(hidden_dims[0], hidden_dims[0], bias = bias)
-        self.layer_3 = nn.Linear(hidden_dims[0], hidden_dims[1], bias = bias)
-        self.layer_4 = nn.Linear(hidden_dims[1], hidden_dims[3], bias = bias)
-        self.layer_5 = nn.Linear(hidden_dims[3], 1, bias = bias)
+        self.layer_1 = nn.Linear(in_features, layer_dimensions[0], bias = bias) 
+        self.layer_2 = nn.Linear(layer_dimensions[0], layer_dimensions[0], bias = bias)
+        self.layer_3 = nn.Linear(layer_dimensions[0], layer_dimensions[1], bias = bias)
+        self.layer_4 = nn.Linear(layer_dimensions[1], layer_dimensions[3], bias = bias)
+        self.layer_5 = nn.Linear(layer_dimensions[3], layer_dimensions[4], bias = bias)
         #self.layer_5 = nn.Linear(128, out_features, bias = bias)
                   
     def forward(self, x):
