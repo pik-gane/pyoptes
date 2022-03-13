@@ -14,7 +14,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 print(f.__doc__)
 
 # set some seed to get reproducible results:
-set_seed(1)
+set_seed(1) 
 
 print("Preparing the target function for a lattice-based, fixed transmissions network")
 

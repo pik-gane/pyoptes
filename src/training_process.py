@@ -37,36 +37,42 @@ set_seed(1)
 device = get_device()
 
 #load inputs and targets
+#inputs = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/ba_inputs_100k.csv"
+#targets = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/ba_targets_100k.csv"
+
 inputs = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_inputs.csv"
 targets = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_targets.csv"
 
 #split data into training and test data
-train_data, test_data = process.postprocessing(inputs, targets, split = 5000, grads = False)
+train_data, test_data = process.postprocessing(inputs, targets, split = 1, grads = False)
 
-trainset = DataLoader(train_data, batch_size = 256, shuffle=True)
-testset = DataLoader(test_data, batch_size = 256, shuffle=True)
+trainset = DataLoader(train_data, batch_size = 1, shuffle=True)
+testset = DataLoader(test_data, batch_size = 128, shuffle=True)
 
 
 """define some hyperparameters"""
 nodes = 120
 output_dimensions = 120
-epochs = 100
+epochs = 500
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-network = "Barabasi-Albert"
+network = "Waxman"
 layer_dimensions = {'small': (128, 64, 32, 16, output_dimensions), 'medium' : (256, 128, 64, 32, output_dimensions), 'big' : (512, 256, 128, 64, output_dimensions)}
 pick = "FCN" #FCN or RNN
 model = model_selection.set_model(pick, dim = nodes, layer_dimensions = layer_dimensions["small"])
 model.to(device)
 
 #load pre-trained model
-model_state = f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/trained_nn_states/wx_120_{pick}_per_node.pth"
+model_state = f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/trained_nn_states/{network}_120_{pick}_per_node.pth"
 #model.load_state_dict(torch.load(model_state))
 
 #criterion = nn.MSELoss() 
 criterion = nn.L1Loss() #mean absolut error
 #learning_rate = 3.5
+
+lr = -3
+
 """opt_params for Adam/W"""
-optimizer_params = {"lr": 0.001, "weight_decay": 0.001, "betas": (0.9, 0.999)}
+optimizer_params = {"lr": 10**lr, "weight_decay": 0.001, "betas": (0.9, 0.999)}
 """opt_params for SGD"""
 #optimizer_params = {"lr": 0.02, "weight_decay": 0.0005, "momentum": True}
 """opt_params for Adagrad"""
@@ -79,8 +85,6 @@ optimizer = optim.AdamW(model.parameters(), **optimizer_params)
 and slower for parameters infrequent parameter."""
 #optimizer = optim.Adagrad(model.parameters(), **optimizer_params)
 
-
-
 """training process"""
 #variables for later storing
 plotter_train_loss = []
@@ -90,7 +94,6 @@ plotter_test_acc = []
 
 #boundary
 val_loss_init = np.inf
-
 
 for epoch in range(1, epochs + 1):
 

@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 class RNNetwork(nn.Module): #Recurrent Neural Network
     """Network with recurrent layers and ReLU activations."""    
-    def __init__(self, in_features: int, out_features: int, bias: bool, layer_dimensions: tuple): 
+    def __init__(self, in_features: int, bias: bool, layer_dimensions: tuple): 
         super(RNNetwork, self).__init__()
             
         """activation functions"""
@@ -30,7 +30,7 @@ class RNNetwork(nn.Module): #Recurrent Neural Network
 
 class FCNetwork(nn.Module): #Fully Connected Neural Network
     """Fully Connected Network with Linear layers and non-linear activation."""    
-    def __init__(self, in_features: int, out_features: int, bias: bool, layer_dimensions: tuple):
+    def __init__(self, in_features: int, bias: bool, layer_dimensions: tuple):
         super(FCNetwork, self).__init__()
 
         """activation functions"""
@@ -39,9 +39,9 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
 
         """Linear Network architecture"""
         self.layer_1 = nn.Linear(in_features, layer_dimensions[0], bias = bias) 
-        self.layer_2 = nn.Linear(layer_dimensions[0], layer_dimensions[0], bias = bias)
-        self.layer_3 = nn.Linear(layer_dimensions[0], layer_dimensions[1], bias = bias)
-        self.layer_4 = nn.Linear(layer_dimensions[1], layer_dimensions[3], bias = bias)
+        self.layer_2 = nn.Linear(layer_dimensions[0], layer_dimensions[1], bias = bias)
+        self.layer_3 = nn.Linear(layer_dimensions[1], layer_dimensions[2], bias = bias)
+        self.layer_4 = nn.Linear(layer_dimensions[2], layer_dimensions[3], bias = bias)
         self.layer_5 = nn.Linear(layer_dimensions[3], layer_dimensions[4], bias = bias)
         #self.layer_5 = nn.Linear(128, out_features, bias = bias)
                   
@@ -49,11 +49,11 @@ class FCNetwork(nn.Module): #Fully Connected Neural Network
         """h_i denotes the hidden states, y_hat the prediction"""
         h_1 = self.act_func(self.layer_1(x))
         
-        for i in range(5):
-            h_2 = self.act_func(self.layer_2(h_1))
-            h_1 = h_2
+        #for i in range(5):
+        #    h_2 = self.act_func(self.layer_2(h_1))
+        #    h_1 = h_2 #RNN
         
-        #h_2 = self.act_func(self.layer_2(h_1))
+        h_2 = self.act_func(self.layer_2(h_1))
         h_3 = self.act_func(self.layer_3(h_2))
         h_4 = self.act_func(self.layer_4(h_3))
         y_hat = self.layer_5(h_4)

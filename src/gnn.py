@@ -61,10 +61,10 @@ class Net(torch.nn.Module):
     
         #self.nn = MLP()
 
-        self.conv1 = GATv2Conv(2, 16, edge_dim = 1) #simple message passing layer
-        self.conv2 = GATv2Conv(16, 32, edge_dim = 1) #simple message passing layer
-        self.conv3 = GATv2Conv(32, 64, edge_dim = 1) #simple message passing layer
-        self.conv4 = GATv2Conv(64, 128, edge_dim = 1) #simple message passing layer
+        #elf.conv1 = GATv2Conv(2, 16, edge_dim = 1) #simple message passing layer
+        #self.conv2 = GATv2Conv(16, 32, edge_dim = 1) #simple message passing layer
+        #self.conv3 = GATv2Conv(32, 64, edge_dim = 1) #simple message passing layer
+        #self.conv4 = GATv2Conv(64, 128, edge_dim = 1) #simple message passing layer
         #self.conv1 = LEConv(2, 8) #simple message passing layer
         #self.conv2 = LEConv(8, 16) #simple message passing layer
         #self.conv3 = LEConv(16, 32) #simple message passing layer
@@ -78,10 +78,9 @@ class Net(torch.nn.Module):
         #self.mlp = MLP(in_channels=128, hidden_channels=32, out_channels=32, num_layers=3)
         #self.gat = GAT(in_channels=2, hidden_channels=32, out_channels=128, num_layers=3)
 
-        #self.conv3 = GCNConv(32, 1)
-        
-        #self.conv4 = GCNConv(32, 16)
-        #self.conv5 = GCNConv(32, 16)
+        self.conv1 = GCNConv(2, 16)
+        self.conv2 = GCNConv(16, 32)
+        self.conv3 = GCNConv(32, 64)
     
         self.relu = nn.ReLU()
         self.elu = nn.ELU()
@@ -93,8 +92,8 @@ class Net(torch.nn.Module):
         #self.cheb1 = ChebConv(dataset.num_features, 18, K=2)
         #self.cheb2 = ChebConv(16, 8, K=2)
 
-        self.linear1 = nn.Linear(8,1)
-        self.linear1 = nn.Linear(128,1)
+        self.linear = nn.Linear(64,1)
+        #self.linear1 = nn.Linear(128,1)
         #self.mlp = MLP([8, 16, 8])
 
     def forward(self, data):
@@ -102,29 +101,29 @@ class Net(torch.nn.Module):
         x, edge_index, edge_weight, u, batch = data.x, data.edge_index, data.weight, graph_features, data.batch
         
         #Data(edge_index=[2, 430], weight=[430], num_nodes=120, x=[120, 2], y=[1], num_features=2, edge_attr=[6], num_edges=430)
-    
         #print(edge_index[0].shape)
-
         #edge_index = edge_index.type(torch.LongTensor)
-        
         #meta_layer = MetaLayer(EdgeModel())
-
         #edge_attr = meta_layer(x, edge_index, edge_weight, u, batch)
-
-        x, (edge_index, edge_weight) = self.conv1(x, edge_index, edge_weight, return_attention_weights=True)
-        x, (edge_index, edge_weight) = self.conv2(x, edge_index, edge_weight, return_attention_weights=True)
-        x, (edge_index, edge_weight) = self.conv3(x, edge_index, edge_weight, return_attention_weights=True)
-        x, (edge_index, edge_weight) = self.conv4(x, edge_index, edge_weight, return_attention_weights=True)
-
+        #x, (edge_index, edge_weight) = self.conv1(x, edge_index, edge_weight, return_attention_weights=True)
+        #x, (edge_index, edge_weight) = self.conv2(x, edge_index, edge_weight, return_attention_weights=True)
+        #x, (edge_index, edge_weight) = self.conv3(x, edge_index, edge_weight, return_attention_weights=True)
+        #x, (edge_index, edge_weight) = self.conv4(x, edge_index, edge_weight, return_attention_weights=True)
         #x, edges  = self.conv2(x, edge_index, edge_weight, return_attention_weights=True)
         #x, edges = self.conv3(x, edge_index, edge_weight, return_attention_weights=True)
         #x, e  = self.conv4(x, edge_index, edge_weight, return_attention_weights=True)
 
-        x  = self.conv1(x, edge_index = edge_index, edge_weight = edge_weight)
-        x = self.relu(x)
-        x  = self.conv1(x, edge_index = edge_index, edge_weight = edge_weight)
-        x = self.relu(x)
+        h_1  = self.conv1(x, edge_index = edge_index, edge_weight = edge_weight)
+        ah_1 = self.relu(h_1)
+        
+        h_2  = self.conv2(ah_1, edge_index = edge_index, edge_weight = edge_weight)
+        ah_2 = self.relu(h_2)
 
+        h_3  = self.conv3(ah_2, edge_index = edge_index, edge_weight = edge_weight)
+        ah_3 = self.relu(h_3)
+
+        output = self.linear(ah_3)
+        #output = h_3
         #x = self.conv2(x, edge_index = edge_index, edge_weight = edge_weight)
         #x = self.relu(x)
         #x = self.conv3(x, edge_index = edge_index, edge_weight = edge_weight)
@@ -156,11 +155,10 @@ class Net(torch.nn.Module):
         #x = global_max_pool(x, data.batch) #32,64
         #x = global_add_pool(x, data.batch) #32,64
 
-        x = global_add_pool(x, data.batch) #32,64
-
-        x = self.linear1(x)
-        
         #x = global_add_pool(x, data.batch) #32,64
 
+        #x = self.linear1(x)
+        
+        #x = global_add_pool(x, data.batch) #32,64
         #x = global_sort_pool(x, data.batch) #32,64
-        return x #x.squeeze()
+        return output #x.squeeze()

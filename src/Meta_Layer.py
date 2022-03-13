@@ -115,6 +115,8 @@ class meta_layer(nn.Module):
         self.layer_4 = MetaLayer(Edge_Model(ins_edges, hiddens, outs),
                             Node_Model(ins_nodes, hiddens, outs),
                             Global_Model(ins_graphs, hiddens, outs-5))
+        
+        self.linear = nn.Linear(ins_nodes, 1)
 
         #self.layer_5 = MetaLayer(Global_Model(ins_graphs, hiddens, outs=outs-5))
 
@@ -133,5 +135,7 @@ class meta_layer(nn.Module):
         hx_3, h3_edge_attr, hu_3 = self.layer_3(x=hx_2, edge_attr=h2_edge_attr, edge_index=edge_index, u=hu_2, batch=batch)
 
         hx_4, h4_edge_attr, hu_4 = self.layer_4(x=hx_3, edge_attr=h3_edge_attr, edge_index=edge_index, u=hu_3, batch=batch)
+        
+        out_x = self.linear(hx_4)
 
-        return hu_4
+        return out_x, h4_edge_attr, hu_4

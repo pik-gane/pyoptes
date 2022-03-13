@@ -39,7 +39,6 @@ from pyoptes import set_seed
 def caps(size): 
   return lognorm.rvs(s=2, scale=np.exp(4), size=size)
 
-
 set_seed(1)
 n_nodes = 120
 
@@ -53,8 +52,8 @@ static_network = nx.DiGraph(nx.to_numpy_array(waxman))
 # at the beginning, call prepare() once:
 f.prepare(
   use_real_data=False, #False = synthetic data
-  static_network=static_network, #use waxman graph
-  n_nodes=n_nodes, #size of network
+  static_network= None, #static_network, #use waxman graph
+  n_nodes= n_nodes, #size of network
   max_t=365, #time horizon
   expected_time_of_first_infection=30, #30 days
   capacity_distribution = caps, #lambda size: np.ones(size), # any function accepting a 'size=' parameter
@@ -66,7 +65,7 @@ n_inputs = f.get_n_inputs() #number of nodes of our network
 print("n_inputs (=number of network nodes):", n_inputs)
 
 total_budget = 1.0 * n_inputs #total budget equals number of nodes
-n_simulations = 1000 #run n_simulations of our target function to reduce std error
+n_simulations = 100000 #run n_simulations of our target function to reduce std error
 num_cpu_cores = -1 #use all cpu cores
 
 #evaluation params of our target function
@@ -84,16 +83,22 @@ pick = "FCN"
 model = model_selection.set_model(pick, dim = n_nodes, layer_dimensions = layer_dimensions)
 model.to(device)
 model.requires_grad_(False) #freeze weights
-model.load_state_dict(torch.load("/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/trained_nn_states/wx_120_FCN_per_node.pth"))
+#model.load_state_dict(torch.load(f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/trained_nn_states/wx_120_{pick}_per_node.pth"))
+model.load_state_dict(torch.load(f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/trained_nn_states/ba_120_{pick}_per_node.pth"))
+
 criterion = nn.L1Loss() #mean absolut error
 
 """evaluate accuracy pre-trained model"""
-inputs = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_inputs.csv"
-targets = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_targets.csv"
-test_x, test_y = process.postprocessing(inputs, targets, split = 5000, grads = True)
+#inputs = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_inputs.csv"
+#targets = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_targets.csv"
+
+inputs = "//Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/ba_inputs_100k.csv"
+targets = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/ba_targets_100k.csv"
+
+test_x, test_y = process.postprocessing(inputs, targets, split = 1000, grads = True)
 test_x = test_x.to_numpy()
 test_y = test_y.to_numpy()
-train_data, test_data = process.postprocessing(inputs, targets, split = 5000, grads = False)
+train_data, test_data = process.postprocessing(inputs, targets, split = 1000, grads = False)
 inputs_train_data = DataLoader(train_data, batch_size = 128, shuffle=True)
 targets_test_data = DataLoader(test_data, batch_size = 128, shuffle=True)
 val_loss, val_acc = train_nn.validate(valloader= targets_test_data, model=model, device=device, criterion=criterion, verbose=10)
@@ -113,13 +118,14 @@ shares = weights / weights.sum()
 x4 = shares * total_budget
 
 """initial budget"""
-initial_budget = test_x[10] #?makes a difference wether I use a.e. Sentinel based BudDist as Init or a a.e. random BD
+initial_budget = test_x[1]
+print(f'initial budget: {initial_budget[:6]}...') #?makes a difference wether I use a.e. Sentinel based BudDist as Init or a a.e. random BD
 (dmg_node, se_node) = f.evaluate(initial_budget, **evaluation_parms)
 si_out_initial = np.sum(dmg_node)
 si_se_initial = np.sum(se_node)
 si_inf_initial = np.sqrt(si_out_initial)
-si_se_total = si_se_initial/(2*np.sqrt(si_out_initial))
-initial_rel_se = si_se_total/np.sqrt(si_out_initial)
+si_se_total = si_se_initial/(2*si_inf_initial )
+initial_rel_se = si_se_total/si_inf_initial 
 
 """evaluate budget test once p.a"""
 test_1_per_year = np.ones_like(initial_budget)
@@ -127,18 +133,16 @@ test_1_per_year = np.ones_like(initial_budget)
 si_out_y = np.sum(dmg_node)
 si_se_y = np.sum(se_node)
 si_inf_year = np.sqrt(si_out_y)
-si_se_total = si_se_y/(2*np.sqrt(si_out_y))
-year_rel_se = si_se_total/np.sqrt(si_out_y)
-
+si_se_total = si_se_y/(2*si_inf_year)
+year_rel_se = si_se_total/si_inf_year
 
 """evaluate baseline budget"""
 (dmg_node, se_node) = f.evaluate(x4, **evaluation_parms)
 si_out_base = np.sum(dmg_node)
 si_se_base = np.sum(se_node)
 si_base_total = np.sqrt(si_out_base)
-si_se_total = si_se_base/(2*np.sqrt(si_out_base))
+si_se_total = si_se_base/(2*si_base_total)
 base_rel_se = si_se_total/si_base_total
-
 
 print(f'\nbaseline initial budget: {si_inf_initial}, std error: {initial_rel_se}\n')
 print(f'baseline test once per year: {si_inf_year}, std error: {year_rel_se}\n')
@@ -148,8 +152,9 @@ initial_budget = torch.tensor(initial_budget).requires_grad_(True) #we allow our
 target_is_zero = torch.tensor(np.zeros_like(test_y[0]))
 
 """hyper-parameters"""
-optimiser = optim.AdamW([initial_budget], lr = 1)
-epochs = 1000000
+lr = -2.5
+optimiser = optim.AdamW([initial_budget], lr = 10**(lr))
+epochs = 100000
 
 opt_input = []
 plot_nn = []
@@ -160,29 +165,32 @@ plot_se = []
 baseline_animals = si_base_total
 nn_base = baseline_animals
 
-for epoch in tqdm(range(1, epochs + 1)):
+for epoch in range(1, epochs + 1):
 
     val_loss, grads = train_nn.optimise(input_budget = initial_budget, targets = target_is_zero, 
-        model=model, optimiser = optimiser, device=device, criterion=criterion, verbose=10)
-
+        model=model, optimiser = optimiser, device=device, criterion=criterion, verbose=10)  
     #print(f"epoch: {epoch}, loss: {val_loss}") # accuracy: {val_acc}")
     nn_out = train_nn.evaluate(grads, model = model, device = device)
     nn_out = nn_out.squeeze()
     nn_inf_animals = np.sqrt(torch.sum(nn_out).item())
-
+    initial_budget = grads.clone().detach().requires_grad_(True)
     #print(epoch, nn_inf_animals)
-    (dmg_node_per_node, se_node) = f.evaluate(grads, **evaluation_parms)
-    si_out_total_dmg = np.sum(dmg_node_per_node)
-    si_inf_animals = np.sqrt(si_out_total_dmg)
-    si_out_total_se = np.sum(se_node)
-    si_se_total = si_out_total_se/(2*np.sqrt(si_out_total_dmg))
-    rel_se = si_se_total/si_inf_animals
+    if epoch%10000==0:  
+      print(epoch)
+      (dmg_node_per_node, se_node) = f.evaluate(grads, **evaluation_parms)
+      si_out_total_dmg = np.sum(dmg_node_per_node)
+      si_inf_animals = np.sqrt(si_out_total_dmg)
+      si_out_total_se = np.sum(se_node)
+      si_se_total = si_out_total_se/(2*np.sqrt(si_out_total_dmg))
+      rel_se = si_se_total/si_inf_animals
+      
+      print(f'nn: {nn_inf_animals}, si: {si_inf_animals}')
 
     plot_nn.append(nn_inf_animals)
-    plot_si.append(si_inf_animals)
-    plot_se.append(si_se_total)
+    #plot_si.append(si_inf_animals)
+    #plot_se.append(si_se_total)
     #test_x = torch.tensor(grads).requires_grad_(True)
-
+    """
     if si_inf_animals < baseline_animals:
       #(dmg_node_per_node, se_node) = f.evaluate(grads, **evaluation_parms)
       #si_out_total_dmg = np.sum(dmg_node_per_node)
@@ -217,6 +225,7 @@ for epoch in tqdm(range(1, epochs + 1)):
 
       baseline_animals = si_inf_animals
       #nn_base = nn_inf_animals
+"""
     """
     if epoch%10==0:
         f_ev = []
@@ -241,12 +250,11 @@ for epoch in tqdm(range(1, epochs + 1)):
 plt.figure(figsize=(5,5))
 #plt.axis([0, epochs, 0, 100])
 plt.plot(np.arange(start= 1, stop = epochs+1), plot_nn, label = "NN Predictions")
-plt.plot(np.arange(start= 1, stop = epochs+1), plot_si, label = "SI Predictions")
-plt.plot(np.arange(start= 1, stop = epochs+1), plot_se, label = "Standard error")
-
+#plt.plot(np.arange(start= 1, stop = epochs+1), plot_si, label = "SI Predictions")
+#plt.plot(np.arange(start= 1, stop = epochs+1), plot_se, label = "Standard error")
 plt.xlabel("Epochs")
 plt.ylabel("number of infected animals")
-plt.title(f"Budget allocation optimisation")
+plt.title(f"Budget allocation optimisation, wx, 120 nodes, lr: {lr}")
 plt.legend()
 
 #plt.figure(figsize=(5,5))

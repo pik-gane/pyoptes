@@ -8,7 +8,11 @@ import pandas as pd
 from torch_geometric.utils import from_networkx
 import torch
 from pyoptes import set_seed
-from pyoptes.optimization.budget_allocation.supervised_learning.utils import distribution as caps 
+from scipy.stats import lognorm
+
+
+def caps(size): 
+  return lognorm.rvs(s=2, scale=np.exp(4), size=size)
 
 
 def prepare_convolutions(x,y):

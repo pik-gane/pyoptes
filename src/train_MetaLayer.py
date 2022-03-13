@@ -18,6 +18,17 @@ import torchvision
 from torch.utils.tensorboard import SummaryWriter
 from Meta_Layer import meta_layer as meta_layer
 
+
+
+
+def get_device():
+    if torch.cuda.is_available():
+        device = 'cuda:0'
+    else:
+        device = 'cpu'
+    return device
+
+device = get_device()
 set_seed(1)
 
 """implement tensorboard"""
@@ -27,8 +38,12 @@ set_seed(1)
 inputs = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_inputs.csv"
 targets = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_targets.csv"
 
+#inputs = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_inputs.csv"
+#targets = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_targets.csv"
+
+
 #warp data into a loader
-x, y = process.postprocessing(inputs, targets, split = 5000, grads = True)
+x, y = process.postprocessing(inputs, targets, split = 20000, grads = True)
 
 #create a data_list consisting of a number of single identical graphs with different budget allocations
 data_list = prep_conv(x,y)
@@ -40,12 +55,13 @@ test_loader = DataLoader(data_list[:5000], batch_size = 128, shuffle = True)
 #define our graph neural network 
 model = meta_layer(ins_nodes = 2, ins_edges = 1, ins_graphs = 6, hiddens= 16, outs = 6).double()
 model.to(device)
-epochs = 10000
+epochs = 50
 
 #define loss criterion
 criterion = nn.L1Loss() #mean absolute error np.abs(y-y_hat)
 
-optimizer_params = {"lr": 0.01, "weight_decay": 0.005, "betas": (0.9, 0.999)}
+lr = -2.5
+optimizer_params = {"lr": 10**lr, "weight_decay": 0.005, "betas": (0.9, 0.999)}
 optimizer = optim.AdamW(model.parameters(), **optimizer_params)
 
 """(optional) load pre-trained weights"""
@@ -69,7 +85,7 @@ def training(loader, model, criterion, optimizer):
         x, edge_weight, u = model.forward(x = x, edge_attr = edge_weight, u = u, edge_index = edge_index, batch = batch)
         
         #print(u.shape)
-
+        #print(x.shape, targets.shape)
         loss = criterion(x, targets)
         loss.backward()
         optimizer.step()
@@ -78,10 +94,10 @@ def training(loader, model, criterion, optimizer):
 
         train_loss.append(loss.item())
 
-        for j, val in enumerate(u):
+        #for j, val in enumerate(u):
             #true.append(targets[j].item())
             #pred.append(u[j].item())
-            acc.append(explained_variance_score(targets[j].detach(), x[j].detach()))
+        acc.append(explained_variance_score(targets.detach(), x.detach()))
 
     #acc = explained_variance_score(true, pred)
     return np.mean(train_loss), np.mean(acc)
@@ -109,10 +125,10 @@ def validate(valloader: DataLoader, model: torchvision.models):
 
             val_loss.append(loss.item())
 
-            for j, val in enumerate(u):
+            #for j, val in enumerate(u):
                 #true.append(targets[j].item())
                 #pred.append(u[j].item())
-                acc.append(explained_variance_score(targets[j].detach(), x[j].detach()))
+            acc.append(explained_variance_score(targets.detach(), x.detach()))
 
     #acc = explained_variance_score(true, pred)
     return np.mean(val_loss), np.mean(acc)
@@ -149,8 +165,8 @@ for epoch in range(epochs):
     print(f'epoch: {epoch+1}, train loss: {train_loss_prev}, train acc: {train_acc}, val loss: {val_loss_prev}, val acc: {val_acc}')
 
 plt.figure()
-plt.plot(np.arange(epochs), np.sqrt(total_loss), label = "training loss")
-plt.plot(np.arange(epochs), np.sqrt(_val_loss), label = "val loss")
+plt.plot(np.arange(epochs), total_loss, label = "training loss")
+plt.plot(np.arange(epochs), _val_loss, label = "val loss")
 plt.xlabel("epochs")
 plt.ylabel("loss")
 plt.legend()

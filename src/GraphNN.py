@@ -15,7 +15,7 @@ import torch
 import pandas as pd
 from torch_geometric.data import InMemoryDataset, Data
 from torch_geometric.data import HeteroData
-from pyoptes.optimization.budget_allocation.supervised_learning.utils import Loader as Loader
+from pyoptes.optimization.budget_allocation.supervised_learning.utils import Loader as Loader, device
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import processing as process
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import model_selection as model_selection
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import device as get_device
@@ -36,25 +36,28 @@ from torch_geometric.loader import DataLoader
 from torch import optim
 from sklearn.metrics import explained_variance_score, mean_squared_error
 from Graph_DataList import prepare_convolutions as prep_conv
+from pyoptes.optimization.budget_allocation.supervised_learning.utils import device as get_device
 
-train_input_data = "/Users/admin/pyoptes/src/inputs_waxman_120_sent_sci2.csv"
-train_targets_data = "/Users/admin/pyoptes/src/targets_waxman_120_sent_sci2.csv"
-
+train_input_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_inputs.csv"
+train_targets_data = "/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/training_data/wx_targets.csv"
 
 x, y = process.postprocessing(train_input_data, train_targets_data, split = 20000, grads = True)
+
+device = get_device()
 
 data_list = prep_conv(x,y)
 
 print(len(data_list))
 
-loader = DataLoader(data_list, batch_size = 256, shuffle = True)
-
+loader = DataLoader(data_list, batch_size = 128, shuffle = True)
 model = Net(16, dataset=data_list[0]).double() # gdc = gdc).double()
 
-epochs = 500
+epochs = 50
 criterion = nn.L1Loss() 
 
-optimizer_params = {"lr": 0.001, "weight_decay": 0.005, "betas": (0.9, 0.999)}
+lr = -2
+
+optimizer_params = {"lr": 10**lr, "weight_decay": 0.005, "betas": (0.9, 0.999)}
 #Ridge regression; it is a technique where the sum of squared parameters, 
 # or weights of a model (multiplied by some coefficient) is added into the loss function as a penalty 
 # term to be minimized.
@@ -74,51 +77,58 @@ def training(loader, model, criterion, optimizer):
     true = []
     pred = []
     train_loss = []
+    acc = []
 
     for batch in loader:
-      
+      #batch.y.to(device)
+      #batch.to(device)
+
       optimizer.zero_grad()
       targets = batch.y.unsqueeze(-1) #= [32,1]
       output = model(batch)
 
       #print(targets.shape, output.shape)
-
       loss = criterion(output, targets)
       loss.backward()
       optimizer.step()
       train_loss.append(loss.item())
-
-      for j, val in enumerate(output):
-        true.append(targets[j].item())
-        pred.append(output[j].item())
-
-    acc = explained_variance_score(true, pred)
-    return np.mean(train_loss), acc
-
+      #print(output[0])
+      #print(targets[0])
+      acc.append(explained_variance_score(targets.detach(), output.detach()))
+      #print(acc)
+      #for j, val in enumerate(output):
+              #true.append(targets[j].detach())
+              #pred.append(output[j].detach())
+      #acc.append(explained_variance_score(targets[j].detach(), output[j].detach()))
+      #acc = explained_variance_score(true, pred) #1 - var(y-y_hat)/var(y) 
+    return np.mean(train_loss), np.mean(acc)
 
 def validate(loader, model):
     model.eval()
     true = []
     pred = []
     val_loss = []
+    acc = []
 
     for batch in loader:
-      
+      #batch.to(device)
+      #batch.y.to(device)
+
       targets = batch.y.unsqueeze(-1) #= [32,1]
       output = model(batch)
-
       #print(targets.shape, output.shape)
-
       loss = criterion(output, targets)
       val_loss.append(loss.item())
+      acc.append(explained_variance_score(targets.detach(), output.detach()))
 
-      for j, val in enumerate(output):
-        true.append(targets[j].item())
-        pred.append(output[j].item())
+    #for j, val in enumerate(output):
+    #true.append(targets[j].detach())
+    #pred.append(output[j].detach())
+    # acc.append(explained_variance_score(targets[j].detach(), output[j].detach()))
+    #acc = explained_variance_score(true, pred) #1 - var(y-y_hat)/var(y) 
 
-    acc = explained_variance_score(true, pred)
-    return np.mean(val_loss), acc
-
+    return np.mean(val_loss), np.mean(acc)
+     
 val_loss = []
 val_acc = []
 
@@ -145,10 +155,10 @@ for epoch in range(epochs):
 
 plt.figure()
 plt.plot(np.arange(epochs), total_loss, label = "training loss")
-
 plt.plot(np.arange(epochs), val_loss, label = "validation loss")
 plt.xlabel("epochs")
 plt.ylabel("loss")
+
 plt.figure()
 plt.plot(np.arange(epochs), total_acc, label = "training acc")
 plt.plot(np.arange(epochs), val_acc, label = "validation acc")
