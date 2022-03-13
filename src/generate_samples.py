@@ -76,21 +76,21 @@ for i in range(n_samples):
   shares = weights / weights.sum()
   x_sent = shares * total_budget #distribute budget among sentinels
   (dmg_node_sent, se_node_sent) = f.evaluate(x_sent, **evaluation_parms)
-  print(np.sum(se_node_sent)/n_nodes)
+  #print(np.sum(se_node_sent)/n_nodes)
 
   #x that is randomly sampled
   weights = np.random.rand(n_inputs)
   shares = weights / weights.sum()
   x_rnd = shares * total_budget  
   (dmg_node_rnd, se_node_rnd) = f.evaluate(x_rnd, **evaluation_parms)
-  print(np.sum(se_node_rnd)/n_nodes)
+  #print(np.sum(se_node_rnd)/n_nodes)
 
   # x that is exp. randomly sampled
   weights = np.random.exponential(size = n_inputs)
   shares = weights / weights.sum()
   x_exp = shares * total_budget  
   (dmg_node_exp, se_node_exp) = f.evaluate(x_exp, **evaluation_parms)
-  print(np.sum(se_node_exp)/n_nodes)
+  #print(np.sum(se_node_exp)/n_nodes)
 
 
   #write our inputs to csv
@@ -120,42 +120,3 @@ for i in range(n_samples):
   f_3.close()
 
   print(f'\ngenerated: {(i+1)*samples_per_iteration} pairs of datapoints x and y')
-
-"""
-for i in tqdm(range(n_training_points)):
-    
-    #weights = np.random.rand(n_inputs)
-    #shares = weights / weights.sum()
-    x = np.zeros(n_inputs)
-    x[-1] = total_budget  
-    print(x)
-    #sentinels = list(np.random.choice(np.arange(0,121), 16, replace=False))
-    #sentinels = [0, 3, 6, 9, 30, 33, 36, 39, 60, 63, 66, 69, 90, 93, 96, 99]
-    #sentinels = [33, 36, 63, 66]
-    #weights = np.zeros(121)
-    #weights[sentinels] = 1
-    #shares = weights / weights.sum()
-
-    x = shares * total_budget
-
-    print(f'\nOne evaluation: {f.evaluate(x, **evaluation_parms)}')  # to focus on the tail of the distribution)
-
-    y =  np.array([f.evaluate(x, **evaluation_parms) for it in range(n_trials)])
-
-    y = np.mean(y)
-    
-    print(f'\nAverage over 1000 evaluations: {y}')  # to focus on the tail of the distribution)
-
-    
-    f_1 = open ('/content/drive/MyDrive/pyoptes/src/input_data_rnd_2.csv', 'a')
-    writer = csv.writer(f_1)
-    writer.writerow(x)
-    f_1.close()
-
-    f_2 = open ('/content/drive/MyDrive/pyoptes/src/label_data_rnd_2.csv', 'a')
-    y = np.str(y)
-    f_2.write(y+"\n")
-    f_2.close()
-
-    print(f'\ngenerated: {i+1} pairs of datapoints x and y')
-    """
