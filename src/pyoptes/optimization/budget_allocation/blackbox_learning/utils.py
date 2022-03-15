@@ -79,7 +79,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
                         enumerate(node_capacities)]  # node_contains only capacities, add node_index
     nodes_capacities_sorted = sorted(nodes_capacities, key=lambda nodes_capacities: nodes_capacities[1],
                                      reverse=True)
-    
+
     for s in sentinels:
         # create strategy for s highest degree nodes
         indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
