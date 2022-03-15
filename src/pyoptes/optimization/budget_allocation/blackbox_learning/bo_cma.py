@@ -5,6 +5,7 @@ import numpy as np
 
 from .utils import map_low_dim_x_to_high_dim
 
+
 # TODO complete documentation for parameters
 # TODO sigma should be about 1/4th of the search space width e.g sigma 30 for budget 120
 def bo_cma(objective_function, initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,

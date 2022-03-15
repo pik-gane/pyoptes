@@ -29,29 +29,31 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("optimizer", choices=['cma', 'alebo', 'smac', 'gpgo'],
                         help="Choose the optimizer to run on the SI-model. Choose between CMA-ES and ALEBO")
-    parser.add_argument("name_experiment", help="")
+    parser.add_argument("name_experiment", help="The name of the folder where the results of the optimizer run are"
+                                                "saved to.")
 
     parser.add_argument("--sentinels", type=int, default=10,
                         help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes. "
                              "Default is 10 nodes.")
     parser.add_argument("--n_nodes", type=int, default=120,
-                        help="Si-simulation parameter. Defines the number of nodes used by the SI-model to create a graph. "
+                        help="Si-simulation parameter. "
+                             "Defines the number of nodes used by the SI-model to create a graph. "
                              "Default value is 120 nodes.")
 
     parser.add_argument("--max_iterations", type=int, default=1000,
-                        help="The maximum number of iterations the algorithms run.")
+                        help="Optimizer parameter. The maximum number of iterations the algorithms run.")
     parser.add_argument('--cma_sigma', type=float, default=30,
                         help="Optimizer parameter. Defines the variance in objective function parameters "
-                             "from which new population is sampled")
-    # TODO rename, solution sounds wrong
-    # TODO fix missing help
-    parser.add_argument('--solution_initialisation', choices=['uniform', 'random'], default='uniform',
-                        help="")
+                             "from which new population is sampled. Therefore the variance has to be big enough to"
+                             "change the parameters in a meaningful way. A useful heuristic is to set the variance to "
+                             "about 1/4th of the parameter search space. Default value (for 120 nodes) is 30.")
+    parser.add_argument('--test_strategy_initialisation', choices=['uniform', 'random'], default='uniform',
+                        help="Defines how the initial test strategy is initialised.")
     parser.add_argument("--n_simulations", type=int, default=1000,
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
-    # TODO rename to something more clear ??
+    # TODO rename graph to something more clear ??
     parser.add_argument('--graph', choices=['waxman', 'barabasi-albert'], default='barabasi-albert',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
@@ -69,17 +71,14 @@ if __name__ == '__main__':
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 12 cpus.')
 
-    parser.add_argument("--log_level", type=int, default=1, choices=range(1, 6), metavar="[1-5]",
-                        help="")
+    parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
+                        help="Optimizer parameter. Only effects SMAC and GPGO. Sets how often log messages appear. "
+                             "Lower values mean more messages.")
     parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
     args = parser.parse_args()
-
-    # TODO add support for reading parameters from json-files // or save parameters + results in a json
-    # set some seed to get reproducible results:
-    set_seed(1)
 
     if args.graph == 'waxman':
         # generate a Waxman graph:
@@ -92,7 +91,8 @@ if __name__ == '__main__':
     else:
         raise Exception(f'"{args.graph}" is an invalid choice for the graph.')
 
-    # at the beginning, call prepare() once:
+    # sets seed for SI-simulation
+    set_seed(1)
     f.prepare(n_nodes=args.n_nodes,
               capacity_distribution=caps,
               p_infection_by_transmission=args.p_infection_by_transmission,
@@ -101,17 +101,19 @@ if __name__ == '__main__':
 
     total_budget = 1.0 * args.n_nodes  # i.e., on average, nodes will do one test per year
 
-    if args.solution_initialisation == 'random':
+    #
+    if args.test_strategy_initialisation == 'random':
         weights = np.random.rand(args.sentinels)
         shares = weights / weights.sum()
         initial_x = shares * total_budget
-    elif args.solution_initialisation == 'uniform':
+    elif args.test_strategy_initialisation == 'uniform':
         # distribute total budget uniformly
         initial_x = np.array([total_budget/args.sentinels for _ in range(args.sentinels)])
     else:
-        raise Exception('Invalid solution initialisation chosen.')
+        raise Exception('Invalid test_strategy initialisation chosen.')
 
-    # reduce the dimension of the input space
+    # reduce the dimension of the input space by choosing to only allocate the budget between nodes with the highest
+    # degrees. The function return the indices of these nodes
     node_indices = choose_high_degree_nodes(f.network.degree, args.sentinels)
 
     # get the first constraint, the boundaries of x_i
@@ -121,20 +123,35 @@ if __name__ == '__main__':
     # the mean of the squared ys is taken to emphasise the tail of the distribution of y
     statistic = lambda x: np.mean(x**2, axis=0)
 
+    weights = np.random.rand(args.sentinels)
+    shares = weights / weights.sum()
+    initial_xx = shares * total_budget
+    ff = [initial_x, initial_x, initial_xx, initial_xx]
+
     # compute the baseline value for y
-    baseline = baseline(initial_x, eval_function=f.evaluate, n_nodes=args.n_nodes, node_indices=node_indices, statistic=statistic)
+    baseline = baseline(initial_x,
+                        eval_function=f.evaluate,
+                        n_nodes=args.n_nodes,
+                        node_indices=node_indices,
+                        statistic=statistic,
+                        parallel=args.parallel,
+                        num_cpu_cores=args.cpu_count
+                        )
 
     # save SI-model parameters as .json-file
-    experiment_params = {'model_hyperparameters': {'node_initialisation': args.solution_initialisation,
-                                                   'total_budget': total_budget,
-                                                   'n_nodes': args.n_nodes,
-                                                   'graph': args.graph,
-                                                   'sentinels': args.sentinels,
-                                                   'n_simulations': args.n_simulations,
-                                                   'max_iterations': args.max_iterations,
-                                                   'statistic': inspect.getsourcelines(statistic)[0][0][23:-1],
-                                                   },
-                         'optimizer_hyperparameters': {'optimizer': args.optimizer}}
+    experiment_params = {'simulation_hyperparameters': {'node_initialisation': args.test_strategy_initialisation,
+                                                        'total_budget': total_budget,
+                                                        'n_nodes': args.n_nodes,
+                                                        'graph': args.graph,
+                                                        'sentinels': args.sentinels,
+                                                        'n_simulations': args.n_simulations,
+                                                        'statistic': inspect.getsourcelines(statistic)[0][0][23:-1],
+                                                        'delta_t_symptoms': args.delta_t_symptoms,
+                                                        'p_infection_by_transmission': args.p_infection_by_transmission
+                                                        },
+                         'optimizer_hyperparameters': {'optimizer': args.optimizer,
+                                                       'max_iterations': args.max_iterations,
+                                                       }}
 
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
@@ -173,7 +190,7 @@ if __name__ == '__main__':
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
-            f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
             f'\nBest CMA-ES solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
@@ -198,7 +215,7 @@ if __name__ == '__main__':
 
         print(f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\n'
               f'n_simulations: {args.n_simulations}\nNetwork type: {args.graph}')
-        print(f'Baseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
+        print(f'Baseline for {args.test_strategy_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
         best_parameters = np.array(list(best_parameters.values()))
         print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
 
@@ -227,13 +244,16 @@ if __name__ == '__main__':
         best_parameter = best_parameter/best_parameter.sum()
         best_parameter = best_parameter*total_budget
 
-        eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic,
-                                         parallel=args.parallel, num_cpu_cores=args.cpu_count)
+        eval_best_parameter = f.evaluate(best_parameter,
+                                         n_simulations=args.n_simulations,
+                                         statistic=statistic,
+                                         parallel=args.parallel,
+                                         num_cpu_cores=args.cpu_count)
 
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
-            f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
             f'\nBest SMAC solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
@@ -242,7 +262,6 @@ if __name__ == '__main__':
         print(p)
 
     elif args.optimizer == 'gpgo':
-        experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
         print('saved hyperparameters')
@@ -259,7 +278,8 @@ if __name__ == '__main__':
                                    max_iterations=args.max_iterations,
                                    parallel=args.parallel,
                                    cpu_count=args.cpu_count,
-                                   log_level=args.log_level)
+                                   log_level=args.log_level,
+                                   initial_X=ff)
         print('------------------------------------------------------')
         print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
@@ -273,7 +293,7 @@ if __name__ == '__main__':
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in hours): {(time() - t0) / 3600}' \
-            f'\n\nBaseline for {args.solution_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
             f'\nBest GPGO solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'

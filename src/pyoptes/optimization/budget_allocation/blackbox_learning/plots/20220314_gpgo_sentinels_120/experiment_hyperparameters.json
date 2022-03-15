@@ -1,6 +1,6 @@
 {
     "optimizer_hyperparameters": {
-        "max_iterations": 10,
+        "max_iterations": 1000,
         "optimizer": "gpgo"
     },
     "simulation_hyperparameters": {
@@ -10,7 +10,7 @@
         "n_simulations": 1000,
         "node_initialisation": "uniform",
         "p_infection_by_transmission": 0.5,
-        "sentinels": 10,
+        "sentinels": 120,
         "statistic": "x: np.mean(x**2, axis=0)",
         "total_budget": 120.0
     }

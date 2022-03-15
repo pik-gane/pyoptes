@@ -48,7 +48,7 @@ def bo_smac(initial_population, max_iterations, n_simulations, node_indices, n_n
     LOG_ITERATOR = [0]  # has to be a list, normal ints are not updated in this
     # log_level defines the percentage of iterations for which a log message appears
     # LOG_INTERVAL is then the number of iteration between two log messages
-    LOG_INTERVAL = int(max_iterations*(log_level*20)/100)
+    LOG_INTERVAL = int(max_iterations*(log_level*10)/100)
 
     T_START = time.time()
 
