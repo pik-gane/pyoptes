@@ -9,7 +9,7 @@ from pyoptes import bo_cma, cma_objective_function
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_pyGPGO import bo_pyGPGO
 
 from pyoptes import choose_high_degree_nodes, baseline
-from pyoptes import map_low_dim_x_to_high_dim, test_function
+from pyoptes import map_low_dim_x_to_high_dim, test_function, create_test_strategy_prior
 from pyoptes import save_hyperparameters, save_results
 
 import inspect
@@ -40,13 +40,6 @@ if __name__ == '__main__':
                              "Defines the number of nodes used by the SI-model to create a graph. "
                              "Default value is 120 nodes.")
 
-    parser.add_argument("--max_iterations", type=int, default=1000,
-                        help="Optimizer parameter. The maximum number of iterations the algorithms run.")
-    parser.add_argument('--cma_sigma', type=float, default=30,
-                        help="Optimizer parameter. Defines the variance in objective function parameters "
-                             "from which new population is sampled. Therefore the variance has to be big enough to"
-                             "change the parameters in a meaningful way. A useful heuristic is to set the variance to "
-                             "about 1/4th of the parameter search space. Default value (for 120 nodes) is 30.")
     parser.add_argument('--test_strategy_initialisation', choices=['uniform', 'random'], default='uniform',
                         help="Defines how the initial test strategy is initialised.")
     parser.add_argument("--n_simulations", type=int, default=1000,
@@ -70,6 +63,18 @@ if __name__ == '__main__':
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 12 cpus.')
+
+    parser.add_argument("--max_iterations", type=int, default=1000,
+                        help="Optimizer parameter. The maximum number of iterations the algorithms run.")
+    parser.add_argument('--cma_sigma', type=float, default=30,
+                        help="Optimizer parameter. Defines the variance in objective function parameters "
+                             "from which new population is sampled. Therefore the variance has to be big enough to"
+                             "change the parameters in a meaningful way. A useful heuristic is to set the variance to "
+                             "about 1/4th of the parameter search space. Default value (for 120 nodes) is 30.")
+    parser.add_argument('--acquisition_function', default='ExpectedImprovement', choices=['ExpectedImprovement'],
+                        help='GPGO optimizer parameter. Defines the acquisition function that is used by GPGO.')
+    parser.add_argument('--use_prior', type=bool, default=True,
+                        help='')
 
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
                         help="Optimizer parameter. Only effects SMAC and GPGO. Sets how often log messages appear. "
@@ -123,10 +128,10 @@ if __name__ == '__main__':
     # the mean of the squared ys is taken to emphasise the tail of the distribution of y
     statistic = lambda x: np.mean(x**2, axis=0)
 
-    weights = np.random.rand(args.sentinels)
-    shares = weights / weights.sum()
-    initial_xx = shares * total_budget
-    ff = [initial_x, initial_x, initial_xx, initial_xx]
+    prior = create_test_strategy_prior(args.n_nodes, f.network.degree, f.capacities, total_budget)
+
+    # print(np.shape(prior))
+    # print([x.sum() for x in prior])
 
     # compute the baseline value for y
     baseline = baseline(initial_x,
@@ -262,6 +267,8 @@ if __name__ == '__main__':
         print(p)
 
     elif args.optimizer == 'gpgo':
+        experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
+        experiment_params['optimizer_hyperparameters']['acquisition_function'] = args.acquisition_function
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
         print('saved hyperparameters')
@@ -279,7 +286,9 @@ if __name__ == '__main__':
                                    parallel=args.parallel,
                                    cpu_count=args.cpu_count,
                                    log_level=args.log_level,
-                                   initial_X=ff)
+                                   prior=prior,
+                                   acquisition_function=args.acquisition_function,
+                                   use_prior=args.use_prior)
         print('------------------------------------------------------')
         print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 

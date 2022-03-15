@@ -65,6 +65,47 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
     return x_true
 
 
+def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget):
+    test_strategy_prior = []
+
+    # specify increasing number of sentinels
+    sentinels = [int(n_nodes / 6), int(n_nodes / 12), int(n_nodes / 24)]
+
+    # sort list of nodes by degree
+    nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
+
+    # sort nodes by capacities
+    nodes_capacities = [(i, c) for i, c in
+                        enumerate(node_capacities)]  # node_contains only capacities, add node_index
+    nodes_capacities_sorted = sorted(nodes_capacities, key=lambda nodes_capacities: nodes_capacities[1],
+                                     reverse=True)
+    
+    for s in sentinels:
+        # create strategy for s highest degree nodes
+        indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
+        x_sentinels = np.array([total_budget / s for _ in range(s)])
+        test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
+
+        # create strategy for s highest capacity nodes
+        indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
+        x_sentinels = np.array([total_budget / s for _ in range(s)])
+        test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_capacity_nodes))
+
+        # create strategies that are a mix of the highest degree and capacity nodes
+        for k in range(s)[1:]:
+
+            indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:k]]
+            indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s-k]]
+            # check whether node indices would appear twice and remove the duplicates
+            # TODO maybe there is a better method ??
+            indices_combined = list(set(indices_highest_degree_nodes) | set(indices_highest_capacity_nodes))
+            # because of the missing nodes the strategies might violate the sum constraint (lightly)
+            x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
+            test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
+
+    return test_strategy_prior
+
+
 def baseline(x, eval_function, node_indices, n_nodes, statistic, parallel, num_cpu_cores):
     # TODO generate initial values here instead of outside the function
     # TODO include baseline with no testing
