@@ -1,4 +1,6 @@
 import os.path
+import pylab as plt
+
 
 from pyoptes import set_seed
 from pyoptes.optimization.budget_allocation import target_function as f
@@ -20,7 +22,7 @@ from scipy.stats import lognorm
 from time import time, localtime, strftime
 
 
-#
+# TODO what is this exactly ??
 def caps(size):
     return lognorm.rvs(s=2, scale=np.exp(4), size=size)
 
@@ -195,7 +197,7 @@ if __name__ == '__main__':
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
-            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"]}' \
             f'\nBest CMA-ES solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
@@ -220,7 +222,7 @@ if __name__ == '__main__':
 
         print(f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}\n'
               f'n_simulations: {args.n_simulations}\nNetwork type: {args.graph}')
-        print(f'Baseline for {args.test_strategy_initialisation} budget distribution: {baseline[str(args.n_simulations)]}')
+        print(f'Baseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"]}')
         best_parameters = np.array(list(best_parameters.values()))
         print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
 
@@ -258,7 +260,7 @@ if __name__ == '__main__':
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
-            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"]}' \
             f'\nBest SMAC solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
@@ -275,22 +277,34 @@ if __name__ == '__main__':
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
 
-        best_parameter = bo_pyGPGO(node_indices=node_indices,
-                                   n_nodes=args.n_nodes,
-                                   eval_function=f.evaluate,
-                                   n_simulations=args.n_simulations,
-                                   statistic=statistic,
-                                   total_budget=total_budget,
-                                   path_experiment=path_experiment,
-                                   max_iterations=args.max_iterations,
-                                   parallel=args.parallel,
-                                   cpu_count=args.cpu_count,
-                                   log_level=args.log_level,
-                                   prior=prior,
-                                   acquisition_function=args.acquisition_function,
-                                   use_prior=args.use_prior)
+        best_parameter, optimizer_history, time_for_optimization = bo_pyGPGO(node_indices=node_indices,
+                                                                             n_nodes=args.n_nodes,
+                                                                             eval_function=f.evaluate,
+                                                                             n_simulations=args.n_simulations,
+                                                                             statistic=statistic,
+                                                                             total_budget=total_budget,
+                                                                             max_iterations=args.max_iterations,
+                                                                             parallel=args.parallel,
+                                                                             cpu_count=args.cpu_count,
+                                                                             prior=prior,
+                                                                             acquisition_function=args.acquisition_function,
+                                                                             use_prior=args.use_prior)
         print('------------------------------------------------------')
         print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
+
+        plt.plot(range(len(optimizer_history)), optimizer_history)
+        plt.plot(range(len(optimizer_history)), np.ones(len(optimizer_history))*baseline['1000'])
+        plt.title(f'GPGO, {args.n_nodes} nodes, {len(node_indices)} sentinels')
+        plt.xlabel('Iteration')
+        plt.ylabel('SI-model output')
+        plt.savefig(os.path.join(path_experiment, 'GPGO_plot.png'))
+
+        plt.clf()
+        plt.plot(range(len(time_for_optimization)), time_for_optimization)
+        plt.title(f'Time for objective function evaluation, {args.n_nodes} nodes, {len(node_indices)} sentinels')
+        plt.xlabel('Iteration')
+        plt.ylabel('Time in minutes')
+        plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
 
         best_parameter = list(best_parameter[0].values())
         best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
@@ -302,7 +316,7 @@ if __name__ == '__main__':
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in hours): {(time() - t0) / 3600}' \
-            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline[str(args.n_simulations)]}' \
+            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"]}' \
             f'\nBest GPGO solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'

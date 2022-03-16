@@ -1,7 +1,6 @@
-import os
 import time
 import numpy as np
-import pylab as plt
+from tqdm import tqdm
 from collections import OrderedDict
 
 from .utils import map_low_dim_x_to_high_dim
@@ -15,14 +14,18 @@ from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 # TODO maybe rewrite GPGO to be able to work when the target_function returns the standard deviation
 # TODO replace log by tqdm
 class GPGO(GPGO):
-    def fit_gp(self, initial_X):
+    '''
+    Adaption of the GPGO-class. Extended to support fitting the surrogate function with a prior.
+    run has been changed to reduce the verbosity of the class.
+    '''
+    def fit_gp(self, prior):
         """
 
         @param initial_X:
         """
-        y=[]
-        X=[]
-        for x in initial_X:
+        y = []
+        X = []
+        for x in prior:
             X.append(list(x.values()))
             y.append(self.f(**x))
 
@@ -40,7 +43,7 @@ class GPGO(GPGO):
             Number of iterations to run. Default is 10.
         """
 
-        for iteration in range(max_iter):
+        for _ in tqdm(range(max_iter)):
             self._optimizeAcq()
             self.updateGP()
 
@@ -60,26 +63,24 @@ class GPGO(GPGO):
         if not resume:
             self.init_evals = init_evals
             self._firstRun(self.init_evals)
-        for iteration in range(max_iter):
+        for _ in tqdm(range(max_iter)):
             self._optimizeAcq()
             self.updateGP()
 
 
 def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-              path_experiment, statistic, total_budget, parallel, cpu_count, log_level, acquisition_function,
+              statistic, total_budget, parallel, cpu_count, acquisition_function,
               use_prior=True):
     """
 
     @param use_prior:
-    @param initial_X:
+    @param prior:
     @param acquisition_function:
-    @param log_level:
     @param max_iterations:
     @param n_simulations:
     @param node_indices:
     @param n_nodes:
     @param eval_function:
-    @param path_experiment:
     @param statistic:
     @param total_budget:
     @param parallel:
@@ -97,12 +98,6 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
     N_NODES = n_nodes
     PARALLEL = parallel
     CPU_COUNT = cpu_count
-    MAX_ITERATIONS = max_iterations
-
-    LOG_ITERATOR = [1]  # has to be a list, normal ints are not updated in this
-    # log_level defines the percentage of iterations for which a log message appears
-    # LOG_INTERVAL is then the number of iteration between two log messages
-    LOG_INTERVAL = int(max_iterations*(log_level*10)/100)
 
     T_START = time.time()
     time_for_optimization = []
@@ -116,17 +111,7 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
         x = np.array(list(kwargs.values()))
         assert np.shape(x) == np.shape(NODE_INDICES)
 
-        t = (time.time()-T_START)/60
-        time_for_optimization.append(t)
-
-        # TODO find a way to deal with initial GP fitting messing up log
-        if LOG_ITERATOR[0]-len(prior) > 1 and LOG_ITERATOR[0] % LOG_INTERVAL == 0:
-            print(f'\n'
-                  f'-------------------------------------------\n'
-                  f'Iteration: {LOG_ITERATOR[0]-len(prior)}/{MAX_ITERATIONS}. '
-                  f'Minutes elapsed since start: {t}\n'
-                  f'-------------------------------------------\n')
-        LOG_ITERATOR[0] = LOG_ITERATOR[0]+1
+        time_for_optimization.append((time.time()-T_START)/60)
 
         # rescale strategy such that it satifies sum constraint
         x = TOTAL_BUDGET * np.exp(x) / sum(np.exp(x))
@@ -150,7 +135,8 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
         parameters[f"x{i}"] = ('cont', [0.0, float(total_budget)])
 
     if use_prior:
-        print('Running GPGO with surrogate function fitted on prior\n')
+        print('Running GPGO with surrogate function fitted on prior.\n'
+              'Fitting the GP takes about a minute (depending on the size of the prior)\n')
         aux = [OrderedDict((f'x{i}', v) for i, v in enumerate(x)) for x in prior]
 
         gpgo = GPGO(surrogate=gp,
@@ -167,22 +153,8 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
                     parameter_dict=parameters)
         gpgo.run(max_iter=max_iterations)
 
-    # TODO move plot creation to main function
-    # TODO add baseline to the plot
     # reverse the sign change of optimizer history to get a more readable plot
-    plt.plot(range(len(gpgo.history)), -np.array(gpgo.history))
-    plt.title(f'GPGO, {n_nodes} nodes, {len(node_indices)} sentinels')
-    plt.xlabel('Iteration')
-    plt.ylabel('SI-model output')
-    plt.savefig(os.path.join(path_experiment, 'GPGO_plot.png'))
-
-    plt.clf()
-    plt.plot(range(len(time_for_optimization)), time_for_optimization)
-    plt.title(f'Time for objective function evaluation, {n_nodes} nodes, {len(node_indices)} sentinels')
-    plt.xlabel('Iteration')
-    plt.ylabel('Time in minutes')
-    plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
-    return gpgo.getResult()
+    return gpgo.getResult(), -np.array(gpgo.history), time_for_optimization
 
 
 if __name__ == '__main__':
