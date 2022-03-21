@@ -73,7 +73,7 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
         return eval_function(x, n_simulations=n_simulations, statistic=statistic,
                              parallel=parallel, num_cpu_cores=cpu_count)
     else:
-        return np.NaN#1e10     # * x.sum(x)
+        return np.NaN
 
 
 if __name__ == '__main__':

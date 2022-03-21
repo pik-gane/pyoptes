@@ -76,7 +76,9 @@ if __name__ == '__main__':
     parser.add_argument('--acquisition_function', default='ExpectedImprovement', choices=['ExpectedImprovement'],
                         help='GPGO optimizer parameter. Defines the acquisition function that is used by GPGO.')
     parser.add_argument('--use_prior', type=bool, default=True,
-                        help='')
+                        help='GPGO optimizer parameter. Sets whether the surrogate function is fitted with priors '
+                             'created by heuristics or by sampling random point. Only works when n_nodes and sentinels'
+                             'are the same size. Default is True.')
 
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
                         help="Optimizer parameter. Only effects SMAC and GPGO. Sets how often log messages appear. "
@@ -131,9 +133,6 @@ if __name__ == '__main__':
     statistic = lambda x: np.mean(x**2, axis=0)
 
     prior = create_test_strategy_prior(args.n_nodes, f.network.degree, f.capacities, total_budget)
-
-    # print(np.shape(prior))
-    # print([x.sum() for x in prior])
 
     # compute the baseline value for y
     baseline = baseline(initial_x,
@@ -277,26 +276,38 @@ if __name__ == '__main__':
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
 
-        best_parameter, optimizer_history, time_for_optimization = bo_pyGPGO(node_indices=node_indices,
-                                                                             n_nodes=args.n_nodes,
-                                                                             eval_function=f.evaluate,
-                                                                             n_simulations=args.n_simulations,
-                                                                             statistic=statistic,
-                                                                             total_budget=total_budget,
-                                                                             max_iterations=args.max_iterations,
-                                                                             parallel=args.parallel,
-                                                                             cpu_count=args.cpu_count,
-                                                                             prior=prior,
-                                                                             acquisition_function=args.acquisition_function,
-                                                                             use_prior=args.use_prior)
+        best_parameter, optimizer_history, time_for_optimization, time_history =\
+            bo_pyGPGO(node_indices=node_indices,
+                      n_nodes=args.n_nodes,
+                      eval_function=f.evaluate,
+                      n_simulations=args.n_simulations,
+                      statistic=statistic,
+                      total_budget=total_budget,
+                      max_iterations=args.max_iterations,
+                      parallel=args.parallel,
+                      cpu_count=args.cpu_count,
+                      prior=prior,
+                      acquisition_function=args.acquisition_function,
+                      use_prior=args.use_prior)
+
         print('------------------------------------------------------')
         print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
-        plt.plot(range(len(optimizer_history)), optimizer_history)
-        plt.plot(range(len(optimizer_history)), np.ones(len(optimizer_history))*baseline['1000'])
+        plt.plot(range(len(time_history)), time_history[:, 0], label='acquisition function')
+        plt.plot(range(len(time_history)), time_history[:, 1], label='surrogate function')
+        plt.title(f'Time for surrogate update and acquisition optimization')
+        plt.xlabel('Iteration')
+        plt.ylabel('Time in minutes')
+        plt.legend()
+        plt.savefig(os.path.join(path_experiment, 'gp_and_acqui_time.png'))
+
+        plt.clf()
+        plt.plot(range(len(optimizer_history)), optimizer_history, label='GPGO')
+        plt.plot(range(len(optimizer_history)), np.ones(len(optimizer_history))*baseline['1000'], label='baseline')
         plt.title(f'GPGO, {args.n_nodes} nodes, {len(node_indices)} sentinels')
         plt.xlabel('Iteration')
         plt.ylabel('SI-model output')
+        plt.legend()
         plt.savefig(os.path.join(path_experiment, 'GPGO_plot.png'))
 
         plt.clf()

@@ -6,18 +6,64 @@ from collections import OrderedDict
 from .utils import map_low_dim_x_to_high_dim
 
 from pyGPGO.GPGO import GPGO
+from pyGPGO.logger import EventLogger
 from pyGPGO.acquisition import Acquisition
 from pyGPGO.covfunc import squaredExponential
 from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 
 
 # TODO maybe rewrite GPGO to be able to work when the target_function returns the standard deviation
-# TODO replace log by tqdm
+# TODO move custom_GPGO into its own script for readability
 class GPGO(GPGO):
     '''
     Adaption of the GPGO-class. Extended to support fitting the surrogate function with a prior.
     run has been changed to reduce the verbosity of the class.
     '''
+    def __init__(self, surrogate, acquisition, f, parameter_dict, n_jobs=1):
+        """
+        Bayesian Optimization class.
+
+        Parameters
+        ----------
+        Surrogate: Surrogate model instance
+            Gaussian Process surrogate model instance.
+        Acquisition: Acquisition instance
+            Acquisition instance.
+        f: fun
+            Function to maximize over parameters specified by `parameter_dict`.
+        parameter_dict: dict
+            Dictionary specifying parameter, their type and bounds.
+        n_jobs: int. Default 1
+            Parallel threads to use during acquisition optimization.
+
+        Attributes
+        ----------
+        parameter_key: list
+            Parameters to consider in optimization
+        parameter_type: list
+            Parameter types.
+        parameter_range: list
+            Parameter bounds during optimization
+        history: list
+            Target values evaluated along the procedure.
+        """
+        self.GP = surrogate
+        self.A = acquisition
+        self.f = f
+        self.parameters = parameter_dict
+        self.n_jobs = n_jobs
+
+        self.parameter_key = list(parameter_dict.keys())
+        self.parameter_value = list(parameter_dict.values())
+        self.parameter_type = [p[0] for p in self.parameter_value]
+        self.parameter_range = [p[1] for p in self.parameter_value]
+
+        self.history = []
+        self.logger = EventLogger(self)
+
+        self.time_history = []
+        self.std = []
+
     def fit_gp(self, prior):
         """
 
@@ -44,8 +90,13 @@ class GPGO(GPGO):
         """
 
         for _ in tqdm(range(max_iter)):
+            time_ac = time.time()
             self._optimizeAcq()
+            time_ac = time.time() - time_ac
+            time_gp = time.time()
             self.updateGP()
+            time_gp = time.time() - time_gp
+            self.time_history.append([time_ac/60, time_gp/60])
 
     def run(self, max_iter=10, init_evals=3, resume=False):
         """
@@ -64,8 +115,13 @@ class GPGO(GPGO):
             self.init_evals = init_evals
             self._firstRun(self.init_evals)
         for _ in tqdm(range(max_iter)):
+            time_ac = time.time()
             self._optimizeAcq()
+            time_ac = time.time() - time_ac
+            time_gp = time.time()
             self.updateGP()
+            time_gp = time.time() - time_gp
+            self.time_history.append([time_ac/60, time_gp/60])
 
 
 def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
@@ -113,7 +169,7 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
 
         time_for_optimization.append((time.time()-T_START)/60)
 
-        # rescale strategy such that it satifies sum constraint
+        # rescale strategy such that it satisfies sum constraint
         x = TOTAL_BUDGET * np.exp(x) / sum(np.exp(x))
 
         x = map_low_dim_x_to_high_dim(x, N_NODES, NODE_INDICES)
@@ -154,7 +210,7 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
         gpgo.run(max_iter=max_iterations)
 
     # reverse the sign change of optimizer history to get a more readable plot
-    return gpgo.getResult(), -np.array(gpgo.history), time_for_optimization
+    return gpgo.getResult(), -np.array(gpgo.history), time_for_optimization, np.array(gpgo.time_history)
 
 
 if __name__ == '__main__':
