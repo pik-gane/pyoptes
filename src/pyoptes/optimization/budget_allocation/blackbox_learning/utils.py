@@ -97,7 +97,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
             indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:k]]
             indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s-k]]
             # check whether node indices would appear twice and remove the duplicates
-            # TODO maybe there is a better method ??
+            # TODO maybe there is a better method for this check??
             indices_combined = list(set(indices_highest_degree_nodes) | set(indices_highest_capacity_nodes))
             # because of the missing nodes the strategies might violate the sum constraint (lightly)
             x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
@@ -110,6 +110,8 @@ def baseline(x, eval_function, node_indices, n_nodes, statistic, parallel, num_c
     # TODO generate initial values here instead of outside the function
     # TODO include baseline with no testing
     # TODO make this more useful somehow ??
+
+    # TODO use the prior to create baseline values
 
     simulations = [100, 1000, 10000]
 

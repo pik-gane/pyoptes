@@ -26,6 +26,7 @@ def bo_cma(objective_function, initial_population, max_iterations, n_simulations
     @param max_iterations: int,
     @return: list of lists, each list represents an optimal solution
     """
+    # TODO replace with ask/tell-interface to enable finer control over optimization
     ea = cma.fmin(objective_function, initial_population, sigma0=sigma,
                   options={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds},
                   args=(n_simulations, node_indices, n_nodes, eval_function,

@@ -7,6 +7,8 @@ Adjusted to support
 
 '''
 
+import time
+from tqdm import tqdm
 from collections import OrderedDict
 
 import numpy as np
@@ -22,9 +24,9 @@ class GPGO:
 
         Parameters
         ----------
-        Surrogate: Surrogate model instance
+        surrogate: Surrogate model instance
             Gaussian Process surrogate model instance.
-        Acquisition: Acquisition instance
+        acquisition: Acquisition instance
             Acquisition instance.
         f: fun
             Function to maximize over parameters specified by `parameter_dict`.
@@ -56,7 +58,9 @@ class GPGO:
         self.parameter_range = [p[1] for p in self.parameter_value]
 
         self.history = []
-        self.logger = EventLogger(self)
+
+        self.time_history = []
+        self.std = []
 
     def _sampleParam(self):
         """
@@ -156,11 +160,14 @@ class GPGO:
         """
         Updates the internal model with the next acquired point and its evaluation.
         """
+        # TODO are objective function y and surrogate y differnet
         kw = {param: self.best[i]
               for i, param in enumerate(self.parameter_key)}
-        f_new = self.f(**kw)
+        f_new = self.f(**kw)    # returns the y corresponding to a test strategy
         self.GP.update(np.atleast_2d(self.best), np.atleast_1d(f_new))
-        self.tau = np.max(self.GP.y)
+        self.tau = np.max(self.GP.y)    # self.GP "saves" the y from the objective f,
+        # test strategies return the same y for f and self.GP (+/- the standarderror)
+        # GP.y is just a list
         self.history.append(self.tau)
 
     def getResult(self):
@@ -185,7 +192,22 @@ class GPGO:
                 res_d[key] = opt_x[i]
         return res_d, self.tau
 
-    def run(self, max_iter=10, init_evals=3, resume=False):
+    def _fitGP(self, prior):
+        """
+
+        @param prior:
+        """
+        y = []
+        X = []
+        for x in prior:
+            X.append(list(x.values()))
+            y.append(self.f(**x))
+
+        self.GP.fit(np.array(X), np.array(y))
+        self.tau = np.max(y)
+        self.history.append(self.tau)
+
+    def run(self, max_iter=10, init_evals=3, prior=None, use_prior=False):
         """
         Runs the Bayesian Optimization procedure.
 
@@ -195,14 +217,21 @@ class GPGO:
             Number of iterations to run. Default is 10.
         init_evals: int
             Initial function evaluations before fitting a GP. Default is 3.
-        resume: bool
-            Whether to resume the optimization procedure from the last evaluation. Default is `False`.
         """
-        if not resume:
+        if not use_prior:
+            print('Running GPGO with surrogate function fitted on randomly sampled points\n')
             self.init_evals = init_evals
             self._firstRun(self.init_evals)
-            self.logger._printInit(self)
-        for iteration in range(max_iter):
+        else:
+            print('Running GPGO with surrogate function fitted on prior.\n'
+                  'Fitting the GP takes about a minute (depending on the size of the prior)\n')
+            self._fitGP(prior)
+
+        for _ in tqdm(range(max_iter)):
+            time_ac = time.time()
             self._optimizeAcq()
+            time_ac = time.time() - time_ac
+            time_gp = time.time()
             self.updateGP()
-            self.logger._printCurrent(self)
+            time_gp = time.time() - time_gp
+            self.time_history.append([time_ac/60, time_gp/60])
