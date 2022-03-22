@@ -28,25 +28,6 @@ def caps(size):
 
 
 if __name__ == '__main__':
-    # x = list(range(0, 10))
-    # y = [10, 5, 4, 4, 4, 4, 4, 4, 4, 4]
-    # b = np.ones(10)*2
-    # yu1 = [i for i in y]
-    # yo1 = [1.2*i for i in y]
-    #
-    # v = {10: 0.2, 5: 0.2, 4: 0.2}
-    #
-    # yu = [i-v[i] for i in y]
-    # yo = [i+v[i] for i in y]
-    #
-    # print(yu, yo)
-    # print(yu1, yo1)
-    #
-    # plt.plot(x, y)
-    # plt.plot(x, yu, linestyle='dotted', color='gray')
-    # plt.plot(x, yo, linestyle='dotted', color='gray')
-    # plt.plot(x, b)
-    # plt.show()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("optimizer", choices=['cma', 'alebo', 'smac', 'gpgo'],
@@ -81,7 +62,7 @@ if __name__ == '__main__':
     parser.add_argument('--parallel', type=bool, default=True,
                         help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
                              'or sequentially. Default is set to parallel computation.')
-    parser.add_argument("--cpu_count", type=int, default=12,
+    parser.add_argument("--cpu_count", type=int, default=15,
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 12 cpus.')
@@ -306,7 +287,6 @@ if __name__ == '__main__':
                       n_nodes=args.n_nodes,
                       eval_function=f.evaluate,
                       n_simulations=args.n_simulations,
-                      statistic=statistic,
                       total_budget=total_budget,
                       max_iterations=args.max_iterations,
                       parallel=args.parallel,
@@ -353,7 +333,7 @@ if __name__ == '__main__':
         plt.ylabel('Time in minutes')
         plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
 
-        best_parameter = list(result[0][0].values())
+        best_parameter = result[0][0]
         best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
 

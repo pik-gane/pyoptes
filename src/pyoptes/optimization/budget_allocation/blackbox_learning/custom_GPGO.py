@@ -13,12 +13,11 @@ from collections import OrderedDict
 
 import numpy as np
 from joblib import Parallel, delayed
-from pyGPGO.logger import EventLogger
 from scipy.optimize import minimize
 
-
+# TODO write check for availability of n_jobs
 class GPGO:
-    def __init__(self, surrogate, acquisition, f, parameter_dict, n_jobs=1):
+    def __init__(self, surrogate, acquisition, f, parameter_dict, n_jobs=15, f_kwargs={}):
         """
         Bayesian Optimization class.
 
@@ -62,6 +61,8 @@ class GPGO:
         self.time_history = []
         self.stderr = {}
 
+        self.f_kwargs = f_kwargs
+
     def _sampleParam(self):
         """
         Randomly samples parameters over bounds.
@@ -71,14 +72,14 @@ class GPGO:
         dict:
             A random sample of specified parameters.
         """
-        d = OrderedDict()
+        d = []
         for index, param in enumerate(self.parameter_key):
             if self.parameter_type[index] == 'int':
-                d[param] = np.random.randint(
-                    self.parameter_range[index][0], self.parameter_range[index][1])
+                d.append(np.random.randint(
+                    self.parameter_range[index][0], self.parameter_range[index][1]))
             elif self.parameter_type[index] == 'cont':
-                d[param] = np.random.uniform(
-                    self.parameter_range[index][0], self.parameter_range[index][1])
+                d.append(np.random.uniform(
+                    self.parameter_range[index][0], self.parameter_range[index][1]))
             else:
                 raise ValueError('Unsupported variable type.')
         return d
@@ -97,9 +98,8 @@ class GPGO:
         self.y = np.empty((n_eval,))
         for i in range(n_eval):
             s_param = self._sampleParam()
-            s_param_val = list(s_param.values())
-            self.X[i] = s_param_val
-            self.y[i], stderr = self.f(**s_param)
+            self.X[i] = s_param
+            self.y[i], stderr = self.f(s_param, **self.f_kwargs)
         self.GP.fit(self.X, self.y)
 
         self.tau = np.max(self.y)
@@ -141,9 +141,9 @@ class GPGO:
         """
         # TODO check which part here is the slowest
         # TODO maybe test different acqui-functions
-        start_points_dict = [self._sampleParam() for i in range(n_start)]
-        start_points_arr = np.array([list(s.values())
-                                     for s in start_points_dict])
+        start_points_arr = np.array([self._sampleParam() for i in range(n_start)])
+        # start_points_arr = np.array([list(s.values())
+        #                              for s in start_points_dict])
         x_best = np.empty((n_start, len(self.parameter_key)))
         f_best = np.empty((n_start,))
         if self.n_jobs == 1:
@@ -166,9 +166,12 @@ class GPGO:
         """
         Updates the internal model with the next acquired point and its evaluation.
         """
+        # TODO how kw is created looks inefficient
         kw = {param: self.best[i]
               for i, param in enumerate(self.parameter_key)}
-        f_new, stderr = self.f(**kw)    # returns the y corresponding to a test strategy
+        param = np.array(list(kw.values()))
+
+        f_new, stderr = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
         self.GP.update(np.atleast_2d(self.best), np.atleast_1d(f_new))
 
         self.tau = np.max(self.GP.y)    # self.GP "saves" the y from the objective f,
@@ -193,12 +196,12 @@ class GPGO:
         """
         argtau = np.argmax(self.GP.y)
         opt_x = self.GP.X[argtau]
-        res_d = OrderedDict()
+        res_d = []
         for i, (key, param_type) in enumerate(zip(self.parameter_key, self.parameter_type)):
             if param_type == 'int':
-                res_d[key] = int(opt_x[i])
+                res_d.append(int(opt_x[i]))
             else:
-                res_d[key] = opt_x[i]
+                res_d.append(opt_x[i])
         return res_d, self.tau
 
     def _fitGP(self, prior):
@@ -209,8 +212,8 @@ class GPGO:
         Y = []
         X = []
         for x in prior:
-            X.append(list(x.values()))
-            y, stderr = self.f(**x)
+            X.append(x)
+            y, stderr = self.f(x, **self.f_kwargs)
             Y.append(y)
 
         self.GP.fit(np.array(X), np.array(Y))

@@ -1,13 +1,13 @@
 {
     "optimizer_hyperparameters": {
-        "acquisition_function": "ProbabilityImprovement",
+        "acquisition_function": "ExpectedImprovement",
         "max_iterations": 400,
         "optimizer": "gpgo",
         "use_prior": true
     },
     "simulation_hyperparameters": {
         "delta_t_symptoms": 60,
-        "graph": "barabasi-albert",
+        "graph": "waxman",
         "n_nodes": 120,
         "n_simulations": 1000,
         "node_initialisation": "uniform",

@@ -43,6 +43,7 @@ def bo_cma(objective_function, initial_population, max_iterations, n_simulations
     return ea[0] #solutions    # contains the best solution found during the whole run
 
 
+# TODO create new objective function like
 # TODO maybe enforce correct types of params ? To prevent floats where ints are expected
 def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function,
                            statistic, total_budget, parallel, cpu_count):
