@@ -60,7 +60,7 @@ class GPGO:
         self.history = []
 
         self.time_history = []
-        self.std = []
+        self.stderr = {}
 
     def _sampleParam(self):
         """
@@ -99,10 +99,14 @@ class GPGO:
             s_param = self._sampleParam()
             s_param_val = list(s_param.values())
             self.X[i] = s_param_val
-            self.y[i] = self.f(**s_param)
+            self.y[i], stderr = self.f(**s_param)
         self.GP.fit(self.X, self.y)
+
         self.tau = np.max(self.y)
+        self.tau = np.round(self.tau, decimals=8)
+
         self.history.append(self.tau)
+        self.stderr[self.tau] = stderr
 
     def _acqWrapper(self, xnew):
         """
@@ -135,6 +139,8 @@ class GPGO:
             Number of starting points for the optimization procedure. Default is 100.
 
         """
+        # TODO check which part here is the slowest
+        # TODO maybe test different acqui-functions
         start_points_dict = [self._sampleParam() for i in range(n_start)]
         start_points_arr = np.array([list(s.values())
                                      for s in start_points_dict])
@@ -160,15 +166,18 @@ class GPGO:
         """
         Updates the internal model with the next acquired point and its evaluation.
         """
-        # TODO are objective function y and surrogate y differnet
         kw = {param: self.best[i]
               for i, param in enumerate(self.parameter_key)}
-        f_new = self.f(**kw)    # returns the y corresponding to a test strategy
+        f_new, stderr = self.f(**kw)    # returns the y corresponding to a test strategy
         self.GP.update(np.atleast_2d(self.best), np.atleast_1d(f_new))
+
         self.tau = np.max(self.GP.y)    # self.GP "saves" the y from the objective f,
+        self.tau = np.round(self.tau, decimals=8)
+
         # test strategies return the same y for f and self.GP (+/- the standarderror)
         # GP.y is just a list
         self.history.append(self.tau)
+        self.stderr[self.tau] = stderr
 
     def getResult(self):
         """
@@ -195,17 +204,21 @@ class GPGO:
     def _fitGP(self, prior):
         """
 
-        @param prior:
+        @param prior: list of test strategies
         """
-        y = []
+        Y = []
         X = []
         for x in prior:
             X.append(list(x.values()))
-            y.append(self.f(**x))
+            y, stderr = self.f(**x)
+            Y.append(y)
 
-        self.GP.fit(np.array(X), np.array(y))
+        self.GP.fit(np.array(X), np.array(Y))
         self.tau = np.max(y)
+        self.tau = np.round(self.tau, decimals=8)
+
         self.history.append(self.tau)
+        self.stderr[self.tau] = stderr
 
     def run(self, max_iter=10, init_evals=3, prior=None, use_prior=False):
         """

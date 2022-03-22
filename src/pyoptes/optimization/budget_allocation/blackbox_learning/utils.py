@@ -81,16 +81,19 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
                                      reverse=True)
 
     for s in sentinels:
+        # ------
         # create strategy for s highest degree nodes
         indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
         x_sentinels = np.array([total_budget / s for _ in range(s)])
         test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
 
+        # ------
         # create strategy for s highest capacity nodes
         indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
         x_sentinels = np.array([total_budget / s for _ in range(s)])
         test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_capacity_nodes))
 
+        # ------
         # create strategies that are a mix of the highest degree and capacity nodes
         for k in range(s)[1:]:
 
@@ -121,12 +124,13 @@ def baseline(x, eval_function, node_indices, n_nodes, statistic, parallel, num_c
 
     y = {}
     for n_sim in simulations:
-        y[f'{n_sim}'] = eval_function(x_true,
-                                      n_simulations=n_sim,
-                                      statistic=statistic,
-                                      parallel=parallel,
-                                      num_cpu_cores=num_cpu_cores
-                                      )
+
+        m, stderr = eval_function(x_true,
+                                  n_simulations=n_sim,
+                                  parallel=parallel,
+                                  num_cpu_cores=num_cpu_cores)
+
+        y[f'{n_sim}'] = [m, stderr]
     return y
 
 

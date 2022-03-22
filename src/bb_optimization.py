@@ -28,6 +28,26 @@ def caps(size):
 
 
 if __name__ == '__main__':
+    # x = list(range(0, 10))
+    # y = [10, 5, 4, 4, 4, 4, 4, 4, 4, 4]
+    # b = np.ones(10)*2
+    # yu1 = [i for i in y]
+    # yo1 = [1.2*i for i in y]
+    #
+    # v = {10: 0.2, 5: 0.2, 4: 0.2}
+    #
+    # yu = [i-v[i] for i in y]
+    # yo = [i+v[i] for i in y]
+    #
+    # print(yu, yo)
+    # print(yu1, yo1)
+    #
+    # plt.plot(x, y)
+    # plt.plot(x, yu, linestyle='dotted', color='gray')
+    # plt.plot(x, yo, linestyle='dotted', color='gray')
+    # plt.plot(x, b)
+    # plt.show()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("optimizer", choices=['cma', 'alebo', 'smac', 'gpgo'],
                         help="Choose the optimizer to run on the SI-model. Choose between CMA-ES and ALEBO")
@@ -73,7 +93,8 @@ if __name__ == '__main__':
                              "from which new population is sampled. Therefore the variance has to be big enough to"
                              "change the parameters in a meaningful way. A useful heuristic is to set the variance to "
                              "about 1/4th of the parameter search space. Default value (for 120 nodes) is 30.")
-    parser.add_argument('--acquisition_function', default='ExpectedImprovement', choices=['ExpectedImprovement'],
+    parser.add_argument('--acquisition_function', default='EI',
+                        choices=['EI', 'PI', 'UCB', 'Entropy', 'tEI'],
                         help='GPGO optimizer parameter. Defines the acquisition function that is used by GPGO.')
     parser.add_argument('--use_prior', type=bool, default=True,
                         help='GPGO optimizer parameter. Sets whether the surrogate function is fitted with priors '
@@ -88,6 +109,10 @@ if __name__ == '__main__':
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
     args = parser.parse_args()
+
+    af = {'EI': 'ExpectedImprovement', 'PI': 'ProbabilityImprovement', 'UCB': 'UCB',
+          'Entropy': 'Entropy', 'tEI': 'tExpectedImprovement'}
+    acquisition_function = af[args.acquisition_function]
 
     if args.graph == 'waxman':
         # generate a Waxman graph:
@@ -269,14 +294,14 @@ if __name__ == '__main__':
 
     elif args.optimizer == 'gpgo':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
-        experiment_params['optimizer_hyperparameters']['acquisition_function'] = args.acquisition_function
+        experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
         path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
         print('saved hyperparameters')
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
 
-        result, optimizer_history, time_for_optimization, time_history =\
+        result, optimizer_history, time_for_optimization, time_history, stderr_history =\
             bo_pyGPGO(node_indices=node_indices,
                       n_nodes=args.n_nodes,
                       eval_function=f.evaluate,
@@ -287,7 +312,7 @@ if __name__ == '__main__':
                       parallel=args.parallel,
                       cpu_count=args.cpu_count,
                       prior=prior,
-                      acquisition_function=args.acquisition_function,
+                      acquisition_function=acquisition_function,
                       use_prior=args.use_prior)
 
         print('------------------------------------------------------')
@@ -303,7 +328,18 @@ if __name__ == '__main__':
 
         plt.clf()
         plt.plot(range(len(optimizer_history)), optimizer_history, label='GPGO')
-        plt.plot(range(len(optimizer_history)), np.ones(len(optimizer_history))*baseline['1000'], label='baseline')
+        plt.plot(range(len(optimizer_history)), stderr_history[0],
+                 linestyle='dotted', color='black', label='stderr GPGO')
+        plt.plot(range(len(optimizer_history)), stderr_history[1],
+                 linestyle='dotted', color='black')
+
+        b = np.ones(len(optimizer_history))*baseline['1000'][0]
+        plt.plot(range(len(optimizer_history)), b, label='baseline')
+        plt.plot(range(len(optimizer_history)), b+baseline['1000'][1],
+                 label='stderr baseline', linestyle='dotted', color='red')
+        plt.plot(range(len(optimizer_history)), b-baseline['1000'][1],
+                 linestyle='dotted', color='red')
+
         plt.title(f'GPGO, {args.n_nodes} nodes, {len(node_indices)} sentinels')
         plt.xlabel('Iteration')
         plt.ylabel('SI-model output')
@@ -317,23 +353,25 @@ if __name__ == '__main__':
         plt.ylabel('Time in minutes')
         plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
 
-        best_parameter = list(result[0].values())
+        best_parameter = list(result[0][0].values())
         best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
 
         eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic,
                                          parallel=args.parallel, num_cpu_cores=args.cpu_count)
 
-        p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
+        output = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in hours): {(time() - t0) / 3600}' \
             f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"]}' \
+            f'\n Baseline standard-error: {baseline["1000"][1]}' \
             f'\nBest GPGO solutions:' \
-            f'\nObjective value:  {eval_best_parameter}, tau: {result[1]}' \
+            f'\nObjective value:  {eval_best_parameter}, tau: {-result[0][1]}' \
+            f'\nStandard-error: {result[1]}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 
-        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
-        print(p)
+        save_results(best_parameter, eval_output=output, path_experiment=path_experiment)
+        print(output)
 
     else:
         print('Something went wrong with choosing the optimizer.')

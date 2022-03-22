@@ -10,7 +10,7 @@ from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 
 from .custom_GPGO import GPGO
 
-# # TODO maybe rewrite GPGO to be able to work when the target_function returns the standard deviation
+
 def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
               statistic, total_budget, parallel, cpu_count, acquisition_function,
               use_prior=True):
@@ -62,11 +62,12 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
         x = map_low_dim_x_to_high_dim(x, N_NODES, NODE_INDICES)
 
         # GPGO maximises a function, therefore the minus is added in front of the eval_function
-        return -EVAL_FUNCTION(x,
-                              n_simulations=N_SIMULATIONS,
-                              statistic=STATISTIC,
-                              parallel=PARALLEL,
-                              num_cpu_cores=CPU_COUNT)
+        y, stderr = EVAL_FUNCTION(x,
+                                  n_simulations=N_SIMULATIONS,
+                                  # statistic=STATISTIC,
+                                  parallel=PARALLEL,
+                                  num_cpu_cores=CPU_COUNT)
+        return -y, stderr
 
     sexp = squaredExponential()
     gp = GaussianProcess(sexp)
@@ -88,9 +89,14 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
              prior=aux,
              use_prior=use_prior)
 
+    # compute boundaries for each y by adding/subtracting the standard-error
+    yu = [-y - gpgo.stderr[y] for y in gpgo.history]
+    yo = [-y + gpgo.stderr[y] for y in gpgo.history]
+
     # gpg.history contains the best y of the gp at each iteration
     # reverse the sign change of optimizer history to get a more readable plot
-    return gpgo.getResult(), -np.array(gpgo.history), time_for_optimization, np.array(gpgo.time_history)
+    return [gpgo.getResult(), gpgo.stderr[gpgo.getResult()[1]]], -np.array(gpgo.history), \
+           time_for_optimization, np.array(gpgo.time_history), np.array([yu, yo])
 
 
 if __name__ == '__main__':
