@@ -9,7 +9,7 @@ Adjusted to support
 
 import time
 from tqdm import tqdm
-from collections import OrderedDict
+from multiprocessing import cpu_count
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -49,7 +49,12 @@ class GPGO:
         self.A = acquisition
         self.f = f
         self.parameters = parameter_dict
-        self.n_jobs = n_jobs
+
+        # check whether the specified number of cpus are available
+        if n_jobs > cpu_count():
+            self.n_jobs = cpu_count()
+        else:
+            self.n_jobs = n_jobs
 
         self.parameter_key = list(parameter_dict.keys())
         self.parameter_value = list(parameter_dict.values())
@@ -142,8 +147,7 @@ class GPGO:
         # TODO check which part here is the slowest
         # TODO maybe test different acqui-functions
         start_points_arr = np.array([self._sampleParam() for i in range(n_start)])
-        # start_points_arr = np.array([list(s.values())
-        #                              for s in start_points_dict])
+
         x_best = np.empty((n_start, len(self.parameter_key)))
         f_best = np.empty((n_start,))
         if self.n_jobs == 1:
@@ -188,8 +192,6 @@ class GPGO:
 
         Returns
         -------
-        OrderedDict
-            Point yielding best evaluation in the procedure.
         float
             Best function evaluation.
 

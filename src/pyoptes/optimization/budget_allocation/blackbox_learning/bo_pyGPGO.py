@@ -49,6 +49,7 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
                 acquisition=acq,
                 f=pyGPGO_objective_function,
                 parameter_dict=parameters,
+                n_jobs=cpu_count,
                 f_kwargs={'node_indices': node_indices, 't_start': t_start, 'total_budget': total_budget,
                           'n_nodes': n_nodes, 'eval_function': eval_function, 'n_simulations': n_simulations,
                           'parallel': parallel, 'cpu_count': cpu_count, 'time_for_optimization': time_for_optimization})
