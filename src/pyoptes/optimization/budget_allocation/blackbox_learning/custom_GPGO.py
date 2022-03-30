@@ -68,6 +68,7 @@ class GPGO:
 
         self.f_kwargs = f_kwargs
 
+
     def _sampleParam(self):
         """
         Randomly samples parameters over bounds.
@@ -130,6 +131,7 @@ class GPGO:
         """
         new_mean, new_var = self.GP.predict(xnew, return_std=True)
         new_std = np.sqrt(new_var + 1e-6)
+
         return -self.A.eval(self.tau, new_mean, new_std)
 
     def _optimizeAcq(self, method='L-BFGS-B', n_start=100):
@@ -213,7 +215,7 @@ class GPGO:
         """
         Y = []
         X = []
-        for x in prior:
+        for x in tqdm(prior):
             X.append(x)
             y, stderr = self.f(x, **self.f_kwargs)
             Y.append(y)
@@ -242,8 +244,9 @@ class GPGO:
             self._firstRun(self.init_evals)
         else:
             print('Running GPGO with surrogate function fitted on prior.\n'
-                  'Fitting the GP takes about a minute (depending on the size of the prior)\n')
+                  'Fitting the GP takes about a minute (depending on the size of the prior and the size of the graph)\n')
             self._fitGP(prior)
+            print('GP fitted.\n')
 
         for _ in tqdm(range(max_iter)):
             time_ac = time.time()

@@ -65,7 +65,16 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
     return x_true
 
 
+# TODO plot priors and standard errors
 def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget):
+    """
+    Creates a list of test strategies to be used as a prior.
+    @param n_nodes: int, number of nodes in SI-simulation graph
+    @param node_degrees: list, contains indices of nodes and their degree
+    @param node_capacities: list,capacity of each node
+    @param total_budget: float, total budget for the allocation
+    @return:
+    """
     test_strategy_prior = []
 
     # specify increasing number of sentinels
@@ -82,34 +91,36 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
 
     for s in sentinels:
         # ------
-        # create strategy for s highest degree nodes
+        # create strategy for s highest degree nodes, budget is allocated uniformly
         indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
         x_sentinels = np.array([total_budget / s for _ in range(s)])
         test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
 
         # ------
-        # create strategy for s highest capacity nodes
+        # create strategy for s highest capacity nodes, budget is allocated uniformly
         indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
         x_sentinels = np.array([total_budget / s for _ in range(s)])
         test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_capacity_nodes))
 
         # ------
-        # create strategies that are a mix of the highest degree and capacity nodes
+        # create strategies that are a mix of the highest degree and highest capacity nodes
         for k in range(s)[1:]:
 
+            # get the highest degree nodes and highest capacity nodes
             indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:k]]
             indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s-k]]
             # check whether node indices would appear twice and remove the duplicates
             # TODO maybe there is a better method for this check??
             indices_combined = list(set(indices_highest_degree_nodes) | set(indices_highest_capacity_nodes))
             # because of the missing nodes the strategies might violate the sum constraint (lightly)
+            # therefore of this the allocated budget is smaller or greater than the total budget
             x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
             test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
 
     return test_strategy_prior
 
 
-def baseline(x, eval_function, node_indices, n_nodes, statistic, parallel, num_cpu_cores):
+def baseline(x, eval_function, node_indices, n_nodes, parallel, num_cpu_cores):
     # TODO generate initial values here instead of outside the function
     # TODO include baseline with no testing
     # TODO make this more useful somehow ??

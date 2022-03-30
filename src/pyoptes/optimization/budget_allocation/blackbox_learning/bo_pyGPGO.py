@@ -1,6 +1,5 @@
 import time
 import numpy as np
-from collections import OrderedDict
 
 from .utils import map_low_dim_x_to_high_dim
 

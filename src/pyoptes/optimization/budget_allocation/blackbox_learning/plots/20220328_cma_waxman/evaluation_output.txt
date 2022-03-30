@@ -1,0 +1,14 @@
+
+Parameters:
+Sentinel nodes: 120
+n_nodes: 120
+iterations: 400
+n_simulations: 1000
+Time for optimization (in minutes): 181.96552778085072
+
+Baseline for uniform budget distribution: 17033345.28679827
+ Baseline standard-error: 1042579.9132805744
+Best CMA-ES solutions:
+Objective value:  15989209.36433419
+Standard error: 994650.121891203
+x min, x max, x sum: 2.5431157159670208e-51, 32.40502382251798, 120.0

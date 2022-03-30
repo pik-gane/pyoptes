@@ -7,7 +7,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 
 from pyoptes import bo_smac
 from pyoptes import bo_alebo
-from pyoptes import bo_cma, cma_objective_function
+from pyoptes import bo_cma
 from pyoptes.optimization.budget_allocation.blackbox_learning.bo_pyGPGO import bo_pyGPGO
 
 from pyoptes import choose_high_degree_nodes, baseline
@@ -138,14 +138,16 @@ if __name__ == '__main__':
     # the mean of the squared ys is taken to emphasise the tail of the distribution of y
     statistic = lambda x: np.mean(x**2, axis=0)
 
-    prior = create_test_strategy_prior(args.n_nodes, f.network.degree, f.capacities, total_budget)
+    if args.use_prior:
+        prior = create_test_strategy_prior(args.n_nodes, f.network.degree, f.capacities, total_budget)
+    else:
+        prior = None
 
     # compute the baseline value for y
     baseline = baseline(initial_x,
                         eval_function=f.evaluate,
                         n_nodes=args.n_nodes,
                         node_indices=node_indices,
-                        statistic=statistic,
                         parallel=args.parallel,
                         num_cpu_cores=args.cpu_count
                         )
@@ -172,39 +174,45 @@ if __name__ == '__main__':
         print('saved hyperparameters')
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
-        best_parameter = bo_cma(objective_function=cma_objective_function,
-                                initial_population=initial_x,
-                                node_indices=node_indices,
-                                n_nodes=args.n_nodes,
-                                eval_function=f.evaluate,
-                                n_simulations=args.n_simulations,
-                                statistic=statistic,
-                                total_budget=total_budget,
-                                bounds=bounds,
-                                path_experiment=path_experiment,
-                                max_iterations=args.max_iterations,
-                                sigma=args.cma_sigma,
-                                parallel=args.parallel,
-                                cpu_count=args.cpu_count)
+        best_parameter, time_for_optimization = bo_cma(initial_population=initial_x,
+                                                       node_indices=node_indices,
+                                                       n_nodes=args.n_nodes,
+                                                       eval_function=f.evaluate,
+                                                       n_simulations=args.n_simulations,
+                                                       statistic=statistic,
+                                                       total_budget=total_budget,
+                                                       bounds=bounds,
+                                                       path_experiment=path_experiment,
+                                                       max_iterations=args.max_iterations,
+                                                       sigma=args.cma_sigma,
+                                                       parallel=args.parallel,
+                                                       cpu_count=args.cpu_count)
 
         print('------------------------------------------------------')
         print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
-        eval_best_parameter = cma_objective_function(best_parameter,
-                                                     node_indices=node_indices,
-                                                     n_nodes=args.n_nodes,
-                                                     eval_function=f.evaluate,
-                                                     n_simulations=args.n_simulations,
-                                                     statistic=statistic,
-                                                     total_budget=total_budget,
-                                                     parallel=args.parallel,
-                                                     cpu_count=args.cpu_count)
+        plt.clf()
+        plt.plot(range(len(time_for_optimization)), time_for_optimization)
+
+        plt.title(f'Time for objective function evaluation, {args.n_nodes} nodes, {len(node_indices)} sentinels')
+        plt.xlabel('Iteration')
+        plt.ylabel('Time in minutes')
+        plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
+
+        best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
+        best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
+
+        eval_best_parameter, best_parameter_stderr = f.evaluate(best_parameter,
+                                                                n_simulations=args.n_simulations,
+                                                                parallel=args.parallel)
         p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
-            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"]}' \
+            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"][0]}' \
+            f'\n Baseline standard-error: {baseline["1000"][1]}' \
             f'\nBest CMA-ES solutions:' \
             f'\nObjective value:  {eval_best_parameter}' \
+            f'\nStandard error: {best_parameter_stderr}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 
         save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
@@ -295,12 +303,11 @@ if __name__ == '__main__':
                       acquisition_function=acquisition_function,
                       use_prior=args.use_prior)
 
-        print('------------------------------------------------------')
-        print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
+        plt.clf()
         plt.plot(range(len(time_history)), time_history[:, 0], label='acquisition function')
         plt.plot(range(len(time_history)), time_history[:, 1], label='surrogate function')
-        plt.title(f'Time for surrogate update and acquisition optimization')
+        plt.title('Time for surrogate update and acquisition optimization')
         plt.xlabel('Iteration')
         plt.ylabel('Time in minutes')
         plt.legend()
@@ -337,13 +344,15 @@ if __name__ == '__main__':
         best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
 
-        eval_best_parameter = f.evaluate(best_parameter, n_simulations=args.n_simulations, statistic=statistic,
-                                         parallel=args.parallel, num_cpu_cores=args.cpu_count)
+        eval_best_parameter, best_parameter_stderr = f.evaluate(best_parameter,
+                                                                n_simulations=args.n_simulations,
+                                                                parallel=args.parallel,
+                                                                num_cpu_cores=args.cpu_count)
 
         output = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in hours): {(time() - t0) / 3600}' \
-            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"]}' \
+            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"][0]}' \
             f'\n Baseline standard-error: {baseline["1000"][1]}' \
             f'\nBest GPGO solutions:' \
             f'\nObjective value:  {eval_best_parameter}, tau: {-result[0][1]}' \
