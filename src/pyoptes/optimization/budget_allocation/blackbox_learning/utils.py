@@ -1,6 +1,8 @@
 import os
 import json
 import numpy as np
+import pylab as plt
+from tqdm import tqdm
 
 
 def save_results(best_parameter, eval_output, path_experiment):
@@ -152,3 +154,44 @@ def test_function(x, **kwargs):
     @return:
     """
     return x[0]**2
+
+
+def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores):
+    """
+    Evaluate the strategies in the prior and return the mean and standard error
+    @param prior:
+    @param n_simulations:
+    @param eval_function:
+    @param parallel:
+    @param num_cpu_cores:
+    @return: A list of the mean and standard error for every strategy in the prior
+    """
+    y_prior = []
+    print(f'Evaluating prior with {n_simulations} simulations')
+    for strategy in tqdm(prior):
+        m, stderr = eval_function(strategy,
+                                  n_simulations=n_simulations,
+                                  parallel=parallel,
+                                  num_cpu_cores=num_cpu_cores)
+
+        y_prior.append(np.array([m, stderr]))
+
+    return np.array(y_prior)
+
+
+def plot_prior(prior, n_simulations, eval_function, parallel, cpu_count, n_nodes, n_runs, path_experiment, sentinels):
+    y_prior = []
+    print(f'Evaluating prior {n_runs} times.')
+    for _ in tqdm(range(n_runs)):
+        y_prior.append(evaluate_prior(prior, n_simulations, eval_function, parallel, cpu_count))
+    y_prior = np.array(y_prior)
+
+    y_prior_mean = [np.mean(m) for m in y_prior[:, :, 0]]
+    y_prior_stderr = [np.mean(s) for s in y_prior[:, :, 1]]
+
+    plt.plot(range(len(y_prior_mean)), np.sqrt(y_prior_mean), 'r', label='prior')
+    plt.title(f'Objective function evaluation for prior, {n_nodes} nodes, {len(sentinels)} sentinels')
+    plt.xlabel('Prior')
+    plt.ylabel('objective function value')
+    plt.savefig(os.path.join(path_experiment, 'objective_function_values_prior.png'))
+    plt.clf()

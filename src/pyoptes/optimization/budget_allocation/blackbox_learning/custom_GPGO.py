@@ -166,6 +166,7 @@ class GPGO:
             x_best = np.array([res.x for res in opt])
             f_best = np.array([np.atleast_1d(res.fun)[0] for res in opt])
 
+        # TODO rename to new/current measurement
         self.best = x_best[np.argmin(f_best)]
 
     def updateGP(self):

@@ -1,18 +1,13 @@
 import os.path
 import pylab as plt
 
-
-from pyoptes import set_seed
 from pyoptes.optimization.budget_allocation import target_function as f
 
-from pyoptes import bo_smac
-from pyoptes import bo_alebo
-from pyoptes import bo_cma
-from pyoptes.optimization.budget_allocation.blackbox_learning.bo_pyGPGO import bo_pyGPGO
+from pyoptes import bo_smac, bo_alebo, bo_cma, bo_pyGPGO
 
 from pyoptes import choose_high_degree_nodes, baseline
 from pyoptes import map_low_dim_x_to_high_dim, test_function, create_test_strategy_prior
-from pyoptes import save_hyperparameters, save_results
+from pyoptes import save_hyperparameters, save_results, plot_prior
 
 import inspect
 import argparse
@@ -35,7 +30,7 @@ if __name__ == '__main__':
     parser.add_argument("name_experiment", help="The name of the folder where the results of the optimizer run are"
                                                 "saved to.")
 
-    parser.add_argument("--sentinels", type=int, default=10,
+    parser.add_argument("--sentinels", type=int, default=120,
                         help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes. "
                              "Default is 10 nodes.")
     parser.add_argument("--n_nodes", type=int, default=120,
@@ -45,6 +40,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--test_strategy_initialisation', choices=['uniform', 'random'], default='uniform',
                         help="Defines how the initial test strategy is initialised.")
+    parser.add_argument('--n_runs', type=int, default=10,)
     parser.add_argument("--n_simulations", type=int, default=1000,
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
@@ -82,6 +78,7 @@ if __name__ == '__main__':
                              'created by heuristics or by sampling random point. Only works when n_nodes and sentinels'
                              'are the same size. Default is True.')
 
+    parser.add_argument('--plot_prior', type=bool, default='', help='')
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
                         help="Optimizer parameter. Only effects SMAC and GPGO. Sets how often log messages appear. "
                              "Lower values mean more messages.")
@@ -90,6 +87,10 @@ if __name__ == '__main__':
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
     args = parser.parse_args()
+
+    path_experiment = os.path.join(args.path_plot, args.name_experiment)
+    if not os.path.exists(path_experiment):
+        os.makedirs(path_experiment)
 
     af = {'EI': 'ExpectedImprovement', 'PI': 'ProbabilityImprovement', 'UCB': 'UCB',
           'Entropy': 'Entropy', 'tEI': 'tExpectedImprovement'}
@@ -107,7 +108,7 @@ if __name__ == '__main__':
         raise Exception(f'"{args.graph}" is an invalid choice for the graph.')
 
     # sets seed for SI-simulation
-    set_seed(1)
+    # set_seed(1)
     f.prepare(n_nodes=args.n_nodes,
               capacity_distribution=caps,
               p_infection_by_transmission=args.p_infection_by_transmission,
@@ -143,6 +144,17 @@ if __name__ == '__main__':
     else:
         prior = None
 
+    if args.plot_prior:
+        plot_prior(prior=prior,
+                   path_experiment=path_experiment,
+                   n_simulations=args.n_simulations,
+                   eval_function=f.evaluate,
+                   parallel=args.parallel,
+                   cpu_count=args.cpu_count,
+                   n_nodes=args.n_nodes,
+                   n_runs=args.n_runs,
+                   sentinels=args.sentinels)
+
     # compute the baseline value for y
     baseline = baseline(initial_x,
                         eval_function=f.evaluate,
@@ -169,7 +181,6 @@ if __name__ == '__main__':
 
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
-        path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
         print('saved hyperparameters')
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
@@ -219,7 +230,6 @@ if __name__ == '__main__':
         print(p)
 
     elif args.optimizer == 'alebo':
-        path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
 
         t0 = time()
@@ -240,7 +250,6 @@ if __name__ == '__main__':
         print('min, max, sum: ', best_parameters.min(), best_parameters.max(), best_parameters.sum())
 
     elif args.optimizer == 'smac':
-        path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
         print('saved hyperparameters')
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
@@ -284,7 +293,6 @@ if __name__ == '__main__':
     elif args.optimizer == 'gpgo':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
-        path_experiment = os.path.join(args.path_plot, args.name_experiment)
         save_hyperparameters(experiment_params, path_experiment)
         print('saved hyperparameters')
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
@@ -303,7 +311,6 @@ if __name__ == '__main__':
                       acquisition_function=acquisition_function,
                       use_prior=args.use_prior)
 
-
         plt.clf()
         plt.plot(range(len(time_history)), time_history[:, 0], label='acquisition function')
         plt.plot(range(len(time_history)), time_history[:, 1], label='surrogate function')
@@ -314,17 +321,19 @@ if __name__ == '__main__':
         plt.savefig(os.path.join(path_experiment, 'gp_and_acqui_time.png'))
 
         plt.clf()
-        plt.plot(range(len(optimizer_history)), optimizer_history, label='GPGO')
-        plt.plot(range(len(optimizer_history)), stderr_history[0],
+        plt.plot(range(len(optimizer_history)), np.sqrt(optimizer_history), label='GPGO')
+        # add standard error of the
+        plt.plot(range(len(optimizer_history)), np.sqrt(stderr_history[0]),
                  linestyle='dotted', color='black', label='stderr GPGO')
-        plt.plot(range(len(optimizer_history)), stderr_history[1],
+        plt.plot(range(len(optimizer_history)), np.sqrt(stderr_history[1]),
                  linestyle='dotted', color='black')
 
         b = np.ones(len(optimizer_history))*baseline['1000'][0]
-        plt.plot(range(len(optimizer_history)), b, label='baseline')
-        plt.plot(range(len(optimizer_history)), b+baseline['1000'][1],
+        plt.plot(range(len(optimizer_history)), np.sqrt(b), label='baseline')
+        # add standard error of the baseline
+        plt.plot(range(len(optimizer_history)), np.sqrt(b+baseline['1000'][1]),
                  label='stderr baseline', linestyle='dotted', color='red')
-        plt.plot(range(len(optimizer_history)), b-baseline['1000'][1],
+        plt.plot(range(len(optimizer_history)), np.sqrt(b-baseline['1000'][1]),
                  linestyle='dotted', color='red')
 
         plt.title(f'GPGO, {args.n_nodes} nodes, {len(node_indices)} sentinels')
