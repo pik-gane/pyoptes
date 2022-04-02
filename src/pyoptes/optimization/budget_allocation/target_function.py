@@ -16,7 +16,7 @@ from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmi
 from functools import partial
 from multiprocessing import cpu_count, Pool
 
-global model, capacities, network
+global model, capacities, network, transmissions_array, transmissions_time_covered
 
 
 def prepare(use_real_data=False, 
@@ -26,7 +26,8 @@ def prepare(use_real_data=False,
             expected_time_of_first_infection=30, 
             capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
             delta_t_symptoms=60,
-            p_infection_by_transmission=0.5
+            p_infection_by_transmission=0.5,
+            pre_transmissions = None
             ):
     """Prepare the target function before being able to evaluate it for the 
     first time.
@@ -44,7 +45,7 @@ def prepare(use_real_data=False,
     infection should be detected automatically even without a test.
     """
 
-    global model, capacities, network
+    global model, capacities, network, transmissions_array, transmissions_time_covered
     
     if use_real_data:
         from pyoptes.networks.transmissions.hitier_schweine import load_transdataarray
@@ -58,17 +59,18 @@ def prepare(use_real_data=False,
             n_nodes = static_network.number_of_nodes()
             
         transmissions_time_covered = 180  # typical lifetime of a pig
-        n_total_transmissions = 6e6 * n_nodes/60000 * transmissions_time_covered/1440  # proportional to HI-Tier German pig trade data
+        n_total_transmissions = 6e6 * n_nodes/60000 * transmissions_time_covered/1460  # proportional to HI-Tier German pig trade data
         transmission_delay = 1
     
         # generate transmissions data:
         n_transmissions_per_day = int(n_total_transmissions // transmissions_time_covered)
 
-        if static_network is None:
+        if static_network is None and pre_transmissions is None:
             # use a scale-free network:
             from pyoptes.networks.transmissions.scale_free import get_scale_free_transmissions_data
             n_forward_transmissions_per_day = int(0.75 * n_transmissions_per_day)
             n_backward_transmissions_per_day = n_transmissions_per_day - n_forward_transmissions_per_day
+            
             transmissions = get_scale_free_transmissions_data (
                 n_nodes=n_nodes, 
                 BA_m=20,
@@ -80,7 +82,18 @@ def prepare(use_real_data=False,
                 )
             assert len(transmissions.events) == transmissions_time_covered * (n_backward_transmissions_per_day + n_forward_transmissions_per_day)  
             network = transmissions.BA_network
+
+        elif static_network is None and pre_transmissions is not None:
+            # use a scale-free network:
+            from pyoptes.networks.transmissions.scale_free import get_scale_free_transmissions_data
+            from pyoptes.networks.transmissions.scale_free import Transmissions
+            n_forward_transmissions_per_day = int(0.75 * n_transmissions_per_day)
+            n_backward_transmissions_per_day = n_transmissions_per_day - n_forward_transmissions_per_day
             
+            transmissions = Transmissions(transmissions_time_covered, pre_transmissions)
+            assert len(transmissions.events) == transmissions_time_covered * (n_backward_transmissions_per_day + n_forward_transmissions_per_day)  
+
+
         else:
             from pyoptes.networks.transmissions.static_network_based import get_static_network_based_transmissions_data
             transmissions = get_static_network_based_transmissions_data (
@@ -88,7 +101,7 @@ def prepare(use_real_data=False,
                 t_max=transmissions_time_covered, 
                 n_transmissions_per_day=n_transmissions_per_day,
                 delay=transmission_delay,
-                verbose=True #False
+                verbose=False
                 )
             assert len(transmissions.events) == transmissions_time_covered * n_transmissions_per_day  
             network = static_network
@@ -117,7 +130,7 @@ def prepare(use_real_data=False,
         
         p_infection_from_outside = p_infection_from_outside,
         p_infection_by_transmission = p_infection_by_transmission,
-        p_test_positive = 0.99,
+        p_test_positive = 0.90,
         delta_t_testable = 1,
         delta_t_infectious = 1,
         delta_t_symptoms = delta_t_symptoms,

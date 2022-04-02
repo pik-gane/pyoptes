@@ -3,6 +3,8 @@ import json
 import numpy as np
 import pylab as plt
 from tqdm import tqdm
+import pandas as pd
+import networkx as nx
 
 
 def save_results(best_parameter, eval_output, path_experiment):
@@ -68,19 +70,22 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
 
 
 # TODO plot priors and standard errors
-def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget):
+def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget, sentinels):
     """
     Creates a list of test strategies to be used as a prior.
+    First element in the list is a strategy where the budget is uniformly distributed over all sentinel nodes
+    that the objective function is using.
+    @param sentinels:
     @param n_nodes: int, number of nodes in SI-simulation graph
     @param node_degrees: list, contains indices of nodes and their degree
     @param node_capacities: list,capacity of each node
     @param total_budget: float, total budget for the allocation
-    @return:
+    @return: list numpy arrays, each array contains the values of a test strategy
     """
     test_strategy_prior = []
 
     # specify increasing number of sentinels
-    sentinels = [int(n_nodes / 6), int(n_nodes / 12), int(n_nodes / 24)]
+    sentinels_list = [int(n_nodes / 6), int(n_nodes / 12), int(n_nodes / 24)]
 
     # sort list of nodes by degree
     nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
@@ -91,19 +96,33 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     nodes_capacities_sorted = sorted(nodes_capacities, key=lambda nodes_capacities: nodes_capacities[1],
                                      reverse=True)
 
-    for s in sentinels:
+    test_strategy_parameter = 'number\tdescription'
+
+    # create strategy for nodes = sentinels used with the objective function
+    indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:sentinels]]
+    x_sentinels = np.array([total_budget / sentinels for _ in range(sentinels)])
+    test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
+
+    test_strategy_parameter += f'\n0\tuniform distribution over all {n_nodes} nodes'
+
+    n = 1
+    for i, s in enumerate(sentinels_list):
         # ------
         # create strategy for s highest degree nodes, budget is allocated uniformly
         indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
         x_sentinels = np.array([total_budget / s for _ in range(s)])
         test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
 
+        test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest degree nodes'
+        n += 1
         # ------
         # create strategy for s highest capacity nodes, budget is allocated uniformly
         indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
         x_sentinels = np.array([total_budget / s for _ in range(s)])
         test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_capacity_nodes))
 
+        test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
+        n += 1
         # ------
         # create strategies that are a mix of the highest degree and highest capacity nodes
         for k in range(s)[1:]:
@@ -119,39 +138,33 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
             x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
             test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
 
-    return test_strategy_prior
+            test_strategy_parameter += f'\n{n}\tuniform distribution over ' \
+                                       f'{k} highest degree nodes and {s-k} highest capacity nodes'
+            n += 1
+
+    return test_strategy_prior, test_strategy_parameter
 
 
-def baseline(x, eval_function, node_indices, n_nodes, parallel, num_cpu_cores):
-    # TODO generate initial values here instead of outside the function
-    # TODO include baseline with no testing
-    # TODO make this more useful somehow ??
+def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, n_runs):
 
-    # TODO use the prior to create baseline values
+    x_baseline = np.array([total_budget / n_nodes for _ in range(n_nodes)])
 
-    simulations = [100, 1000, 10000]
+    for n in range(n_runs):
+        pass
 
-    x_true = np.zeros(n_nodes)
-    for i, xi in zip(node_indices, x):
-        x_true[i] = xi
+    m, stderr = eval_function(x_baseline,
+                              n_simulations=10000,
+                              parallel=parallel,
+                              num_cpu_cores=num_cpu_cores)
 
-    y = {}
-    for n_sim in simulations:
-
-        m, stderr = eval_function(x_true,
-                                  n_simulations=n_sim,
-                                  parallel=parallel,
-                                  num_cpu_cores=num_cpu_cores)
-
-        y[f'{n_sim}'] = [m, stderr]
-    return y
+    return m, stderr
 
 
 def test_function(x, **kwargs):
     """
     Quadratic function just for test purposes
-    @param x:
-    @return:
+    @param x: numpy array, input vector
+    @return: float, square of first element of input vector
     """
     return x[0]**2
 
@@ -159,16 +172,16 @@ def test_function(x, **kwargs):
 def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores):
     """
     Evaluate the strategies in the prior and return the mean and standard error
-    @param prior:
-    @param n_simulations:
-    @param eval_function:
-    @param parallel:
-    @param num_cpu_cores:
+    @param prior: list of numpy arrays, each array contains the values of a test strategy
+    @param n_simulations: int, number of simulations to be performed
+    @param eval_function: function, function to be evaluated
+    @param parallel: bool, whether to use parallelization or not
+    @param num_cpu_cores: int, number of cpu cores to be used for parallelization
     @return: A list of the mean and standard error for every strategy in the prior
     """
     y_prior = []
-    print(f'Evaluating prior with {n_simulations} simulations')
-    for strategy in tqdm(prior):
+    # print(f'Evaluating prior with {n_simulations} simulations')
+    for strategy in tqdm(prior, leave=False):
         m, stderr = eval_function(strategy,
                                   n_simulations=n_simulations,
                                   parallel=parallel,
@@ -179,19 +192,76 @@ def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores)
     return np.array(y_prior)
 
 
-def plot_prior(prior, n_simulations, eval_function, parallel, cpu_count, n_nodes, n_runs, path_experiment, sentinels):
+def plot_prior(prior, n_simulations, eval_function, parallel, cpu_count, n_runs, path_experiment, n_nodes):
+    """
+
+    @param prior:
+    @param n_simulations:
+    @param eval_function:
+    @param parallel:
+    @param cpu_count:
+    @param n_runs:
+    @param path_experiment:
+
+    """
     y_prior = []
     print(f'Evaluating prior {n_runs} times.')
-    for _ in tqdm(range(n_runs)):
+    for _ in tqdm(range(n_runs), leave=False):
+
         y_prior.append(evaluate_prior(prior, n_simulations, eval_function, parallel, cpu_count))
     y_prior = np.array(y_prior)
 
-    y_prior_mean = [np.mean(m) for m in y_prior[:, :, 0]]
-    y_prior_stderr = [np.mean(s) for s in y_prior[:, :, 1]]
+    y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)
+    y_prior_stderr = np.mean(y_prior[:, :, 1], axis=0)
 
-    plt.plot(range(len(y_prior_mean)), np.sqrt(y_prior_mean), 'r', label='prior')
-    plt.title(f'Objective function evaluation for prior, {n_nodes} nodes, {len(sentinels)} sentinels')
+    min_y_prior_mean = np.sqrt(y_prior_mean.min())
+    max_y_prior_mean = np.sqrt(y_prior_mean.max())
+
+    plt.bar(range(len(y_prior_mean)), np.sqrt(y_prior_mean), label='prior')
+    plt.title(f'Objective function evaluation for {len(prior)} strategies')
     plt.xlabel('Prior')
     plt.ylabel('objective function value')
-    plt.savefig(os.path.join(path_experiment, 'objective_function_values_prior.png'))
+    plt.text(1, 1, f'min: {min_y_prior_mean:2f}\nmax: {max_y_prior_mean:2f}', bbox=dict(facecolor='red', alpha=0.5))
+    plt.savefig(os.path.join(path_experiment, f'objective_function_values_prior_{n_nodes}_n_nodes.png'))
     plt.clf()
+
+
+def create_graphs(n_runs, graph_type):
+    """
+    Create a graph for every run
+    @param n_runs: int, the number of different networks to be loaded
+    @param graph_type: string, barabasi-albert or waxman
+    @return: list of dictionaries with the graph and the node indices
+    """
+    assert 0 < n_runs <= 100 # there are only 100 graphs available
+    network_list = []
+    if graph_type == 'waxman':
+        print(f'Loading {n_runs} waxman graphs')
+        for n in tqdm(range(n_runs)):
+            transmissions_path = os.path.join('../data/', graph_type+'_networks', 'transmissions')
+            single_transmission_path = os.path.join(transmissions_path, f'WXtransmission_array_network_{n}.csv')
+
+            transmissions_waxman = pd.read_csv(single_transmission_path)
+            waxman = nx.from_pandas_edgelist(transmissions_waxman, source='Source Node', target='Destination Node')
+            pos = dict(waxman.nodes.data('pos'))
+            static_network = nx.DiGraph(nx.to_numpy_array(waxman))
+
+            network_list.append({'static_network': static_network,
+                                 'pos': pos})
+    elif graph_type == 'ba':
+        print(f'Loading {n_runs} barabasi-albert graphs')
+        for n in tqdm(range(n_runs)):
+            transmissions_path = os.path.join('../data/', graph_type+'_networks', 'transmissions')
+            single_transmission_path = os.path.join(transmissions_path, f'BAtransmission_array_network_{n}.csv')
+
+            transmissions_ba = pd.read_csv(single_transmission_path)
+            ba = nx.from_pandas_edgelist(transmissions_ba, source='Source Node', target='Destination Node')
+            pos = dict(ba.nodes.data('pos'))
+            static_network = nx.DiGraph(nx.to_numpy_array(ba))
+
+            network_list.append({'static_network': static_network,
+                                 'pos': pos})
+    else:
+        Exception(f'Graph type {graph_type} not supported')
+
+    return network_list

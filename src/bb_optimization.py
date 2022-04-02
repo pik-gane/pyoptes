@@ -7,17 +7,19 @@ from pyoptes import bo_smac, bo_alebo, bo_cma, bo_pyGPGO
 
 from pyoptes import choose_high_degree_nodes, baseline
 from pyoptes import map_low_dim_x_to_high_dim, test_function, create_test_strategy_prior
-from pyoptes import save_hyperparameters, save_results, plot_prior
+from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs
 
 import inspect
 import argparse
 import numpy as np
+import pandas as pd
 import networkx as nx
 from scipy.stats import lognorm
 from time import time, localtime, strftime
 
 
 # TODO what is this exactly ??
+# TODO rename to something more meaningful
 def caps(size):
     return lognorm.rvs(s=2, scale=np.exp(4), size=size)
 
@@ -40,13 +42,14 @@ if __name__ == '__main__':
 
     parser.add_argument('--test_strategy_initialisation', choices=['uniform', 'random'], default='uniform',
                         help="Defines how the initial test strategy is initialised.")
-    parser.add_argument('--n_runs', type=int, default=10,)
+    parser.add_argument('--n_runs', type=int, default=10,# choices=[10, 100],
+                        help='')
     parser.add_argument("--n_simulations", type=int, default=1000,
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
     # TODO rename graph to something more clear ??
-    parser.add_argument('--graph', choices=['waxman', 'barabasi-albert'], default='barabasi-albert',
+    parser.add_argument('--graph_type', choices=['waxman', 'ba'], default='ba',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
     parser.add_argument('--delta_t_symptoms', type=int, default=60,
@@ -58,10 +61,10 @@ if __name__ == '__main__':
     parser.add_argument('--parallel', type=bool, default=True,
                         help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
                              'or sequentially. Default is set to parallel computation.')
-    parser.add_argument("--cpu_count", type=int, default=15,
+    parser.add_argument("--cpu_count", type=int, default=14,
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
-                             '-1 selects all available cpus. Default are 12 cpus.')
+                             '-1 selects all available cpus. Default are 14 cpus.')
 
     parser.add_argument("--max_iterations", type=int, default=1000,
                         help="Optimizer parameter. The maximum number of iterations the algorithms run.")
@@ -88,96 +91,84 @@ if __name__ == '__main__':
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
     args = parser.parse_args()
 
+    # prepare the directory for the plots, hyperparameters and results
     path_experiment = os.path.join(args.path_plot, args.name_experiment)
     if not os.path.exists(path_experiment):
         os.makedirs(path_experiment)
 
+    #
     af = {'EI': 'ExpectedImprovement', 'PI': 'ProbabilityImprovement', 'UCB': 'UCB',
           'Entropy': 'Entropy', 'tEI': 'tExpectedImprovement'}
     acquisition_function = af[args.acquisition_function]
 
-    if args.graph == 'waxman':
-        # generate a Waxman graph:
-        waxman = nx.waxman_graph(120)
-        pos = dict(waxman.nodes.data('pos'))
-        # convert into a directed graph:
-        static_network = nx.DiGraph(nx.to_numpy_array(waxman))
-    elif args.graph == 'barabasi-albert':
-        static_network = None
-    else:
-        raise Exception(f'"{args.graph}" is an invalid choice for the graph.')
+    # creates a list of n_runs networks (either waxman or barabasi-albert)
+    network_list = create_graphs(args.n_runs, args.graph_type)
 
-    # sets seed for SI-simulation
-    # set_seed(1)
     f.prepare(n_nodes=args.n_nodes,
               capacity_distribution=caps,
               p_infection_by_transmission=args.p_infection_by_transmission,
-              static_network=static_network,
+              static_network=network_list[0]['static_network'],
               delta_t_symptoms=args.delta_t_symptoms)
 
     total_budget = 1.0 * args.n_nodes  # i.e., on average, nodes will do one test per year
-
-    #
-    if args.test_strategy_initialisation == 'random':
-        weights = np.random.rand(args.sentinels)
-        shares = weights / weights.sum()
-        initial_x = shares * total_budget
-    elif args.test_strategy_initialisation == 'uniform':
-        # distribute total budget uniformly
-        initial_x = np.array([total_budget/args.sentinels for _ in range(args.sentinels)])
-    else:
-        raise Exception('Invalid test_strategy initialisation chosen.')
-
-    # reduce the dimension of the input space by choosing to only allocate the budget between nodes with the highest
-    # degrees. The function return the indices of these nodes
-    node_indices = choose_high_degree_nodes(f.network.degree, args.sentinels)
-
-    # get the first constraint, the boundaries of x_i
+    # define the first constraint, the boundaries of x_i
     bounds = [0, total_budget]
 
     # define function to average the results of the simulation
     # the mean of the squared ys is taken to emphasise the tail of the distribution of y
     statistic = lambda x: np.mean(x**2, axis=0)
 
+    # create a list of test strategies based on different heuristics
     if args.use_prior:
-        prior = create_test_strategy_prior(args.n_nodes, f.network.degree, f.capacities, total_budget)
+        prior, prior_parameter = create_test_strategy_prior(args.n_nodes, f.network.degree,
+                                                            f.capacities, total_budget, args.sentinels)
+        # plot the objective function values of the prior
+        if args.plot_prior:
+            with open(os.path.join(args.path_plot, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:
+                fi.write(prior_parameter)
+            plot_prior(prior=prior,
+                       path_experiment=args.path_plot,
+                       n_simulations=args.n_simulations,
+                       eval_function=f.evaluate,
+                       parallel=args.parallel,
+                       cpu_count=args.cpu_count,
+                       n_runs=args.n_runs,
+                       n_nodes=args.n_nodes)
     else:
         prior = None
 
-    if args.plot_prior:
-        plot_prior(prior=prior,
-                   path_experiment=path_experiment,
-                   n_simulations=args.n_simulations,
-                   eval_function=f.evaluate,
-                   parallel=args.parallel,
-                   cpu_count=args.cpu_count,
-                   n_nodes=args.n_nodes,
-                   n_runs=args.n_runs,
-                   sentinels=args.sentinels)
+    # reduce the dimension of the input space by choosing to only allocate the budget between nodes with the highest
+    # degrees. The function return the indices of these nodes
+    # The indices correspond to the first item of the prior
+    node_indices = choose_high_degree_nodes(f.network.degree, args.sentinels)
 
-    # compute the baseline value for y
-    baseline = baseline(initial_x,
-                        eval_function=f.evaluate,
-                        n_nodes=args.n_nodes,
-                        node_indices=node_indices,
-                        parallel=args.parallel,
-                        num_cpu_cores=args.cpu_count
-                        )
+    # compute the baseline, i.e., the expected value of the objective function for a uniform distribution of the
+    # budget over all nodes (regardless of the number of sentinels)
+    baseline_mean, baseline_stderr = baseline(total_budget=total_budget,
+                                              eval_function=f.evaluate,
+                                              n_nodes=args.n_nodes,
+                                              parallel=args.parallel,
+                                              num_cpu_cores=args.cpu_count,
+                                              n_runs=args.n_runs)
 
-    # save SI-model parameters as .json-file
+    # save SI-model and optimizer parameters as .json-file
     experiment_params = {'simulation_hyperparameters': {'node_initialisation': args.test_strategy_initialisation,
                                                         'total_budget': total_budget,
                                                         'n_nodes': args.n_nodes,
-                                                        'graph': args.graph,
+                                                        'graph': args.graph_type,
                                                         'sentinels': args.sentinels,
                                                         'n_simulations': args.n_simulations,
                                                         'statistic': inspect.getsourcelines(statistic)[0][0][23:-1],
                                                         'delta_t_symptoms': args.delta_t_symptoms,
-                                                        'p_infection_by_transmission': args.p_infection_by_transmission
+                                                        'p_infection_by_transmission': args.p_infection_by_transmission,
+                                                        'n_runs': args.n_runs
                                                         },
                          'optimizer_hyperparameters': {'optimizer': args.optimizer,
                                                        'max_iterations': args.max_iterations,
                                                        }}
+
+    # --------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------
 
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
@@ -185,7 +176,7 @@ if __name__ == '__main__':
         print('saved hyperparameters')
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
-        best_parameter, time_for_optimization = bo_cma(initial_population=initial_x,
+        best_parameter, time_for_optimization = bo_cma(initial_population=prior[0],
                                                        node_indices=node_indices,
                                                        n_nodes=args.n_nodes,
                                                        eval_function=f.evaluate,
@@ -211,6 +202,7 @@ if __name__ == '__main__':
         plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
 
         best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
+        # TODO add check for n_nodes == sentinels
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
 
         eval_best_parameter, best_parameter_stderr = f.evaluate(best_parameter,
@@ -226,8 +218,8 @@ if __name__ == '__main__':
             f'\nStandard error: {best_parameter_stderr}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 
-        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
         print(p)
+        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
 
     elif args.optimizer == 'alebo':
         save_hyperparameters(experiment_params, path_experiment)
@@ -254,7 +246,7 @@ if __name__ == '__main__':
         print('saved hyperparameters')
         print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
         t0 = time()
-        best_parameter = bo_smac(initial_population=initial_x,
+        best_parameter = bo_smac(initial_population=prior[0],
                                  node_indices=node_indices,
                                  n_nodes=args.n_nodes,
                                  eval_function=test_function,
@@ -269,6 +261,7 @@ if __name__ == '__main__':
         print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
 
         best_parameter = np.array(list(best_parameter.values()))
+        # TODO add check for n_nodes == sentinels
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
         best_parameter = best_parameter/best_parameter.sum()
         best_parameter = best_parameter*total_budget
@@ -287,8 +280,8 @@ if __name__ == '__main__':
             f'\nObjective value:  {eval_best_parameter}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 
-        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
         print(p)
+        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
 
     elif args.optimizer == 'gpgo':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
@@ -368,8 +361,8 @@ if __name__ == '__main__':
             f'\nStandard-error: {result[1]}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 
-        save_results(best_parameter, eval_output=output, path_experiment=path_experiment)
         print(output)
+        save_results(best_parameter, eval_output=output, path_experiment=path_experiment)
 
     else:
         print('Something went wrong with choosing the optimizer.')
