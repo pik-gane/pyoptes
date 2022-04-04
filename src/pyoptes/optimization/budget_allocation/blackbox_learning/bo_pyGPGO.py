@@ -22,7 +22,6 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
     @param node_indices:
     @param n_nodes:
     @param eval_function:
-    @param statistic:
     @param total_budget:
     @param parallel:
     @param cpu_count:

@@ -3,8 +3,10 @@ import cma
 import time
 import numpy as np
 import matplotlib.pyplot
+import pylab as plt
 
-from .utils import map_low_dim_x_to_high_dim
+
+from .utils import map_low_dim_x_to_high_dim, test_function
 
 
 # TODO complete documentation for parameters
@@ -26,32 +28,42 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
     @param initial_population: numpy array,
     @param sigma: float,
     @param max_iterations: int,
-    @return: list of lists, each list represents an optimal solution
+    @return: the parameters for the best solution found by the optimizer,
+            the best solutions found by the optimizer during the run, the time take for the optimization
     """
+
+    es = cma.CMAEvolutionStrategy(initial_population, sigma0=sigma,
+                                  inopts={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds})
 
     t_start = time.time()
     time_for_optimization = []
+    best_solution_history = []
+    while not es.stop():
+        solutions = es.ask()
+        # TODO replace individual function params with kwargs dict
+        es.tell(solutions, [cma_objective_function(s, n_simulations,
+                                                   node_indices, n_nodes,
+                                                   eval_function, statistic,
+                                                   total_budget, parallel,
+                                                   cpu_count) for s in solutions])
+        best_solution_history.append(es.result.fbest)
+        es.logger.add()
+        es.disp()   # print the progress of the optimizer
+        time_for_optimization.append((time.time() - t_start) / 60)
 
-    # TODO replace with ask/tell-interface to enable finer control over optimization
-    ea = cma.fmin(cma_objective_function, initial_population, sigma0=sigma,
-                  options={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds},
-                  args=(n_simulations, node_indices, n_nodes, eval_function,
-                        statistic, total_budget, parallel, cpu_count, t_start, time_for_optimization))
+    best_parameter = es.result.xbest
 
-    solutions = ea[-2].pop_sorted   # pop_sorted is the population after stopping CMA ||
-    # print('len(solutions)', len(solutions))
-    # TODO change x-axis in plot to iterations instead of function evals
-    ea[-1].plot()
-    cma.s.figsave = matplotlib.pyplot.savefig
-    path_plot = os.path.join(path_experiment, 'cma_plot_full.png')
-    cma.s.figsave(path_plot, dpi=400)
+    # es.logger.plot()
+    # cma.s.figsave = matplotlib.pyplot.savefig
+    # path_plot = os.path.join(path_experiment, 'cma_plot_full.png')
+    # cma.s.figsave(path_plot, dpi=400)
+    # plt.clf()
 
-    return ea[0], time_for_optimization #solutions    # contains the best solution found during the whole run
+    return best_parameter, best_solution_history, time_for_optimization
 
 
-# TODO maybe enforce correct types of params ? To prevent floats where ints are expected
 def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function,
-                           statistic, total_budget, parallel, cpu_count, t_start, time_for_optimization):
+                           statistic, total_budget, parallel, cpu_count):
     """
     An optimizeable objective function.
     Maps a lower dimensional x to their corresponding indices in the input vector of the given objective function.
@@ -73,8 +85,6 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     @return: float, objective function value at x
     """
     assert np.shape(x) == np.shape(node_indices)
-
-    time_for_optimization.append((time.time()-t_start)/60)
 
     x = total_budget * np.exp(x) / sum(np.exp(x))
 

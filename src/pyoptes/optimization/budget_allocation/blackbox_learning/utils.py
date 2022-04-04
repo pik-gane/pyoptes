@@ -145,12 +145,17 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     return test_strategy_prior, test_strategy_parameter
 
 
-def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, n_runs):
+def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores):
+    """
 
+    @param total_budget:
+    @param eval_function:
+    @param n_nodes:
+    @param parallel:
+    @param num_cpu_cores:
+    @return:
+    """
     x_baseline = np.array([total_budget / n_nodes for _ in range(n_nodes)])
-
-    for n in range(n_runs):
-        pass
 
     m, stderr = eval_function(x_baseline,
                               n_simulations=10000,
@@ -160,7 +165,7 @@ def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, n_ru
     return m, stderr
 
 
-def test_function(x, **kwargs):
+def test_function(x, *args, **kwargs):
     """
     Quadratic function just for test purposes
     @param x: numpy array, input vector
@@ -204,6 +209,7 @@ def plot_prior(prior, n_simulations, eval_function, parallel, cpu_count, n_runs,
     @param path_experiment:
 
     """
+    # TODO move this outside of the function
     y_prior = []
     print(f'Evaluating prior {n_runs} times.')
     for _ in tqdm(range(n_runs), leave=False):
@@ -214,26 +220,28 @@ def plot_prior(prior, n_simulations, eval_function, parallel, cpu_count, n_runs,
     y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)
     y_prior_stderr = np.mean(y_prior[:, :, 1], axis=0)
 
-    min_y_prior_mean = np.sqrt(y_prior_mean.min())
-    max_y_prior_mean = np.sqrt(y_prior_mean.max())
+    min_y_prior_mean = y_prior_mean.min()
+    max_y_prior_mean = y_prior_mean.max()
 
-    plt.bar(range(len(y_prior_mean)), np.sqrt(y_prior_mean), label='prior')
+    plt.bar(range(len(y_prior_mean)), y_prior_mean, label='prior')
     plt.title(f'Objective function evaluation for {len(prior)} strategies')
     plt.xlabel('Prior')
     plt.ylabel('objective function value')
-    plt.text(1, 1, f'min: {min_y_prior_mean:2f}\nmax: {max_y_prior_mean:2f}', bbox=dict(facecolor='red', alpha=0.5))
+    # TODO move text in the top right corner of the plot
+    plt.text(25, 1000, f'min: {min_y_prior_mean:2f}\nmax: {max_y_prior_mean:2f}',
+             bbox=dict(facecolor='red', alpha=0.5))
     plt.savefig(os.path.join(path_experiment, f'objective_function_values_prior_{n_nodes}_n_nodes.png'))
     plt.clf()
 
 
 def create_graphs(n_runs, graph_type):
     """
-    Create a graph for every run
+    Loads n_runs graphs from disk and returns them as a list
     @param n_runs: int, the number of different networks to be loaded
     @param graph_type: string, barabasi-albert or waxman
     @return: list of dictionaries with the graph and the node indices
     """
-    assert 0 < n_runs <= 100 # there are only 100 graphs available
+    assert 0 < n_runs <= 100    # there are only 100 graphs available
     network_list = []
     if graph_type == 'waxman':
         print(f'Loading {n_runs} waxman graphs')

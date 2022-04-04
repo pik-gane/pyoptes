@@ -1,0 +1,14 @@
+
+Parameters:
+Sentinel nodes: 120
+n_nodes: 120
+iterations: 400
+n_simulations: 1000
+Time for optimization (in hours): 0.3564121182759603
+
+Baseline for uniform budget distribution: 19227022.166985847
+ Baseline standard-error: 479559.31958305725
+Best GPGO solutions:
+Objective value:  19627314.10338586, tau: 17347630.34867986
+Standard-error: 1843016.5208663705
+x min, x max, x sum: 0.014690443219465927, 5.92654778390267, 119.99999999999999

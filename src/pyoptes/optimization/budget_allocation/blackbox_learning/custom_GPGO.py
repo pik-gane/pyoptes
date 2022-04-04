@@ -15,6 +15,8 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy.optimize import minimize
 
+import pylab as plt
+
 # TODO write check for availability of n_jobs
 class GPGO:
     def __init__(self, surrogate, acquisition, f, parameter_dict, n_jobs=15, f_kwargs={}):
@@ -225,6 +227,15 @@ class GPGO:
         self.tau = np.max(y)
         self.tau = np.round(self.tau, decimals=8)
 
+        # print('shape and type of GP.y: ', np.shape(self.GP.y), type(self.GP.y))
+        # print('sqrt of self.GP.y: ', -self.GP.y)
+        # print('min, max and mean of sqrt(self.GP.y): ', np.min(-self.GP.y), np.max(-self.GP.y), np.mean(-self.GP.y))
+        # plt.bar(range(len(-self.GP.y)), -self.GP.y, label='prior')
+        # plt.title(f'Objective function evaluation for {len(prior)} strategies')
+        # plt.xlabel('Prior')
+        # plt.ylabel('objective function value')
+        # plt.show()
+
         self.history.append(self.tau)
         self.stderr[self.tau] = stderr
 
@@ -249,6 +260,7 @@ class GPGO:
             self._fitGP(prior)
             print('GP fitted.\n')
 
+        print(f'Running GPGO for {max_iter} iterations.\n')
         for _ in tqdm(range(max_iter)):
             time_ac = time.time()
             self._optimizeAcq()

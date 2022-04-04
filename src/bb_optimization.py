@@ -104,6 +104,12 @@ if __name__ == '__main__':
     # creates a list of n_runs networks (either waxman or barabasi-albert)
     network_list = create_graphs(args.n_runs, args.graph_type)
 
+    # TODO wrap the following in a loop over the network_list
+    # TODO save optimizer output in a directory with structure: /name_experiment/runs/1-n_runs/...
+    # TODO in addition save optimizer output in lists
+    # TODO compute mean for baseline, best_parameter
+    # TODO plot and save new
+
     f.prepare(n_nodes=args.n_nodes,
               capacity_distribution=caps,
               p_infection_by_transmission=args.p_infection_by_transmission,
@@ -122,10 +128,13 @@ if __name__ == '__main__':
     if args.use_prior:
         prior, prior_parameter = create_test_strategy_prior(args.n_nodes, f.network.degree,
                                                             f.capacities, total_budget, args.sentinels)
+
+        # TODO move plotting of prior to the end of the loop
         # plot the objective function values of the prior
         if args.plot_prior:
             with open(os.path.join(args.path_plot, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:
                 fi.write(prior_parameter)
+
             plot_prior(prior=prior,
                        path_experiment=args.path_plot,
                        n_simulations=args.n_simulations,
@@ -148,8 +157,7 @@ if __name__ == '__main__':
                                               eval_function=f.evaluate,
                                               n_nodes=args.n_nodes,
                                               parallel=args.parallel,
-                                              num_cpu_cores=args.cpu_count,
-                                              n_runs=args.n_runs)
+                                              num_cpu_cores=args.cpu_count)
 
     # save SI-model and optimizer parameters as .json-file
     experiment_params = {'simulation_hyperparameters': {'node_initialisation': args.test_strategy_initialisation,
@@ -170,56 +178,83 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------
 
+    # TODO move optimizer calls into a separate utils file
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
         save_hyperparameters(experiment_params, path_experiment)
-        print('saved hyperparameters')
-        print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
+        print('saved hyperparameters\n')
+        print(f'Optimization start: {strftime("%H:%M:%S", localtime())}\n')
         t0 = time()
-        best_parameter, time_for_optimization = bo_cma(initial_population=prior[0],
-                                                       node_indices=node_indices,
-                                                       n_nodes=args.n_nodes,
-                                                       eval_function=f.evaluate,
-                                                       n_simulations=args.n_simulations,
-                                                       statistic=statistic,
-                                                       total_budget=total_budget,
-                                                       bounds=bounds,
-                                                       path_experiment=path_experiment,
-                                                       max_iterations=args.max_iterations,
-                                                       sigma=args.cma_sigma,
-                                                       parallel=args.parallel,
-                                                       cpu_count=args.cpu_count)
+
+        best_parameter, best_solution_history, time_for_optimization = bo_cma(initial_population=prior[0],
+                                                                              node_indices=node_indices,
+                                                                              n_nodes=args.n_nodes,
+                                                                              eval_function=f.evaluate,
+                                                                              n_simulations=args.n_simulations,
+                                                                              statistic=statistic,
+                                                                              total_budget=total_budget,
+                                                                              bounds=bounds,
+                                                                              path_experiment=path_experiment,
+                                                                              max_iterations=args.max_iterations,
+                                                                              sigma=args.cma_sigma,
+                                                                              parallel=args.parallel,
+                                                                              cpu_count=args.cpu_count)
 
         print('------------------------------------------------------')
-        print(f'Optimization end: {strftime("%H:%M:%S", localtime())}')
+        print(f'Optimization end: {strftime("%H:%M:%S", localtime())}\n')
+
+        plt.clf()
+        plt.plot(range(len(best_solution_history)), best_solution_history, label='CMA-ES')
+        # # add standard error of the mean
+        # plt.plot(range(len(optimizer_history)), stderr_history[0]),
+        #          linestyle='dotted', color='black', label='stderr GPGO')
+        # plt.plot(range(len(optimizer_history)), stderr_history[1]),
+        #          linestyle='dotted', color='black')
+        b = np.ones(len(best_solution_history))*baseline_mean
+        plt.plot(range(len(best_solution_history)), b, label='baseline')
+        # add standard error of the baseline
+        plt.plot(range(len(best_solution_history)), b+baseline_stderr,
+                 label='stderr baseline', linestyle='dotted', color='red')
+        plt.plot(range(len(best_solution_history)), b-baseline_stderr,
+                 linestyle='dotted', color='red')
+
+        plt.title(f'CMA-ES, {args.n_nodes} nodes, {args.sentinels} sentinels')
+        plt.xlabel('Iteration')
+        plt.ylabel('SI-model output')
+        plt.legend()
+        plt.savefig(os.path.join(path_experiment, 'cma_plot.png'))
 
         plt.clf()
         plt.plot(range(len(time_for_optimization)), time_for_optimization)
-
         plt.title(f'Time for objective function evaluation, {args.n_nodes} nodes, {len(node_indices)} sentinels')
         plt.xlabel('Iteration')
         plt.ylabel('Time in minutes')
         plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
 
+        # print('type best_parameter: ', type(best_parameter))
+        # print('shape best_parameter: ', np.shape(best_parameter))
+        # print('best_parameter: ', best_parameter)
+
         best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
-        # TODO add check for n_nodes == sentinels
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
 
         eval_best_parameter, best_parameter_stderr = f.evaluate(best_parameter,
                                                                 n_simulations=args.n_simulations,
-                                                                parallel=args.parallel)
-        p = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
+                                                                parallel=args.parallel,
+                                                                num_cpu_cores=args.cpu_count)
+
+        output = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
-            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"][0]}' \
-            f'\n Baseline standard-error: {baseline["1000"][1]}' \
+            f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
+            f'\n Baseline standard-error:  {baseline_stderr}' \
             f'\nBest CMA-ES solutions:' \
-            f'\nObjective value:  {eval_best_parameter}' \
-            f'\nStandard error: {best_parameter_stderr}' \
+            f'\nObjective value:   {eval_best_parameter}' \
+            f'\nStandard error:  {best_parameter_stderr}' \
             f'\nx min, x max, x sum: {best_parameter.min()}, {best_parameter.max()}, {best_parameter.sum()}'
 
-        print(p)
-        save_results(best_parameter, eval_output=p, path_experiment=path_experiment)
+        print(output)
+        save_results(best_parameter, eval_output=output, path_experiment=path_experiment)
 
     elif args.optimizer == 'alebo':
         save_hyperparameters(experiment_params, path_experiment)
@@ -287,8 +322,8 @@ if __name__ == '__main__':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
         save_hyperparameters(experiment_params, path_experiment)
-        print('saved hyperparameters')
-        print(f'Optimization start: {strftime("%H:%M:%S", localtime())}')
+        print('saved hyperparameters\n')
+        print(f'Optimization start: {strftime("%H:%M:%S", localtime())}\n')
         t0 = time()
 
         result, optimizer_history, time_for_optimization, time_history, stderr_history =\
@@ -304,6 +339,38 @@ if __name__ == '__main__':
                       acquisition_function=acquisition_function,
                       use_prior=args.use_prior)
 
+        print('------------------------------------------------------')
+        print(f'Optimization end: {strftime("%H:%M:%S", localtime())}\n')
+
+        plt.clf()
+        plt.plot(range(len(optimizer_history)), optimizer_history, label='GPGO')
+        # add standard error of the mean
+        plt.plot(range(len(optimizer_history)), stderr_history[0],
+                 linestyle='dotted', color='black', label='stderr GPGO')
+        plt.plot(range(len(optimizer_history)), stderr_history[1],
+                 linestyle='dotted', color='black')
+
+        b = np.ones(len(optimizer_history))*baseline_mean
+        plt.plot(range(len(optimizer_history)), b, label='baseline')
+        # add standard error of the baseline
+        plt.plot(range(len(optimizer_history)), b+baseline_stderr,
+                 label='stderr baseline', linestyle='dotted', color='red')
+        plt.plot(range(len(optimizer_history)), b-baseline_stderr,
+                 linestyle='dotted', color='red')
+
+        plt.title(f'GPGO, {args.n_nodes} nodes, {args.sentinels} sentinels')
+        plt.xlabel('Iteration')
+        plt.ylabel('SI-model output')
+        plt.legend()
+        plt.savefig(os.path.join(path_experiment, 'GPGO_plot.png'))
+
+        plt.clf()
+        plt.plot(range(len(time_for_optimization)), time_for_optimization)
+        plt.title(f'Time for objective function evaluation, {args.n_nodes} nodes, {args.sentinels} sentinels')
+        plt.xlabel('Iteration')
+        plt.ylabel('Time in minutes')
+        plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
+
         plt.clf()
         plt.plot(range(len(time_history)), time_history[:, 0], label='acquisition function')
         plt.plot(range(len(time_history)), time_history[:, 1], label='surrogate function')
@@ -313,35 +380,6 @@ if __name__ == '__main__':
         plt.legend()
         plt.savefig(os.path.join(path_experiment, 'gp_and_acqui_time.png'))
 
-        plt.clf()
-        plt.plot(range(len(optimizer_history)), np.sqrt(optimizer_history), label='GPGO')
-        # add standard error of the
-        plt.plot(range(len(optimizer_history)), np.sqrt(stderr_history[0]),
-                 linestyle='dotted', color='black', label='stderr GPGO')
-        plt.plot(range(len(optimizer_history)), np.sqrt(stderr_history[1]),
-                 linestyle='dotted', color='black')
-
-        b = np.ones(len(optimizer_history))*baseline['1000'][0]
-        plt.plot(range(len(optimizer_history)), np.sqrt(b), label='baseline')
-        # add standard error of the baseline
-        plt.plot(range(len(optimizer_history)), np.sqrt(b+baseline['1000'][1]),
-                 label='stderr baseline', linestyle='dotted', color='red')
-        plt.plot(range(len(optimizer_history)), np.sqrt(b-baseline['1000'][1]),
-                 linestyle='dotted', color='red')
-
-        plt.title(f'GPGO, {args.n_nodes} nodes, {len(node_indices)} sentinels')
-        plt.xlabel('Iteration')
-        plt.ylabel('SI-model output')
-        plt.legend()
-        plt.savefig(os.path.join(path_experiment, 'GPGO_plot.png'))
-
-        plt.clf()
-        plt.plot(range(len(time_for_optimization)), time_for_optimization)
-        plt.title(f'Time for objective function evaluation, {args.n_nodes} nodes, {len(node_indices)} sentinels')
-        plt.xlabel('Iteration')
-        plt.ylabel('Time in minutes')
-        plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
-
         best_parameter = result[0][0]
         best_parameter = total_budget * np.exp(best_parameter) / sum(np.exp(best_parameter))
         best_parameter = map_low_dim_x_to_high_dim(best_parameter, args.n_nodes, node_indices)
@@ -350,12 +388,12 @@ if __name__ == '__main__':
                                                                 n_simulations=args.n_simulations,
                                                                 parallel=args.parallel,
                                                                 num_cpu_cores=args.cpu_count)
-
+        # TODO fix this mess
         output = f'\nParameters:\nSentinel nodes: {args.sentinels}\nn_nodes: {args.n_nodes}' \
             f'\niterations: {args.max_iterations}\nn_simulations: {args.n_simulations}' \
             f'\nTime for optimization (in hours): {(time() - t0) / 3600}' \
-            f'\n\nBaseline for {args.test_strategy_initialisation} budget distribution: {baseline["1000"][0]}' \
-            f'\n Baseline standard-error: {baseline["1000"][1]}' \
+            f'\n\nBaseline for uniform budget distribution: {baseline_mean}' \
+            f'\n Baseline standard-error: {baseline_stderr}' \
             f'\nBest GPGO solutions:' \
             f'\nObjective value:  {eval_best_parameter}, tau: {-result[0][1]}' \
             f'\nStandard-error: {result[1]}' \
