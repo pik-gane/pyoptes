@@ -59,13 +59,12 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
     plt.clf()
 
 
-def plot_prior(prior, path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
+def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
     """
 
     @param y_prior_stderr:
     @param n_nodes:
     @param y_prior_mean:
-    @param prior:
     @param path_experiment:
 
     """
@@ -74,7 +73,7 @@ def plot_prior(prior, path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_
     max_y_prior_mean = y_prior_mean.max()
 
     plt.bar(range(len(y_prior_mean)), y_prior_mean, label='prior')
-    plt.title(f'Objective function evaluation for {len(prior)} strategies, average over {n_runs} networks')
+    plt.title(f'Objective function evaluation for {len(y_prior_mean)} strategies, average over {n_runs} networks')
     plt.xlabel('Prior')
     plt.ylabel('objective function value')
     # TODO move text in the top right corner of the plot

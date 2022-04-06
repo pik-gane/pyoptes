@@ -256,11 +256,11 @@ class GPGO:
             self._firstRun(self.init_evals)
         else:
             print('Running GPGO with surrogate function fitted on prior.\n'
-                  'Fitting the GP takes about a minute (depending on the size of the prior and the size of the graph)\n')
+                  'Fitting the GP takes about a minute (depending on the size of the prior and the size of the graph)')
             self._fitGP(prior)
-            print('GP fitted.\n')
+            print('GP fitted.')
 
-        print(f'Running GPGO for {max_iter} iterations.\n')
+        print(f'Running GPGO for {max_iter} iterations.')
         for _ in tqdm(range(max_iter)):
             time_ac = time.time()
             self._optimizeAcq()

@@ -8,32 +8,22 @@ import networkx as nx
 from time import time
 
 
-def save_results(best_parameter, path_experiment,
-                 best_test_strategy_stderr, eval_best_test_strategy, baseline_mean, baseline_stderr, t0):
+def save_results(best_test_strategy, path_experiment, output, save_test_strategy=True):
     """
     Saves the evaluation of the output and the corresponding best parameter.
-    @param best_test_strategy_stderr:
-    @param eval_best_test_strategy:
-    @param t0:
-    @param baseline_mean:
-    @param baseline_stderr:
-    @param best_parameter: numpy array, the best parameter the optimizer has found
+    @param save_test_strategy:
+    @param output:
+    @param best_test_strategy: numpy array, the best parameter the optimizer has found
     @param path_experiment:
     """
     if not os.path.isdir(path_experiment):
         os.makedirs(path_experiment)
 
-    eval_output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
-                  f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
-                  f'\n Baseline standard-error:  {baseline_stderr}' \
-                  f'\nBest CMA-ES solutions:' \
-                  f'\nObjective value:   {eval_best_test_strategy}' \
-                  f'\nStandard error:  {best_test_strategy_stderr}'
-
     with open(os.path.join(path_experiment, 'evaluation_output.txt'), 'w') as f:
-        f.write(eval_output)
+        f.write(output)
 
-    np.save(os.path.join(path_experiment, 'best_parameter'), best_parameter)
+    if save_test_strategy:
+        np.save(os.path.join(path_experiment, 'best_parameter'), best_test_strategy)
 
 
 def save_hyperparameters(hyperparameters, base_path):
@@ -96,7 +86,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     @param total_budget: float, total budget for the allocation
     @return: list numpy arrays, each array contains the values of a test strategy
     """
-    print('Assembling prior from test strategies created by different heuristics.\n')
+    # print('Assembling prior from test strategies created by different heuristics.\n')
     test_strategy_prior = []
 
     # specify increasing number of sentinels

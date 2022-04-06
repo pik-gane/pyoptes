@@ -6,7 +6,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 from pyoptes import bo_cma, bo_pyGPGO
 
 from pyoptes import choose_high_degree_nodes, baseline
-from pyoptes import map_low_dim_x_to_high_dim, test_function, create_test_strategy_prior
+from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
 from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs
 from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
 
@@ -14,14 +14,7 @@ import inspect
 import argparse
 import numpy as np
 from tqdm import tqdm
-from scipy.stats import lognorm
 from time import time, localtime, strftime
-
-
-# TODO what is this exactly ??
-# TODO rename to something more meaningful
-def caps(size):
-    return lognorm.rvs(s=2, scale=np.exp(4), size=size)
 
 
 if __name__ == '__main__':
@@ -48,7 +41,6 @@ if __name__ == '__main__':
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
-    # TODO rename graph to something more clear ??
     parser.add_argument('--graph_type', choices=['waxman', 'ba'], default='ba',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
@@ -127,12 +119,6 @@ if __name__ == '__main__':
     # creates a list of n_runs networks (either waxman or barabasi-albert)
     network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes)
 
-    # TODO wrap the following in a loop over the network_list
-    # TODO save optimizer output in a directory with structure: /name_experiment/runs/1-n_runs/...
-    # TODO in addition save optimizer output in lists
-    # TODO compute mean for baseline, best_parameter
-    # TODO plot and save new averaged results
-
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
     elif args.optimizer == 'gpgo':
@@ -141,11 +127,13 @@ if __name__ == '__main__':
 
     save_hyperparameters(experiment_params, path_experiment)
 
+    # lists for result aggregations
     list_prior = []
-    list_baseline = []
 
-    list_solution_history = []
+    list_baseline = []
     list_best_test_strategy = []
+    list_ratio_otf = []
+    list_solution_history = []
     list_time_for_optimization = []
 
     time_start = time()
@@ -178,14 +166,12 @@ if __name__ == '__main__':
                                                   n_nodes=args.n_nodes,
                                                   parallel=args.parallel,
                                                   num_cpu_cores=args.cpu_count)
-        list_baseline.append([baseline_mean, baseline_stderr])
 
         # create a folder to save the results of the individual optimization run
         path_sub_experiment = os.path.join(path_experiment, f'{n}')
         if not os.path.exists(path_sub_experiment):
             os.makedirs(path_sub_experiment)
 
-        # TODO move optimizer calls into a separate utils file
         t0 = time()
         print(f'Optimization {n} start: {strftime("%H:%M:%S", localtime())}\n')
         if args.optimizer == 'cma':
@@ -205,12 +191,6 @@ if __name__ == '__main__':
                        parallel=args.parallel,
                        cpu_count=args.cpu_count)
 
-            list_solution_history.append(best_solution_history)
-            list_best_test_strategy.append(best_test_strategy)
-            list_time_for_optimization.append(time_for_optimization)
-            print('------------------------------------------------------')
-            print(f'Optimization {n} end: {strftime("%H:%M:%S", localtime())}\n')
-
             # TODO temporary fix because cma-es does not return stderr
             stderr_history = [best_solution_history, best_solution_history]
 
@@ -229,13 +209,6 @@ if __name__ == '__main__':
                           acquisition_function=acquisition_function,
                           use_prior=args.use_prior)
 
-            list_solution_history.append(best_solution_history)
-            list_best_test_strategy.append(best_test_strategy)
-            list_time_for_optimization.append(time_for_optimization)
-
-            print('------------------------------------------------------')
-            print(f'Optimization {n} end: {strftime("%H:%M:%S", localtime())}\n')
-
             plt.clf()
             plt.plot(range(len(time_history)), time_history[:, 0], label='acquisition function')
             plt.plot(range(len(time_history)), time_history[:, 1], label='surrogate function')
@@ -244,8 +217,12 @@ if __name__ == '__main__':
             plt.ylabel('Time in minutes')
             plt.legend()
             plt.savefig(os.path.join(path_sub_experiment, 'gp_and_acqui_time.png'))
+            plt.clf()
 
-        #
+        print(f'Optimization {n} end: {strftime("%H:%M:%S", localtime())}\n')
+        print('------------------------------------------------------')
+
+        # plot and save to disk, the results of the individual optimization run
         plot_optimizer_history(best_solution_history, stderr_history,
                                baseline_mean, baseline_stderr,
                                args.n_nodes, args.sentinels,
@@ -263,24 +240,48 @@ if __name__ == '__main__':
                                                                         parallel=args.parallel,
                                                                         num_cpu_cores=args.cpu_count)
 
-        save_results(best_test_strategy, path_experiment=path_sub_experiment,
-                     best_test_strategy_stderr=best_test_strategy_stderr,
-                     eval_best_test_strategy=eval_best_test_strategy,
-                     baseline_stderr=baseline_stderr, baseline_mean=baseline_mean, t0=t0)
+        output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
+                  f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
+                  f'\n Baseline standard-error:  {baseline_stderr}' \
+                  f'\nBest CMA-ES solutions:' \
+                  f'\nObjective value:   {eval_best_test_strategy}' \
+                  f'\nStandard error:  {best_test_strategy_stderr}' \
+                  f'\nRatio OTF: {eval_best_test_strategy / baseline_mean}'
 
+        save_results(best_test_strategy=best_test_strategy,
+                     path_experiment=path_sub_experiment,
+                     output=output)
 
+        # save OTFs of baseline and optimizer
+        list_baseline.append([baseline_mean, baseline_stderr])
+        list_best_test_strategy.append([eval_best_test_strategy, best_test_strategy_stderr])
+        list_ratio_otf.append(eval_best_test_strategy / baseline_mean)
 
-    #TODO save averaged output
+        list_solution_history.append(best_solution_history)
+        list_time_for_optimization.append(time_for_optimization)
 
+    # ------------------------------------------------------------
     # postprocessing
-    print('shape list_solution_history: ', np.shape(list_solution_history))
-    print('shape list_best_parameter: ', np.shape(list_best_test_strategy))
-    print('shape list_time_for_optimization: ', np.shape(list_time_for_optimization))
+
+    average_otf = np.mean(list_ratio_otf)
+    average_baseline = np.mean(list_baseline, axis=0)
+    average_best_test_strategy = np.mean(list_best_test_strategy, axis=0)
+
+    output = f'Results averaged over {args.n_runs} optimizer runs' \
+             f'average_otf: {average_otf}' \
+             f'\naverage_baseline: {average_baseline}' \
+             f'\naverage_best_test_strategy: {average_best_test_strategy}'
+
+    save_results(best_test_strategy=None,
+                 save_test_strategy=False,
+                 path_experiment=path_experiment,
+                 output=output)
+    print(output)
 
     if args.plot_prior:
         y_prior = []
         print(f'Evaluating prior {args.n_runs} times.')
-        for _ in tqdm(range(args.n_runs)):
+        for prior in tqdm(list_prior):
             y_prior.append(evaluate_prior(prior, args.n_simulations, f.evaluate, args.parallel, args.cpu_count))
         y_prior = np.array(y_prior)
 
@@ -290,8 +291,7 @@ if __name__ == '__main__':
         # plot the objective function values of the prior
         with open(os.path.join(args.path_plot, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:
             fi.write(prior_parameter)
-        plot_prior(prior=prior,
-                   path_experiment=args.path_plot,
+        plot_prior(path_experiment=args.path_plot,
                    n_nodes=args.n_nodes,
                    y_prior_mean=y_prior_mean,
                    y_prior_stderr=y_prior_stderr,
