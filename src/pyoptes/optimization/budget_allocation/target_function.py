@@ -109,12 +109,24 @@ def prepare(use_real_data=False,
         assert transmissions.max_delay == transmission_delay
         transmissions_array = transmissions.get_data_array()
         
-        # set random capacities:
-        total_capacity = 25e6 * n_nodes/60000  # proportional to German pig trade 
-        weights = capacity_distribution(size=n_nodes)
-        shares = weights / weights.sum()
-        capacities = shares * total_capacity
-         
+        if static_network is None and pre_transmissions is None:
+            # set random capacities:
+            total_capacity = 25e6 * n_nodes/60000  # proportional to German pig trade 
+            weights = capacity_distribution(size=n_nodes)
+            shares = weights / weights.sum()
+            capacities = shares * total_capacity
+            
+        elif static_network is None and pre_transmissions is not None:
+            capacities = capacity_distribution
+
+        else:
+            # set random capacities:
+            total_capacity = 25e6 * n_nodes/60000  # proportional to German pig trade 
+            weights = capacity_distribution(size=n_nodes)
+            shares = weights / weights.sum()
+            capacities = shares * total_capacity
+            
+
     # setup the model:
     p_infection_from_outside = 1 / (n_nodes * expected_time_of_first_infection)
     model = SIModelOnTransmissions(

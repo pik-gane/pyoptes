@@ -1,0 +1,8 @@
+
+Time for optimization (in minutes): 1.684750258922577
+
+Baseline for uniform budget distribution:  18914275.2974
+ Baseline standard-error:  342768.7351187425
+Best CMA-ES solutions:
+Objective value:   18738207.747
+Standard error:  342439.8354533708

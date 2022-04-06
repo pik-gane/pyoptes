@@ -61,7 +61,7 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
 
     # gpg.history contains the best y of the gp at each iteration
     # reverse the sign change of optimizer history to get a more readable plot
-    return [gpgo.getResult(), gpgo.stderr[gpgo.getResult()[1]]], -np.array(gpgo.history), \
+    return gpgo.getResult()[0], -np.array(gpgo.history), \
            time_for_optimization, np.array(gpgo.time_history), np.array([yu, yo])
 
 
@@ -81,7 +81,7 @@ def pyGPGO_objective_function(x, node_indices, t_start, total_budget, n_nodes, e
     @param cpu_count:
     @return:
     """
-
+    # TODO fix GPGO breaking when using the prior + sentinels less the n_nodes
     assert np.shape(x) == np.shape(node_indices)
 
     time_for_optimization.append((time.time()-t_start)/60)

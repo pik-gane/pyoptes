@@ -13,7 +13,7 @@ dependencies:
   - cma=3.0.3
   - pytorch
   - pip
-#  - pandas
+  - pandas
   - pip:
 #    - git+https://github.com/uber-research/TuRBO
 #    - dragonfly-opt == 0.1.4

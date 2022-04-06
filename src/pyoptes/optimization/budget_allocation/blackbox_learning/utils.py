@@ -5,17 +5,30 @@ import pylab as plt
 from tqdm import tqdm
 import pandas as pd
 import networkx as nx
+from time import time
 
 
-def save_results(best_parameter, eval_output, path_experiment):
+def save_results(best_parameter, path_experiment,
+                 best_test_strategy_stderr, eval_best_test_strategy, baseline_mean, baseline_stderr, t0):
     """
     Saves the evaluation of the output and the corresponding best parameter.
-    @param best_parameter:
-    @param eval_output:
+    @param best_test_strategy_stderr:
+    @param eval_best_test_strategy:
+    @param t0:
+    @param baseline_mean:
+    @param baseline_stderr:
+    @param best_parameter: numpy array, the best parameter the optimizer has found
     @param path_experiment:
     """
     if not os.path.isdir(path_experiment):
         os.makedirs(path_experiment)
+
+    eval_output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
+                  f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
+                  f'\n Baseline standard-error:  {baseline_stderr}' \
+                  f'\nBest CMA-ES solutions:' \
+                  f'\nObjective value:   {eval_best_test_strategy}' \
+                  f'\nStandard error:  {best_test_strategy_stderr}'
 
     with open(os.path.join(path_experiment, 'evaluation_output.txt'), 'w') as f:
         f.write(eval_output)
@@ -38,6 +51,7 @@ def save_hyperparameters(hyperparameters, base_path):
 
     with open(json_path, 'w') as fp:
         json.dump(hyperparameters, fp, sort_keys=True, indent=4)
+    print('saved hyperparameters\n')
 
 
 def choose_high_degree_nodes(node_degrees, n):
@@ -82,6 +96,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     @param total_budget: float, total budget for the allocation
     @return: list numpy arrays, each array contains the values of a test strategy
     """
+    print('Assembling prior from test strategies created by different heuristics.\n')
     test_strategy_prior = []
 
     # specify increasing number of sentinels
@@ -197,44 +212,7 @@ def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores)
     return np.array(y_prior)
 
 
-def plot_prior(prior, n_simulations, eval_function, parallel, cpu_count, n_runs, path_experiment, n_nodes):
-    """
-
-    @param prior:
-    @param n_simulations:
-    @param eval_function:
-    @param parallel:
-    @param cpu_count:
-    @param n_runs:
-    @param path_experiment:
-
-    """
-    # TODO move this outside of the function
-    y_prior = []
-    print(f'Evaluating prior {n_runs} times.')
-    for _ in tqdm(range(n_runs), leave=False):
-
-        y_prior.append(evaluate_prior(prior, n_simulations, eval_function, parallel, cpu_count))
-    y_prior = np.array(y_prior)
-
-    y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)
-    y_prior_stderr = np.mean(y_prior[:, :, 1], axis=0)
-
-    min_y_prior_mean = y_prior_mean.min()
-    max_y_prior_mean = y_prior_mean.max()
-
-    plt.bar(range(len(y_prior_mean)), y_prior_mean, label='prior')
-    plt.title(f'Objective function evaluation for {len(prior)} strategies')
-    plt.xlabel('Prior')
-    plt.ylabel('objective function value')
-    # TODO move text in the top right corner of the plot
-    plt.text(25, 1000, f'min: {min_y_prior_mean:2f}\nmax: {max_y_prior_mean:2f}',
-             bbox=dict(facecolor='red', alpha=0.5))
-    plt.savefig(os.path.join(path_experiment, f'objective_function_values_prior_{n_nodes}_n_nodes.png'))
-    plt.clf()
-
-
-def create_graphs(n_runs, graph_type):
+def create_graphs(n_runs, graph_type, n_nodes):
     """
     Loads n_runs graphs from disk and returns them as a list
     @param n_runs: int, the number of different networks to be loaded
@@ -243,32 +221,33 @@ def create_graphs(n_runs, graph_type):
     """
     assert 0 < n_runs <= 100    # there are only 100 graphs available
     network_list = []
+    network_path = os.path.join('../data/', graph_type + '_networks', f'{n_nodes}')
     if graph_type == 'waxman':
         print(f'Loading {n_runs} waxman graphs')
         for n in tqdm(range(n_runs)):
-            transmissions_path = os.path.join('../data/', graph_type+'_networks', 'transmissions')
-            single_transmission_path = os.path.join(transmissions_path, f'WXtransmission_array_network_{n}.csv')
+            transmission_path = os.path.join(network_path, f'WX{n}', 'transmissions.txt')
+            transmissions_waxman = pd.read_csv(transmission_path, header=None).to_numpy()
 
-            transmissions_waxman = pd.read_csv(single_transmission_path)
-            waxman = nx.from_pandas_edgelist(transmissions_waxman, source='Source Node', target='Destination Node')
-            pos = dict(waxman.nodes.data('pos'))
-            static_network = nx.DiGraph(nx.to_numpy_array(waxman))
+            capacities_path = os.path.join(network_path, f'WX{n}', 'capacity.txt')
+            capacities_waxman = pd.read_csv(capacities_path, header=None).to_numpy().squeeze()
 
-            network_list.append({'static_network': static_network,
-                                 'pos': pos})
+            network_list.append([transmissions_waxman,
+                                 np.int_(capacities_waxman)])
     elif graph_type == 'ba':
         print(f'Loading {n_runs} barabasi-albert graphs')
         for n in tqdm(range(n_runs)):
-            transmissions_path = os.path.join('../data/', graph_type+'_networks', 'transmissions')
-            single_transmission_path = os.path.join(transmissions_path, f'BAtransmission_array_network_{n}.csv')
+            single_transmission_path = os.path.join(network_path, f'BA{n}', 'transmissions.txt')
+            transmissions_ba = pd.read_csv(single_transmission_path, header=None).to_numpy()
 
-            transmissions_ba = pd.read_csv(single_transmission_path)
-            ba = nx.from_pandas_edgelist(transmissions_ba, source='Source Node', target='Destination Node')
-            pos = dict(ba.nodes.data('pos'))
-            static_network = nx.DiGraph(nx.to_numpy_array(ba))
+            capacities_path = os.path.join(network_path, f'BA{n}', 'capacity.txt')
+            capacities_ba = pd.read_csv(capacities_path, header=None).to_numpy().squeeze()
 
-            network_list.append({'static_network': static_network,
-                                 'pos': pos})
+            degrees_path = os.path.join(network_path, f'BA{n}', 'degree.txt')
+            degrees_ba = pd.read_csv(degrees_path, header=None).to_numpy()
+
+            network_list.append([transmissions_ba,
+                                 np.int_(capacities_ba),
+                                 degrees_ba])
     else:
         Exception(f'Graph type {graph_type} not supported')
 
