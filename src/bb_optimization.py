@@ -10,11 +10,30 @@ from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
 from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs
 from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
 
-import inspect
 import argparse
 import numpy as np
 from tqdm import tqdm
 from time import time, localtime, strftime
+
+
+def rms_tia(n_infected_animals):
+    values = n_infected_animals**2
+    estimate = np.sqrt(np.mean(values, axis=0))
+    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
+    stderr = stderr/(2*estimate)
+    return estimate, stderr
+
+
+def mean_tia(n_infected_animals):
+    values = n_infected_animals
+    estimate = np.mean(values, axis=0)
+    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
+    return estimate, stderr
+
+
+def percentile_tia(n_infected_animals):
+
+    return 0, 0
 
 
 if __name__ == '__main__':
@@ -32,12 +51,12 @@ if __name__ == '__main__':
                         help="Si-simulation parameter. "
                              "Defines the number of nodes used by the SI-model to create a graph. "
                              "Default value is 120 nodes.")
-
-    parser.add_argument('--test_strategy_initialisation', choices=['uniform', 'random'], default='uniform',
-                        help="Defines how the initial test strategy is initialised.")
     parser.add_argument('--n_runs', type=int, default=10,
                         help='')
-    parser.add_argument("--n_simulations", type=int, default=1000,
+
+    parser.add_argument("--statistic", choices=['mean', 'rms'], default='rms',
+                        help="Choose the statistic to be used by the target function. Choose between mean and rms.")
+    parser.add_argument("--n_simulations", type=int, default=10000,
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
@@ -57,14 +76,17 @@ if __name__ == '__main__':
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 14 cpus.')
+    parser.add_argument('--scale_total_budget', type=float, default=1.0,
+                        help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.0.")
 
     parser.add_argument("--max_iterations", type=int, default=1000,
                         help="Optimizer parameter. The maximum number of iterations the algorithms run.")
     parser.add_argument('--cma_sigma', type=float, default=30,
-                        help="Optimizer parameter. Defines the variance in objective function parameters "
+                        help="CMA-ES Optimizer parameter. Defines the variance in objective function parameters "
                              "from which new population is sampled. Therefore the variance has to be big enough to"
                              "change the parameters in a meaningful way. A useful heuristic is to set the variance to "
-                             "about 1/4th of the parameter search space. Default value (for 120 nodes) is 30.")
+                             "about 1/4th of the parameter search space. "
+                             "Default value (for a budget of 120) is 30.")
     parser.add_argument('--acquisition_function', default='EI',
                         choices=['EI', 'PI', 'UCB', 'Entropy', 'tEI'],
                         help='GPGO optimizer parameter. Defines the acquisition function that is used by GPGO.')
@@ -94,10 +116,17 @@ if __name__ == '__main__':
     acquisition_function = af[args.acquisition_function]
 
     # define function to average the results of the simulation
-    # the mean of the squared ys is taken to emphasise the tail of the distribution of y
-    statistic = lambda x: np.mean(x**2, axis=0)
 
-    total_budget = 1.0 * args.n_nodes  # i.e., on average, nodes will do one test per year
+    if args.statistic == 'mean':
+        statistic = mean_tia
+    elif args.statistic == 'rms':
+        statistic = rms_tia
+
+    if args.optimizer == 'cma':
+        # the mean of the squared ys is taken to emphasise the tail of the distribution of y
+        statistic = lambda x: np.mean(x**2, axis=0)
+
+    total_budget = args.scale_total_budget * args.n_nodes  # i.e., on average, nodes will do one test per year
     # define the first constraint, the boundaries of x_i
     bounds = [0, total_budget]
 
@@ -107,10 +136,10 @@ if __name__ == '__main__':
                                                         'graph': args.graph_type,
                                                         'sentinels': args.sentinels,
                                                         'n_simulations': args.n_simulations,
-                                                        'statistic': inspect.getsourcelines(statistic)[0][0][23:-1],
                                                         'delta_t_symptoms': args.delta_t_symptoms,
                                                         'p_infection_by_transmission': args.p_infection_by_transmission,
-                                                        'n_runs': args.n_runs
+                                                        'n_runs': args.n_runs,
+                                                        'statistic': args.statistic,
                                                         },
                          'optimizer_hyperparameters': {'optimizer': args.optimizer,
                                                        'max_iterations': args.max_iterations,
@@ -130,15 +159,15 @@ if __name__ == '__main__':
     # lists for result aggregations
     list_prior = []
 
-    list_baseline = []
-    list_best_test_strategy = []
+    list_otf = []
     list_ratio_otf = []
+    list_baseline_otf = []
     list_solution_history = []
     list_time_for_optimization = []
 
     time_start = time()
     for n, network in enumerate(network_list[:args.n_runs]):
-
+        print(f'Run {n + 1} of {args.n_runs}, start time: {strftime("%H:%M:%S", localtime())}')
         # unpack the properties of the network
         transmissions, capacities, degrees = network
 
@@ -165,15 +194,16 @@ if __name__ == '__main__':
                                                   eval_function=f.evaluate,
                                                   n_nodes=args.n_nodes,
                                                   parallel=args.parallel,
-                                                  num_cpu_cores=args.cpu_count)
+                                                  num_cpu_cores=args.cpu_count,
+                                                  statistic=statistic)
 
         # create a folder to save the results of the individual optimization run
-        path_sub_experiment = os.path.join(path_experiment, f'{n}')
+        path_sub_experiment = os.path.join(path_experiment, 'raw', f'{n}')
         if not os.path.exists(path_sub_experiment):
             os.makedirs(path_sub_experiment)
 
         t0 = time()
-        print(f'Optimization {n} start: {strftime("%H:%M:%S", localtime())}\n')
+
         if args.optimizer == 'cma':
 
             best_test_strategy, best_solution_history, time_for_optimization = \
@@ -192,11 +222,11 @@ if __name__ == '__main__':
                        cpu_count=args.cpu_count)
 
             # TODO temporary fix because cma-es does not return stderr
-            stderr_history = [best_solution_history, best_solution_history]
+            stderr_history = [0 for _ in best_solution_history]
 
         elif args.optimizer == 'gpgo':
 
-            best_test_strategy, best_solution_history, time_for_optimization, time_history, stderr_history =\
+            best_test_strategy, best_solution_history, stderr_history, time_for_optimization, time_history =\
                 bo_pyGPGO(node_indices=node_indices,
                           n_nodes=args.n_nodes,
                           eval_function=f.evaluate,
@@ -207,7 +237,8 @@ if __name__ == '__main__':
                           cpu_count=args.cpu_count,
                           prior=prior,
                           acquisition_function=acquisition_function,
-                          use_prior=args.use_prior)
+                          use_prior=args.use_prior,
+                          statistic=statistic)
 
             plt.clf()
             plt.plot(range(len(time_history)), time_history[:, 0], label='acquisition function')
@@ -219,7 +250,6 @@ if __name__ == '__main__':
             plt.savefig(os.path.join(path_sub_experiment, 'gp_and_acqui_time.png'))
             plt.clf()
 
-        print(f'Optimization {n} end: {strftime("%H:%M:%S", localtime())}\n')
         print('------------------------------------------------------')
 
         # plot and save to disk, the results of the individual optimization run
@@ -238,39 +268,43 @@ if __name__ == '__main__':
         eval_best_test_strategy, best_test_strategy_stderr = f.evaluate(best_test_strategy,
                                                                         n_simulations=args.n_simulations,
                                                                         parallel=args.parallel,
-                                                                        num_cpu_cores=args.cpu_count)
+                                                                        num_cpu_cores=args.cpu_count,
+                                                                        statistic=statistic)
 
         output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
-                  f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
-                  f'\n Baseline standard-error:  {baseline_stderr}' \
-                  f'\nBest CMA-ES solutions:' \
-                  f'\nObjective value:   {eval_best_test_strategy}' \
-                  f'\nStandard error:  {best_test_strategy_stderr}' \
-                  f'\nRatio OTF: {eval_best_test_strategy / baseline_mean}'
+                 f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
+                 f'\n Baseline standard-error:  {baseline_stderr}, ' \
+                 f'ratio stderr/mean: {baseline_stderr/baseline_mean}' \
+                 f'\nBest solutions:' \
+                 f'\nObjective value:   {eval_best_test_strategy}' \
+                 f'\nStandard error:  {best_test_strategy_stderr},' \
+                 f' ratio stderr/mean: {best_test_strategy_stderr/eval_best_test_strategy}' \
+                 f'\nRatio OTF: {eval_best_test_strategy / baseline_mean}'
 
         save_results(best_test_strategy=best_test_strategy,
                      path_experiment=path_sub_experiment,
                      output=output)
 
         # save OTFs of baseline and optimizer
-        list_baseline.append([baseline_mean, baseline_stderr])
-        list_best_test_strategy.append([eval_best_test_strategy, best_test_strategy_stderr])
+        list_baseline_otf.append([baseline_mean, baseline_stderr])
+        list_otf.append([eval_best_test_strategy, best_test_strategy_stderr])
         list_ratio_otf.append(eval_best_test_strategy / baseline_mean)
 
         list_solution_history.append(best_solution_history)
         list_time_for_optimization.append(time_for_optimization)
 
+    print(f'Optimization end: {strftime("%H:%M:%S", localtime())}\n')
     # ------------------------------------------------------------
     # postprocessing
 
-    average_otf = np.mean(list_ratio_otf)
-    average_baseline = np.mean(list_baseline, axis=0)
-    average_best_test_strategy = np.mean(list_best_test_strategy, axis=0)
+    average_ratio_otf = np.mean(list_ratio_otf)
+    average_baseline = np.mean(list_baseline_otf, axis=0)
+    average_otf = np.mean(list_otf, axis=0)
 
     output = f'Results averaged over {args.n_runs} optimizer runs' \
-             f'average_otf: {average_otf}' \
-             f'\naverage_baseline: {average_baseline}' \
-             f'\naverage_best_test_strategy: {average_best_test_strategy}'
+             f'\naverage ratio otf to baseline: {average_ratio_otf}' \
+             f'\naverage baseline: {average_baseline}' \
+             f'\naverage best strategy OTF and stderr: {average_otf}'
 
     save_results(best_test_strategy=None,
                  save_test_strategy=False,

@@ -150,7 +150,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     return test_strategy_prior, test_strategy_parameter
 
 
-def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores):
+def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, statistic):
     """
 
     @param total_budget:
@@ -160,12 +160,15 @@ def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores):
     @param num_cpu_cores:
     @return:
     """
+    # distribute budget uniformly over all nodes
     x_baseline = np.array([total_budget / n_nodes for _ in range(n_nodes)])
 
     m, stderr = eval_function(x_baseline,
                               n_simulations=10000,
                               parallel=parallel,
-                              num_cpu_cores=num_cpu_cores)
+                              num_cpu_cores=num_cpu_cores,
+                              statistic=statistic
+                              )
 
     return m, stderr
 
@@ -221,8 +224,12 @@ def create_graphs(n_runs, graph_type, n_nodes):
             capacities_path = os.path.join(network_path, f'WX{n}', 'capacity.txt')
             capacities_waxman = pd.read_csv(capacities_path, header=None).to_numpy().squeeze()
 
+            degrees_path = os.path.join(network_path, f'WX{n}', 'degree.txt')
+            degrees_waxman = pd.read_csv(degrees_path, header=None).to_numpy()
+
             network_list.append([transmissions_waxman,
-                                 np.int_(capacities_waxman)])
+                                 np.int_(capacities_waxman),
+                                 degrees_waxman])
     elif graph_type == 'ba':
         print(f'Loading {n_runs} barabasi-albert graphs')
         for n in tqdm(range(n_runs)):

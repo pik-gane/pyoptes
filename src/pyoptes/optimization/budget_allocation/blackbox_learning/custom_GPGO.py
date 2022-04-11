@@ -260,7 +260,7 @@ class GPGO:
             self._fitGP(prior)
             print('GP fitted.')
 
-        print(f'Running GPGO for {max_iter} iterations.')
+        # print(f'Running GPGO for {max_iter} iterations.')
         for _ in tqdm(range(max_iter)):
             time_ac = time.time()
             self._optimizeAcq()

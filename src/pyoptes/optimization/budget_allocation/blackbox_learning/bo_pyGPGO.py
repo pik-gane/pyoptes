@@ -11,7 +11,7 @@ from .custom_GPGO import GPGO
 
 
 def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-              total_budget, parallel, cpu_count, acquisition_function, use_prior=True):
+              total_budget, parallel, cpu_count, acquisition_function, statistic, use_prior=True):
     """
 
     @param use_prior:
@@ -50,23 +50,24 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
                 n_jobs=cpu_count,
                 f_kwargs={'node_indices': node_indices, 't_start': t_start, 'total_budget': total_budget,
                           'n_nodes': n_nodes, 'eval_function': eval_function, 'n_simulations': n_simulations,
-                          'parallel': parallel, 'cpu_count': cpu_count, 'time_for_optimization': time_for_optimization})
+                          'parallel': parallel, 'cpu_count': cpu_count, 'time_for_optimization': time_for_optimization,
+                          'statistic': statistic})
     gpgo.run(max_iter=max_iterations,
              prior=prior,
              use_prior=use_prior)
 
     # compute boundaries for each y by adding/subtracting the standard-error
-    yu = [-y - gpgo.stderr[y] for y in gpgo.history]
-    yo = [-y + gpgo.stderr[y] for y in gpgo.history]
+    stderr_history = [gpgo.stderr[y] for y in gpgo.history]
 
+    # TODO clean up the return of GPGO, only one time is necessary, maybe stderr is not needed in this format
     # gpg.history contains the best y of the gp at each iteration
     # reverse the sign change of optimizer history to get a more readable plot
-    return gpgo.getResult()[0], -np.array(gpgo.history), \
-           time_for_optimization, np.array(gpgo.time_history), np.array([yu, yo])
+    return gpgo.getResult()[0], -np.array(gpgo.history), stderr_history, \
+           time_for_optimization, np.array(gpgo.time_history)
 
 
 def pyGPGO_objective_function(x, node_indices, t_start, total_budget, n_nodes, eval_function,
-                              n_simulations, parallel, cpu_count, time_for_optimization):
+                              n_simulations, parallel, cpu_count, time_for_optimization, statistic):
     """
 
     @param time_for_optimization:
@@ -95,7 +96,8 @@ def pyGPGO_objective_function(x, node_indices, t_start, total_budget, n_nodes, e
     y, stderr = eval_function(x,
                               n_simulations=n_simulations,
                               parallel=parallel,
-                              num_cpu_cores=cpu_count)
+                              num_cpu_cores=cpu_count,
+                              statistic=statistic)
     return -y, stderr
 
 

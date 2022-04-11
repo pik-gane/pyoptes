@@ -35,12 +35,17 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
     @param path_experiment:
     @param optimizer:
     """
+
+    s_bounds = np.array([[m+s, m-s] for m, s in zip(optimizer_history, stderr_history)])
+    # print('shape of s:', np.shape(s_bounds))
+    # print(s_bounds)
+
     plt.clf()
     plt.plot(range(len(optimizer_history)), optimizer_history, label='GPGO')
     # add standard error of the mean
-    plt.plot(range(len(optimizer_history)), stderr_history[0],
+    plt.plot(range(len(optimizer_history)), s_bounds[:, 0],
              linestyle='dotted', color='black', label='stderr GPGO')
-    plt.plot(range(len(optimizer_history)), stderr_history[1],
+    plt.plot(range(len(optimizer_history)), s_bounds[:, 1],
              linestyle='dotted', color='black')
 
     b = np.ones(len(optimizer_history)) * baseline_mean
