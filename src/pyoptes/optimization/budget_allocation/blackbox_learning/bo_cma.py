@@ -46,6 +46,9 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
                                                    eval_function, statistic,
                                                    total_budget, parallel,
                                                    cpu_count) for s in solutions])
+        # TODO add stderr
+        # TODO use xbest, then cma_objective_function(xbest, n_simulations, ...)
+        # TODO but with different statistic
         best_solution_history.append(es.result.fbest)
         es.logger.add()
         es.disp()   # print the progress of the optimizer

@@ -28,7 +28,7 @@ x = shares * total_budget
 
 a = time()
 # y = np.mean([fp.evaluate(x, n_simulations=n_simulations, parallel=False) for _ in range(100)])
-y = fp.evaluate(x, n_simulations=n_simulations, parallel=False)
+y, s = fp.evaluate(x, n_simulations=n_simulations, parallel=False)
 b = time()-a
 print('Non-parallel simulation')
 print(f'Time for {n_simulations} simulations of: {b}')
@@ -37,7 +37,7 @@ print(f'y: {y}')
 
 a = time()
 # y = np.mean([fp.evaluate(x, n_simulations=n_simulations) for _ in range(100)])
-y = fp.evaluate(x, n_simulations=n_simulations, parallel=True, num_cpu_cores=-1)
+y, s = fp.evaluate(x, n_simulations=n_simulations, parallel=True, num_cpu_cores=-1)
 b = time()-a
 print('Parallel simulation')
 print(f'Time for {n_simulations} simulations of: {b}')
@@ -59,14 +59,15 @@ for s in tqdm(n):
     ylp.append(fp.evaluate(x, n_simulations=s, parallel=True, num_cpu_cores=-1))
     tlp.append(time() - a)
 
-plt.plot(n, yl, label='y non-parallel')
-plt.plot(n, ylp, label='y parallel')
-plt.title('Simulation output for 1, 100, 1000, 10000, 1000000 evaluations')
-plt.legend()
-plt.show()
+# plt.plot(n, yl, label='y non-parallel')
+# plt.plot(n, ylp, label='y parallel')
+# plt.title('Simulation output for 1, 100, 1000, 10000, 1000000 evaluations')
+# plt.legend()
+# plt.show()
 
 plt.plot(n, tl, label='time non-parallel')
 plt.plot(n, tlp, label='time parallel')
+plt.xscale('log')
 plt.title('Evaluation time for  for 1, 100, 1000, 10000, 1000000 evaluations')
 plt.legend()
 plt.show()

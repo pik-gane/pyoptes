@@ -35,6 +35,9 @@ def percentile_tia(n_infected_animals):
 
     return 0, 0
 
+# def share_detected(unused_n_infected_animals):
+#     return model.detection_was_by_test.true
+
 
 if __name__ == '__main__':
 
@@ -47,11 +50,11 @@ if __name__ == '__main__':
     parser.add_argument("--sentinels", type=int, default=120,
                         help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes. "
                              "Default is 10 nodes.")
-    parser.add_argument("--n_nodes", type=int, default=120,
+    parser.add_argument("--n_nodes", type=int, default=120, choices=[120, 1040, 57590],
                         help="Si-simulation parameter. "
                              "Defines the number of nodes used by the SI-model to create a graph. "
                              "Default value is 120 nodes.")
-    parser.add_argument('--n_runs', type=int, default=10,
+    parser.add_argument('--n_runs', type=int, default=100,
                         help='')
 
     parser.add_argument("--statistic", choices=['mean', 'rms'], default='rms',
@@ -79,7 +82,7 @@ if __name__ == '__main__':
     parser.add_argument('--scale_total_budget', type=float, default=1.0,
                         help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.0.")
 
-    parser.add_argument("--max_iterations", type=int, default=1000,
+    parser.add_argument("--max_iterations", type=int, default=100,
                         help="Optimizer parameter. The maximum number of iterations the algorithms run.")
     parser.add_argument('--cma_sigma', type=float, default=30,
                         help="CMA-ES Optimizer parameter. Defines the variance in objective function parameters "
@@ -164,6 +167,8 @@ if __name__ == '__main__':
     list_baseline_otf = []
     list_solution_history = []
     list_time_for_optimization = []
+
+    list_history = []
 
     time_start = time()
     for n, network in enumerate(network_list[:args.n_runs]):
@@ -293,18 +298,29 @@ if __name__ == '__main__':
         list_solution_history.append(best_solution_history)
         list_time_for_optimization.append(time_for_optimization)
 
+        list_history.append([best_solution_history, stderr_history])
     print(f'Optimization end: {strftime("%H:%M:%S", localtime())}\n')
     # ------------------------------------------------------------
     # postprocessing
-
+    # ------------------------------------------------------------
     average_ratio_otf = np.mean(list_ratio_otf)
     average_baseline = np.mean(list_baseline_otf, axis=0)
     average_otf = np.mean(list_otf, axis=0)
 
+    # create an average otf plot
+    average_history_mean = np.array(list_history)[:, 0]
+    average_history_stderr = np.array(list_history)[:, 1]
+    plot_optimizer_history(np.mean(average_history_mean, axis=0), np.mean(average_history_stderr, axis=0),
+                           average_baseline[0], average_baseline[1],
+                           args.n_nodes, args.sentinels,
+                           path_experiment, args.optimizer,
+                           name='_average_plot')
+
     output = f'Results averaged over {args.n_runs} optimizer runs' \
              f'\naverage ratio otf to baseline: {average_ratio_otf}' \
              f'\naverage baseline: {average_baseline}' \
-             f'\naverage best strategy OTF and stderr: {average_otf}'
+             f'\naverage best strategy OTF and stderr: {average_otf}' \
+             f'\nTime for optimization (in minutes): {(time()-time_start) / 60}'
 
     save_results(best_test_strategy=None,
                  save_test_strategy=False,

@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--n_runs', type=int, default=100,
                         help='')
-    parser.add_argument("--n_simulations", type=int, default=10000,
+    parser.add_argument("--n_simulations", type=int, default=100000,
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")

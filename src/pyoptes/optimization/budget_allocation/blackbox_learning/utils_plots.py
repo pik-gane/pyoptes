@@ -23,9 +23,10 @@ def plot_time_for_optimization(time_for_optimization, n_nodes, sentinels, path_e
 
 
 def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, baseline_stderr,
-                           n_nodes, sentinels, path_experiment, optimizer):
+                           n_nodes, sentinels, path_experiment, optimizer, name='_plot'):
     """
 
+    @param name:
     @param optimizer_history:
     @param stderr_history:
     @param baseline_mean:
@@ -60,7 +61,7 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
     plt.xlabel('Iteration')
     plt.ylabel('SI-model output')
     plt.legend()
-    plt.savefig(os.path.join(path_experiment, f'{optimizer}_plot.png'))
+    plt.savefig(os.path.join(path_experiment, f'{optimizer}{name}.png'))
     plt.clf()
 
 
