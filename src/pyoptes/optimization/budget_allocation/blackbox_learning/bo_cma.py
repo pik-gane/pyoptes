@@ -12,14 +12,13 @@ from .utils import map_low_dim_x_to_high_dim, test_function
 # TODO complete documentation for parameters
 # TODO sigma should be about 1/4th of the search space width e.g sigma 30 for budget 120
 def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-           bounds, path_experiment, statistic, total_budget, parallel, cpu_count, sigma=0.4):
+           bounds, statistic, total_budget, parallel, cpu_count, sigma=0.4):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
     @param cpu_count: int, number of cores to use for parallelization of the objective function
     @param parallel: bool, whether to run the objective function in parallel
     @param total_budget: float, the total budget that is to be distributed along the nodes of the graph
     @param statistic: function object,
-    @param path_experiment: string,
     @param eval_function: function object,
     @param bounds: list,
     @param n_simulations: int,
@@ -32,24 +31,31 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
             the best solutions found by the optimizer during the run, the time take for the optimization
     """
 
+    f_kwargs = {'n_simulations': n_simulations, 'node_indices': node_indices, 'n_nodes': n_nodes,
+                'eval_function': eval_function, 'statistic': statistic, 'total_budget': total_budget,
+                'parallel': parallel, 'cpu_count': cpu_count}
+
     es = cma.CMAEvolutionStrategy(initial_population, sigma0=sigma,
                                   inopts={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds})
 
     t_start = time.time()
     time_for_optimization = []
     best_solution_history = []
+    best_solution_stderr_history = []
     while not es.stop():
+        # sample a new population of solutions
         solutions = es.ask()
-        # TODO replace individual function params with kwargs dict
-        es.tell(solutions, [cma_objective_function(s, n_simulations,
-                                                   node_indices, n_nodes,
-                                                   eval_function, statistic,
-                                                   total_budget, parallel,
-                                                   cpu_count) for s in solutions])
-        # TODO add stderr
-        # TODO use xbest, then cma_objective_function(xbest, n_simulations, ...)
-        # TODO but with different statistic
-        best_solution_history.append(es.result.fbest)
+        # evaluate all solutions on the objective function, list contains mean and stderr
+        f_solution = [cma_objective_function(s, **f_kwargs)[0] for s in solutions]
+
+        # use the solution and evaluation to update cma-es parameters (covariance-matrix ...)
+        es.tell(solutions, f_solution)
+
+        # evaluate the current best parameter and save mean + standard error
+        best_s, best_s_stderr = cma_objective_function(es.result.xbest, **f_kwargs)
+        best_solution_history.append(best_s)
+        best_solution_stderr_history.append(best_s_stderr)
+
         es.logger.add()
         es.disp()   # print the progress of the optimizer
         time_for_optimization.append((time.time() - t_start) / 60)
@@ -62,7 +68,7 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
     # cma.s.figsave(path_plot, dpi=400)
     # plt.clf()
 
-    return best_parameter, best_solution_history, time_for_optimization
+    return best_parameter, best_solution_history, best_solution_stderr_history, time_for_optimization
 
 
 def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function,
@@ -92,12 +98,8 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     x = total_budget * np.exp(x) / sum(np.exp(x))
 
     x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
-
-    if 0 < x.sum() <= total_budget:
-        return eval_function(x, n_simulations=n_simulations, statistic=statistic,
-                             parallel=parallel, num_cpu_cores=cpu_count)
-    else:
-        return np.NaN
+    return eval_function(x, n_simulations=n_simulations, statistic=statistic,
+                         parallel=parallel, num_cpu_cores=cpu_count)
 
 
 if __name__ == '__main__':

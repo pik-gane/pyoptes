@@ -153,6 +153,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
 def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, statistic):
     """
 
+    @param statistic:
     @param total_budget:
     @param eval_function:
     @param n_nodes:

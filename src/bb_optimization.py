@@ -113,21 +113,16 @@ if __name__ == '__main__':
     if not os.path.exists(path_experiment):
         os.makedirs(path_experiment)
 
-    #
+    # map acquisition function string to one useable by pyGPGO
     af = {'EI': 'ExpectedImprovement', 'PI': 'ProbabilityImprovement', 'UCB': 'UCB',
           'Entropy': 'Entropy', 'tEI': 'tExpectedImprovement'}
     acquisition_function = af[args.acquisition_function]
 
     # define function to average the results of the simulation
-
     if args.statistic == 'mean':
         statistic = mean_tia
     elif args.statistic == 'rms':
         statistic = rms_tia
-
-    if args.optimizer == 'cma':
-        # the mean of the squared ys is taken to emphasise the tail of the distribution of y
-        statistic = lambda x: np.mean(x**2, axis=0)
 
     total_budget = args.scale_total_budget * args.n_nodes  # i.e., on average, nodes will do one test per year
     # define the first constraint, the boundaries of x_i
@@ -207,43 +202,30 @@ if __name__ == '__main__':
         if not os.path.exists(path_sub_experiment):
             os.makedirs(path_sub_experiment)
 
-        t0 = time()
+        optimizer_kwargs = {'n_nodes': args.n_nodes, 'node_indices': node_indices, 'eval_function': f.evaluate,
+                            'n_simulations': args.n_simulations, 'statistic': statistic, 'total_budget': total_budget,
+                            'max_iterations': args.max_iterations,
+                            'parallel': args.parallel, 'cpu_count': args.cpu_count}
 
+        t0 = time()
         if args.optimizer == 'cma':
 
-            best_test_strategy, best_solution_history, time_for_optimization = \
-                bo_cma(initial_population=prior[0],
-                       node_indices=node_indices,
-                       n_nodes=args.n_nodes,
-                       eval_function=f.evaluate,
-                       n_simulations=args.n_simulations,
-                       statistic=statistic,
-                       total_budget=total_budget,
-                       bounds=bounds,
-                       path_experiment=path_sub_experiment,
-                       max_iterations=args.max_iterations,
-                       sigma=args.cma_sigma,
-                       parallel=args.parallel,
-                       cpu_count=args.cpu_count)
+            # TODO check whether multiple initial solutions can be supplied
+            optimizer_kwargs['initial_population'] = prior[0]
+            optimizer_kwargs['bounds'] = bounds
+            optimizer_kwargs['sigma'] = args.cma_sigma
 
-            # TODO temporary fix because cma-es does not return stderr
-            stderr_history = [0 for _ in best_solution_history]
+            best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
+                bo_cma(**optimizer_kwargs)
 
         elif args.optimizer == 'gpgo':
 
+            optimizer_kwargs['prior'] = prior
+            optimizer_kwargs['acquisition_function'] = acquisition_function
+            optimizer_kwargs['use_prior'] = args.use_prior
+
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization, time_history =\
-                bo_pyGPGO(node_indices=node_indices,
-                          n_nodes=args.n_nodes,
-                          eval_function=f.evaluate,
-                          n_simulations=args.n_simulations,
-                          total_budget=total_budget,
-                          max_iterations=args.max_iterations,
-                          parallel=args.parallel,
-                          cpu_count=args.cpu_count,
-                          prior=prior,
-                          acquisition_function=acquisition_function,
-                          use_prior=args.use_prior,
-                          statistic=statistic)
+                bo_pyGPGO(**optimizer_kwargs)
 
             plt.clf()
             plt.plot(range(len(time_history)), time_history[:, 0], label='acquisition function')
