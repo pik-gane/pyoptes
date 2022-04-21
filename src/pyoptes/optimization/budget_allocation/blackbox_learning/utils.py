@@ -73,7 +73,7 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
     return x_true
 
 
-# TODO plot priors and standard errors
+# TODO restrict prior to a fixed number of strategies
 def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget, sentinels):
     """
     Creates a list of test strategies to be used as a prior.

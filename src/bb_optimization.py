@@ -79,17 +79,19 @@ if __name__ == '__main__':
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 14 cpus.')
-    parser.add_argument('--scale_total_budget', type=float, default=1.0,
-                        help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.0.")
+    parser.add_argument('--scale_total_budget', type=int, default=1, choices=[1, 4, 12],
+                        help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.")
 
     parser.add_argument("--max_iterations", type=int, default=100,
                         help="Optimizer parameter. The maximum number of iterations the algorithms run.")
+    # TODO maybe change the sigma to be a function of the total budget
     parser.add_argument('--cma_sigma', type=float, default=30,
                         help="CMA-ES Optimizer parameter. Defines the variance in objective function parameters "
                              "from which new population is sampled. Therefore the variance has to be big enough to"
                              "change the parameters in a meaningful way. A useful heuristic is to set the variance to "
                              "about 1/4th of the parameter search space. "
                              "Default value (for a budget of 120) is 30.")
+
     parser.add_argument('--acquisition_function', default='EI',
                         choices=['EI', 'PI', 'UCB', 'Entropy', 'tEI'],
                         help='GPGO optimizer parameter. Defines the acquisition function that is used by GPGO.')
@@ -302,7 +304,7 @@ if __name__ == '__main__':
              f'\naverage ratio otf to baseline: {average_ratio_otf}' \
              f'\naverage baseline: {average_baseline}' \
              f'\naverage best strategy OTF and stderr: {average_otf}' \
-             f'\nTime for optimization (in minutes): {(time()-time_start) / 60}'
+             f'\nTime for optimization (in hours): {(time()-time_start) / 3600}'
 
     save_results(best_test_strategy=None,
                  save_test_strategy=False,
