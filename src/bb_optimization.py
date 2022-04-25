@@ -38,6 +38,12 @@ def percentile_tia(n_infected_animals):
 # def share_detected(unused_n_infected_animals):
 #     return model.detection_was_by_test.true
 
+# TODO run GPGO-experiments without the prior but similar number of function evals
+# prior -> 39 evals for fit + 50 evals for optim
+# no prior -> 3 random samples for fit + 86 evals for optim
+# only baseline as prior -> 1 sample for fit + 89 evals for optim
+# only baseline + highest degree/cap -> 7 for fit (regardless of network size) + 82 evals for optim
+
 
 if __name__ == '__main__':
 
@@ -67,6 +73,9 @@ if __name__ == '__main__':
                         help='GPGO optimizer parameter. Sets whether the surrogate function is fitted with priors '
                              'created by heuristics or by sampling random point. Only works when n_nodes and sentinels'
                              'are the same size. Default is True.')
+    parser.add_argument('--prior_mixed_strategies', type=bool,default=True,
+                        help='Sets whether to use test strategies that mix highest degrees and capacities in the prior.'
+                             'If set to no the prior has the same shape for all network sizes.')
 
     parser.add_argument("--statistic", choices=['mean', 'rms'], default='rms',
                         help="Choose the statistic to be used by the target function. Choose between mean and rms.")
@@ -178,7 +187,11 @@ if __name__ == '__main__':
 
         # create a list of test strategies based on different heuristics
         prior, prior_parameter = create_test_strategy_prior(args.n_nodes, degrees,
-                                                            capacities, total_budget, args.sentinels)
+                                                            capacities, total_budget, args.sentinels,
+                                                            mixed_strategies=args.prior_mixed_strategies)
+
+        # list_prior is only needed if the objective function values of the strategies in the prior
+        # are to be plotted
         list_prior.append(prior)
 
         # reduce the dimension of the input space by choosing to only allocate the budget between nodes with the highest

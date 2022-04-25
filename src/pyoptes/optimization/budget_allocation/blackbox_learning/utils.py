@@ -74,17 +74,20 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
 
 
 # TODO restrict prior to a fixed number of strategies
-def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget, sentinels):
+# TODO make prior with sentinels < n_nodes work with gpgg
+def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget, sentinels, mixed_strategies=True):
     """
     Creates a list of test strategies to be used as a prior.
     First element in the list is a strategy where the budget is uniformly distributed over all sentinel nodes
     that the objective function is using.
+    @param mixed_strategies:
     @param sentinels:
     @param n_nodes: int, number of nodes in SI-simulation graph
     @param node_degrees: list, contains indices of nodes and their degree
     @param node_capacities: list,capacity of each node
     @param total_budget: float, total budget for the allocation
-    @return: list numpy arrays, each array contains the values of a test strategy
+    @return: list of numpy arrays, each array contains the budget distribution of a test strategy
+            a string containing descriptions for each test strategy
     """
     # print('Assembling prior from test strategies created by different heuristics.\n')
     test_strategy_prior = []
@@ -103,14 +106,15 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
 
     test_strategy_parameter = 'number\tdescription'
 
-    # create strategy for nodes = sentinels used with the objective function
+    # TODO has to be fixed to distribute over n_nodes instead of sentinels
+    # the baseline strategy (equally distributed budget over all sentinels)
     indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:sentinels]]
     x_sentinels = np.array([total_budget / sentinels for _ in range(sentinels)])
     test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
 
     test_strategy_parameter += f'\n0\tuniform distribution over all {n_nodes} nodes'
 
-    n = 1
+    n = 1   # index for test strategies
     for i, s in enumerate(sentinels_list):
         # ------
         # create strategy for s highest degree nodes, budget is allocated uniformly
@@ -130,22 +134,23 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
         n += 1
         # ------
         # create strategies that are a mix of the highest degree and highest capacity nodes
-        for k in range(s)[1:]:
+        if mixed_strategies:
+            for k in range(s)[1:]:
 
-            # get the highest degree nodes and highest capacity nodes
-            indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:k]]
-            indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s-k]]
-            # check whether node indices would appear twice and remove the duplicates
-            # TODO maybe there is a better method for this check??
-            indices_combined = list(set(indices_highest_degree_nodes) | set(indices_highest_capacity_nodes))
-            # because of the missing nodes the strategies might violate the sum constraint (lightly)
-            # therefore of this the allocated budget is smaller or greater than the total budget
-            x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
-            test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
+                # get the highest degree nodes and highest capacity nodes
+                indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:k]]
+                indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s-k]]
+                # check whether node indices would appear twice and remove the duplicates
+                # TODO maybe there is a better method for this check??
+                indices_combined = list(set(indices_highest_degree_nodes) | set(indices_highest_capacity_nodes))
+                # because of the missing nodes the strategies might violate the sum constraint (lightly)
+                # therefore of this the allocated budget is smaller or greater than the total budget
+                x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
+                test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
 
-            test_strategy_parameter += f'\n{n}\tuniform distribution over ' \
-                                       f'{k} highest degree nodes and {s-k} highest capacity nodes'
-            n += 1
+                test_strategy_parameter += f'\n{n}\tuniform distribution over ' \
+                                           f'{k} highest degree nodes and {s-k} highest capacity nodes'
+                n += 1
 
     return test_strategy_prior, test_strategy_parameter
 
