@@ -57,6 +57,17 @@ if __name__ == '__main__':
     parser.add_argument('--n_runs', type=int, default=100,
                         help='')
 
+    parser.add_argument("--max_iterations", type=int, default=50,
+                        help="Optimizer parameter. The maximum number of iterations the algorithms run.")
+
+    parser.add_argument('--acquisition_function', default='EI',
+                        choices=['EI', 'PI', 'UCB', 'Entropy', 'tEI'],
+                        help='GPGO optimizer parameter. Defines the acquisition function that is used by GPGO.')
+    parser.add_argument('--use_prior', type=bool, default=True,
+                        help='GPGO optimizer parameter. Sets whether the surrogate function is fitted with priors '
+                             'created by heuristics or by sampling random point. Only works when n_nodes and sentinels'
+                             'are the same size. Default is True.')
+
     parser.add_argument("--statistic", choices=['mean', 'rms'], default='rms',
                         help="Choose the statistic to be used by the target function. Choose between mean and rms.")
     parser.add_argument("--n_simulations", type=int, default=10000,
@@ -81,24 +92,6 @@ if __name__ == '__main__':
                              '-1 selects all available cpus. Default are 14 cpus.')
     parser.add_argument('--scale_total_budget', type=int, default=1, choices=[1, 4, 12],
                         help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.")
-
-    parser.add_argument("--max_iterations", type=int, default=100,
-                        help="Optimizer parameter. The maximum number of iterations the algorithms run.")
-    # TODO maybe change the sigma to be a function of the total budget
-    parser.add_argument('--cma_sigma', type=float, default=30,
-                        help="CMA-ES Optimizer parameter. Defines the variance in objective function parameters "
-                             "from which new population is sampled. Therefore the variance has to be big enough to"
-                             "change the parameters in a meaningful way. A useful heuristic is to set the variance to "
-                             "about 1/4th of the parameter search space. "
-                             "Default value (for a budget of 120) is 30.")
-
-    parser.add_argument('--acquisition_function', default='EI',
-                        choices=['EI', 'PI', 'UCB', 'Entropy', 'tEI'],
-                        help='GPGO optimizer parameter. Defines the acquisition function that is used by GPGO.')
-    parser.add_argument('--use_prior', type=bool, default=True,
-                        help='GPGO optimizer parameter. Sets whether the surrogate function is fitted with priors '
-                             'created by heuristics or by sampling random point. Only works when n_nodes and sentinels'
-                             'are the same size. Default is True.')
 
     parser.add_argument('--plot_prior', type=bool, default='', help='')
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
@@ -130,6 +123,9 @@ if __name__ == '__main__':
     # define the first constraint, the boundaries of x_i
     bounds = [0, total_budget]
 
+    # for CMA-ES sigma is set as 0.25 of the total budget
+    cma_sigma = 0.25 * total_budget
+
     # save SI-model and optimizer parameters as .json-file
     experiment_params = {'simulation_hyperparameters': {'total_budget': total_budget,
                                                         'n_nodes': args.n_nodes,
@@ -149,7 +145,7 @@ if __name__ == '__main__':
     network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes)
 
     if args.optimizer == 'cma':
-        experiment_params['optimizer_hyperparameters']['cma_sigma'] = args.cma_sigma
+        experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
     elif args.optimizer == 'gpgo':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
@@ -215,7 +211,7 @@ if __name__ == '__main__':
             # TODO check whether multiple initial solutions can be supplied
             optimizer_kwargs['initial_population'] = prior[0]
             optimizer_kwargs['bounds'] = bounds
-            optimizer_kwargs['sigma'] = args.cma_sigma
+            optimizer_kwargs['sigma'] = cma_sigma
 
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
                 bo_cma(**optimizer_kwargs)
@@ -241,7 +237,7 @@ if __name__ == '__main__':
 
         print('------------------------------------------------------')
 
-        # plot and save to disk, the results of the individual optimization run
+        # plot and save to disk the results of the individual optimization runs
         plot_optimizer_history(best_solution_history, stderr_history,
                                baseline_mean, baseline_stderr,
                                args.n_nodes, args.sentinels,
@@ -287,6 +283,7 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
     # postprocessing
     # ------------------------------------------------------------
+    # compute the average OTFs, baseline and their standard errors
     average_ratio_otf = np.mean(list_ratio_otf)
     average_baseline = np.mean(list_baseline_otf, axis=0)
     average_otf = np.mean(list_otf, axis=0)
@@ -312,6 +309,7 @@ if __name__ == '__main__':
                  output=output)
     print(output)
 
+    # evaluate each strategy in each prior of n_runs and plot the average objective function value of each strategy
     if args.plot_prior:
         y_prior = []
         print(f'Evaluating prior {args.n_runs} times.')
@@ -322,9 +320,10 @@ if __name__ == '__main__':
         y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)
         y_prior_stderr = np.mean(y_prior[:, :, 1], axis=0)
 
-        # plot the objective function values of the prior
+        # save a description of what each strategy is
         with open(os.path.join(args.path_plot, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:
             fi.write(prior_parameter)
+        # plot the objective function values of the prior
         plot_prior(path_experiment=args.path_plot,
                    n_nodes=args.n_nodes,
                    y_prior_mean=y_prior_mean,
