@@ -123,7 +123,7 @@ if __name__ == '__main__':
     # define the first constraint, the boundaries of x_i
     bounds = [0, total_budget]
 
-    # for CMA-ES sigma is set as 0.25 of the total budget
+    # for CMA-ES, sigma is set as 0.25 of the total budget
     cma_sigma = 0.25 * total_budget
 
     # save SI-model and optimizer parameters as .json-file
