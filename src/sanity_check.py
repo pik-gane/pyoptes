@@ -2,6 +2,8 @@ import os.path
 import pylab as plt
 
 from pyoptes.optimization.budget_allocation import target_function as f
+from pyoptes import map_low_dim_x_to_high_dim
+from pyoptes import choose_high_degree_nodes
 
 import argparse
 import numpy as np
@@ -88,19 +90,13 @@ if __name__ == '__main__':
 
     parser.add_argument('--n_runs', type=int, default=100,
                         help='')
-    parser.add_argument("--n_simulations", type=int, default=100000,
+    parser.add_argument("--n_simulations", type=int, default=10000,
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
     parser.add_argument('--graph_type', choices=['waxman', 'ba'], default='ba',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
-    parser.add_argument('--delta_t_symptoms', type=int, default=60,
-                        help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
-                             ' automatically. Default is 60 days')
-    parser.add_argument('--p_infection_by_transmission', type=float, default=0.5,
-                        help='Si-simulation parameter. The probability of how likely a trade animal '
-                             'infects other animals. Default is 0.5.')
 
     parser.add_argument('--scale_total_budget', type=float, default=1.0,
                         help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.0.")
@@ -125,69 +121,71 @@ if __name__ == '__main__':
         'parallel': True,
         'num_cpu_cores': -1
     }
+    for s in [120, 10, 5, 2]:
+        for n, network in tqdm(enumerate(network_list[:args.n_runs])):
+            # unpack the properties of the network
 
-    for n, network in tqdm(enumerate(network_list[:args.n_runs])):
-        # unpack the properties of the network
+            transmissions, capacities, degree = network
 
-        transmissions, capacities, degree = network
+            f.prepare(n_nodes=args.n_nodes,
+                      delta_t_symptoms=60,
+                      p_infection_by_transmission=0.5,
+                      static_network=None,
+                      capacity_distribution=capacities,
+                      pre_transmissions=transmissions,
+                      max_t=365)
 
-        f.prepare(n_nodes=args.n_nodes,
-                  delta_t_symptoms=args.delta_t_symptoms,
-                  p_infection_by_transmission=args.p_infection_by_transmission,
-                  static_network=None,
-                  capacity_distribution=capacities,
-                  pre_transmissions=transmissions,
-                  max_t=365)
+            node_indices = choose_high_degree_nodes(degree, s)
+            # distribute budget uniformly over all nodes
+            x_baseline = np.array([total_budget / args.n_nodes for _ in range(s)])
+            best_test_strategy = map_low_dim_x_to_high_dim(x_baseline, args.n_nodes, node_indices)
 
-        # distribute budget uniformly over all nodes
-        x_baseline = np.array([total_budget / args.n_nodes for _ in range(args.n_nodes)])
+            baseline_mean, baseline_stderr = f.evaluate(x_baseline, **mean_sq_evaluation_params)
 
-        # run the optimization
+            rms_baseline = np.sqrt(baseline_mean)
+            stderr_baseline = baseline_stderr / (2*rms_baseline)
 
-        baseline_mean, baseline_stderr = f.evaluate(x_baseline, **mean_sq_evaluation_params)
+            list_baseline_mean.append(rms_baseline)
+            list_baseline_stderr.append(stderr_baseline)
 
-        rms_baseline = np.sqrt(baseline_mean)
-        stderr_baseline = baseline_stderr / (2*rms_baseline)
+            max_degree.append(np.max(degree[:, 1]))
 
-        list_baseline_mean.append(rms_baseline)
-        list_baseline_stderr.append(stderr_baseline)
+        print(f'Baseline for {s} sentinels and {args.n_nodes} nodes:')
+        print('ratio of stderr and mean:', np.mean(list_baseline_stderr) / np.mean(list_baseline_mean))
+        average_baseline_mean = np.mean(list_baseline_mean)
+        average_baseline_stderr = np.mean(list_baseline_stderr)
+        # average_best_test_strategy = np.mean(list_best_test_strategy, axis=0)
+        print(f'average_baseline_mean: {average_baseline_mean},'
+              f' average_baseline_stderr: {average_baseline_stderr}'
+              f'ratio stderr/mean{average_baseline_stderr/average_baseline_mean}')
+        print('-----------------------------------------------------')
 
-        max_degree.append(np.max(degree[:, 1]))
-
-    print('ratio of stderr and mean:', np.mean(list_baseline_stderr) / np.mean(list_baseline_mean))
-    average_baseline_mean = np.mean(list_baseline_mean)
-    average_baseline_stderr = np.mean(list_baseline_stderr)
-    # average_best_test_strategy = np.mean(list_best_test_strategy, axis=0)
-    print(f'average_baseline_mean: {average_baseline_mean},'
-          f' average_baseline_stderr: {average_baseline_stderr}'
-          f'ratio stderr/mean{average_baseline_stderr/average_baseline_mean}')
-
-    baseline_rms = np.sqrt(np.array(list_baseline_mean))
-    baseline_rms_stderr = np.array(list_baseline_stderr) / (2*baseline_rms)
-    su = [list_baseline_mean[i] - list_baseline_stderr[i] for i in range(len(list_baseline_mean))]
-    sd = [list_baseline_mean[i] + list_baseline_stderr[i] for i in range(len(list_baseline_mean))]
-
-    average = np.ones(len(list_baseline_mean)) * average_baseline_mean
-    plt.plot(range(len(list_baseline_mean)), list_baseline_mean, label='baseline')
-    plt.plot(range(len(list_baseline_mean)), average, label='average baseline')
-    # add standard error of the baseline
-    plt.plot(range(len(list_baseline_mean)), su,
-             label='stderr baseline', linestyle='dotted', color='red')
-    plt.plot(range(len(list_baseline_mean)), sd,
-             linestyle='dotted', color='red')
-
-    plt.title(f'Baseline mean & stderr over {args.n_runs} runs')
-    plt.xlabel('Iteration')
-    plt.ylabel('SI-model output (rms)')
-    plt.legend()
-    plt.savefig('Baseline_mean_over_100_networks.png')
-    plt.show()
-
-    plt.clf()
-    plt.scatter(max_degree, list_baseline_mean)
-    plt.title(f'Highest degree vs baseline mean over {args.n_runs} runs')
-    plt.xlabel('Highest degree')
-    plt.ylabel('Baseline mean (rms)')
-    plt.savefig('Scatter-plot_node_degree_vs_baseline.png')
-
-    plt.show()
+    # baseline_rms = np.sqrt(np.array(list_baseline_mean))
+    # baseline_rms_stderr = np.array(list_baseline_stderr) / (2*baseline_rms)
+    # su = [list_baseline_mean[i] - list_baseline_stderr[i] for i in range(len(list_baseline_mean))]
+    # sd = [list_baseline_mean[i] + list_baseline_stderr[i] for i in range(len(list_baseline_mean))]
+    #
+    # average = np.ones(len(list_baseline_mean)) * average_baseline_mean
+    # plt.plot(range(len(list_baseline_mean)), list_baseline_mean, label='baseline')
+    # plt.plot(range(len(list_baseline_mean)), average, label='average baseline')
+    # # add standard error of the baseline
+    # plt.plot(range(len(list_baseline_mean)), su,
+    #          label='stderr baseline', linestyle='dotted', color='red')
+    # plt.plot(range(len(list_baseline_mean)), sd,
+    #          linestyle='dotted', color='red')
+    #
+    # plt.title(f'Baseline mean & stderr over {args.n_runs} runs')
+    # plt.xlabel('Iteration')
+    # plt.ylabel('SI-model output (rms)')
+    # plt.legend()
+    # plt.savefig('Baseline_mean_over_100_networks.png')
+    # plt.show()
+    #
+    # plt.clf()
+    # plt.scatter(max_degree, list_baseline_mean)
+    # plt.title(f'Highest degree vs baseline mean over {args.n_runs} runs')
+    # plt.xlabel('Highest degree')
+    # plt.ylabel('Baseline mean (rms)')
+    # plt.savefig('Scatter-plot_node_degree_vs_baseline.png')
+    #
+    # plt.show()
