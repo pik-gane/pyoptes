@@ -25,15 +25,15 @@ def rms_tia(n_infected_animals):
 
 
 def mean_tia(n_infected_animals):
-    values = n_infected_animals
-    estimate = np.mean(values, axis=0)
-    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
+    estimate = np.mean(n_infected_animals, axis=0)
+    stderr = np.std(n_infected_animals, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
     return estimate, stderr
 
 
 def percentile_tia(n_infected_animals):
-
-    return 0, 0
+    estimate = np.percentile(n_infected_animals, 95, axis=0)
+    stderr = np.std(estimate, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
+    return estimate, stderr
 
 # def share_detected(unused_n_infected_animals):
 #     return model.detection_was_by_test.true
@@ -43,6 +43,7 @@ def percentile_tia(n_infected_animals):
 # no prior -> 3 random samples for fit + 86 evals for optim
 # only baseline as prior -> 1 sample for fit + 89 evals for optim
 # only baseline + highest degree/cap -> 7 for fit (regardless of network size) + 82 evals for optim
+# or just always use 50 evals for optim, for better comparison
 
 
 if __name__ == '__main__':
@@ -55,13 +56,14 @@ if __name__ == '__main__':
 
     parser.add_argument("--sentinels", type=int, default=120,
                         help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes. "
-                             "Default is 10 nodes.")
+                             "Default is 120 nodes.")
     parser.add_argument("--n_nodes", type=int, default=120, choices=[120, 1040, 57590],
                         help="Si-simulation parameter. "
                              "Defines the number of nodes used by the SI-model to create a graph. "
                              "Default value is 120 nodes.")
     parser.add_argument('--n_runs', type=int, default=100,
-                        help='')
+                        help='The number of times the optimizer is run. Results are then averaged over all runs.'
+                             'Default is 100 runs.')
 
     parser.add_argument("--max_iterations", type=int, default=50,
                         help="Optimizer parameter. The maximum number of iterations the algorithms run.")
@@ -73,8 +75,9 @@ if __name__ == '__main__':
                         help='GPGO optimizer parameter. Sets whether the surrogate function is fitted with priors '
                              'created by heuristics or by sampling random point. Only works when n_nodes and sentinels'
                              'are the same size. Default is True.')
-    parser.add_argument('--prior_mixed_strategies', type=bool,default=True,
-                        help='Sets whether to use test strategies that mix highest degrees and capacities in the prior.'
+    parser.add_argument('--prior_mixed_strategies', type=bool, default=True,
+                        help='GPGO optimizer parameter. '
+                             'Sets whether to use test strategies that mix highest degrees and capacities in the prior.'
                              'If set to no the prior has the same shape for all network sizes.')
 
     parser.add_argument("--statistic", choices=['mean', 'rms'], default='rms',
@@ -95,7 +98,7 @@ if __name__ == '__main__':
     parser.add_argument('--parallel', type=bool, default=True,
                         help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
                              'or sequentially. Default is set to parallel computation.')
-    parser.add_argument("--cpu_count", type=int, default=14,
+    parser.add_argument("--cpu_count", type=int, default=-1,
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 14 cpus.')
