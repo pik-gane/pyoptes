@@ -161,6 +161,7 @@ if __name__ == '__main__':
     elif args.optimizer == 'gpgo':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
+        experiment_params['optimizer_hyperparameters']['prior_mixed_strategies'] = args.prior_mixed_strategies
 
     save_hyperparameters(experiment_params, path_experiment)
 

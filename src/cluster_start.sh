@@ -22,6 +22,6 @@
 
 #SBATCH --mem=64000
 
-module load anaconda/2020.07
-source activate pik
-srun -n $SLURM_NTASKS python3 bb_optimization.py cma 2022_cma_100_runs
+module load anaconda/5.0.0_py3
+source activate bbo
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 2022_cma_100_runs --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/
