@@ -11,7 +11,7 @@ from .custom_GPGO import GPGO
 
 
 def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-              total_budget, parallel, cpu_count, acquisition_function, statistic, use_prior=True):
+              total_budget, parallel, num_cpu_cores, acquisition_function, statistic, use_prior=True):
     """
 
     @param use_prior:
@@ -24,7 +24,7 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
     @param eval_function:
     @param total_budget:
     @param parallel:
-    @param cpu_count:
+    @param num_cpu_cores:
     @return:
     """
     # variables in uppercase are used in the objective function
@@ -47,10 +47,10 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
                 acquisition=acq,
                 f=pyGPGO_objective_function,
                 parameter_dict=parameters,
-                n_jobs=cpu_count,
+                n_jobs=num_cpu_cores,
                 f_kwargs={'node_indices': node_indices, 't_start': t_start, 'total_budget': total_budget,
                           'n_nodes': n_nodes, 'eval_function': eval_function, 'n_simulations': n_simulations,
-                          'parallel': parallel, 'cpu_count': cpu_count, 'time_for_optimization': time_for_optimization,
+                          'parallel': parallel, 'num_cpu_cores': num_cpu_cores, 'time_for_optimization': time_for_optimization,
                           'statistic': statistic})
     gpgo.run(max_iter=max_iterations,
              prior=prior,
@@ -67,7 +67,7 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
 
 
 def pyGPGO_objective_function(x, node_indices, t_start, total_budget, n_nodes, eval_function,
-                              n_simulations, parallel, cpu_count, time_for_optimization, statistic):
+                              n_simulations, parallel, num_cpu_cores, time_for_optimization, statistic):
     """
 
     @param time_for_optimization:
@@ -79,7 +79,7 @@ def pyGPGO_objective_function(x, node_indices, t_start, total_budget, n_nodes, e
     @param eval_function:
     @param total_budget:
     @param parallel:
-    @param cpu_count:
+    @param num_cpu_cores:
     @return:
     """
     # TODO fix GPGO breaking when using the prior + sentinels less the n_nodes
@@ -96,7 +96,7 @@ def pyGPGO_objective_function(x, node_indices, t_start, total_budget, n_nodes, e
     y, stderr = eval_function(x,
                               n_simulations=n_simulations,
                               parallel=parallel,
-                              num_cpu_cores=cpu_count,
+                              num_cpu_cores=num_cpu_cores,
                               statistic=statistic)
     return -y, stderr
 
