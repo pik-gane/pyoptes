@@ -98,7 +98,7 @@ if __name__ == '__main__':
     parser.add_argument('--parallel', type=bool, default=True,
                         help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
                              'or sequentially. Default is set to parallel computation.')
-    parser.add_argument("--cpu_count", type=int, default=-1,
+    parser.add_argument("--num_cpu_cores", type=int, default=-1,
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 14 cpus.')
@@ -113,6 +113,8 @@ if __name__ == '__main__':
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
+    parser.add_argument('--path_networks', default='../data',
+                        help='Location where the networks are saved to. ')
     args = parser.parse_args()
 
     # prepare the directory for the plots, hyperparameters and results
@@ -154,7 +156,7 @@ if __name__ == '__main__':
                                                        }}
 
     # creates a list of n_runs networks (either waxman or barabasi-albert)
-    network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes)
+    network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
 
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
@@ -209,7 +211,7 @@ if __name__ == '__main__':
                                                   eval_function=f.evaluate,
                                                   n_nodes=args.n_nodes,
                                                   parallel=args.parallel,
-                                                  num_cpu_cores=args.cpu_count,
+                                                  num_cpu_cores=args.num_cpu_cores,
                                                   statistic=statistic)
 
         # create a folder to save the results of the individual optimization run
@@ -220,7 +222,7 @@ if __name__ == '__main__':
         optimizer_kwargs = {'n_nodes': args.n_nodes, 'node_indices': node_indices, 'eval_function': f.evaluate,
                             'n_simulations': args.n_simulations, 'statistic': statistic, 'total_budget': total_budget,
                             'max_iterations': args.max_iterations,
-                            'parallel': args.parallel, 'cpu_count': args.cpu_count}
+                            'parallel': args.parallel, 'num_cpu_cores': args.num_cpu_cores}
 
         t0 = time()
         if args.optimizer == 'cma':
@@ -270,7 +272,7 @@ if __name__ == '__main__':
         eval_best_test_strategy, best_test_strategy_stderr = f.evaluate(best_test_strategy,
                                                                         n_simulations=args.n_simulations,
                                                                         parallel=args.parallel,
-                                                                        num_cpu_cores=args.cpu_count,
+                                                                        num_cpu_cores=args.num_cpu_cores,
                                                                         statistic=statistic)
 
         output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
@@ -331,7 +333,7 @@ if __name__ == '__main__':
         y_prior = []
         print(f'Evaluating prior {args.n_runs} times.')
         for prior in tqdm(list_prior):
-            y_prior.append(evaluate_prior(prior, args.n_simulations, f.evaluate, args.parallel, args.cpu_count))
+            y_prior.append(evaluate_prior(prior, args.n_simulations, f.evaluate, args.parallel, args.num_cpu_cores))
         y_prior = np.array(y_prior)
 
         y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)

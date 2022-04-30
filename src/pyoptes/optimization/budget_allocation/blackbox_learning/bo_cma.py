@@ -5,17 +5,15 @@ import numpy as np
 import matplotlib.pyplot
 import pylab as plt
 
-
-from .utils import map_low_dim_x_to_high_dim, test_function
+from .utils import map_low_dim_x_to_high_dim
 
 
 # TODO complete documentation for parameters
-# TODO sigma should be about 1/4th of the search space width e.g sigma 30 for budget 120
 def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-           bounds, statistic, total_budget, parallel, cpu_count, sigma=0.4):
+           bounds, statistic, total_budget, parallel, num_cpu_cores, sigma):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
-    @param cpu_count: int, number of cores to use for parallelization of the objective function
+    @param num_cpu_cores: int, number of cores to use for parallelization of the objective function
     @param parallel: bool, whether to run the objective function in parallel
     @param total_budget: float, the total budget that is to be distributed along the nodes of the graph
     @param statistic: function object,
@@ -33,7 +31,7 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
 
     f_kwargs = {'n_simulations': n_simulations, 'node_indices': node_indices, 'n_nodes': n_nodes,
                 'eval_function': eval_function, 'statistic': statistic, 'total_budget': total_budget,
-                'parallel': parallel, 'cpu_count': cpu_count}
+                'parallel': parallel, 'num_cpu_cores': num_cpu_cores}
 
     es = cma.CMAEvolutionStrategy(initial_population, sigma0=sigma,
                                   inopts={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds})
@@ -47,6 +45,8 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
         solutions = es.ask()
         # evaluate all solutions on the objective function, list contains mean and stderr
         f_solution = [cma_objective_function(s, **f_kwargs)[0] for s in solutions]
+            # parallelization is non-trivial, as the objective function is already parallelized and nested
+            # parallelization is not allowed
 
         # use the solution and evaluation to update cma-es parameters (covariance-matrix ...)
         es.tell(solutions, f_solution)
@@ -57,7 +57,7 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
         best_solution_stderr_history.append(best_s_stderr)
 
         es.logger.add()
-        es.disp()   # print the progress of the optimizer
+        es.disp()   # prints the progress of the optimizer
         time_for_optimization.append((time.time() - t_start) / 60)
 
     best_parameter = es.result.xbest
@@ -72,7 +72,7 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
 
 
 def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function,
-                           statistic, total_budget, parallel, cpu_count):
+                           statistic, total_budget, parallel, num_cpu_cores):
     """
     An optimizeable objective function.
     Maps a lower dimensional x to their corresponding indices in the input vector of the given objective function.
@@ -82,7 +82,7 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     If this constraint is violated the function return 1e10, otherwise the output of the eva function
     (the evaluate function of the SI-model) for n_simulations is returned.
 
-    @param cpu_count:
+    @param num_cpu_cores:
     @param parallel:
     @param total_budget: float,
     @param statistic: function object,
@@ -99,7 +99,7 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
 
     x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
     return eval_function(x, n_simulations=n_simulations, statistic=statistic,
-                         parallel=parallel, num_cpu_cores=cpu_count)
+                         parallel=parallel, num_cpu_cores=num_cpu_cores)
 
 
 if __name__ == '__main__':

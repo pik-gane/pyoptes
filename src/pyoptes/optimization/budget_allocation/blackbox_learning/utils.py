@@ -211,16 +211,18 @@ def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores)
     return np.array(y_prior)
 
 
-def create_graphs(n_runs, graph_type, n_nodes):
+def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
     """
     Loads n_runs graphs from disk and returns them as a list
+    @param n_nodes:
+    @param base_path:
     @param n_runs: int, the number of different networks to be loaded
     @param graph_type: string, barabasi-albert or waxman
     @return: list of dictionaries with the graph and the node indices
     """
     assert 0 < n_runs <= 100    # there are only 100 graphs available
     network_list = []
-    network_path = os.path.join('../data/', graph_type + '_networks', f'{n_nodes}')
+    network_path = os.path.join(base_path, graph_type + '_networks', f'{n_nodes}')
     if graph_type == 'waxman':
         print(f'Loading {n_runs} waxman graphs')
         for n in tqdm(range(n_runs)):
