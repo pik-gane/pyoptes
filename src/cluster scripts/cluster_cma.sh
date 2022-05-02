@@ -4,13 +4,13 @@
 
 #SBATCH --qos=medium
 
-#SBATCH --job-name=loebkens
+#SBATCH --job-name=loebkens_cma
 
 #SBATCH --account=gane
 
-#SBATCH --output=outputs.out
+#SBATCH --output=cma_outputs.out
 
-#SBATCH --error=errors.err
+#SBATCH --error=cma_errors.err
 
 #SBATCH --workdir=/home/loebkens
 
