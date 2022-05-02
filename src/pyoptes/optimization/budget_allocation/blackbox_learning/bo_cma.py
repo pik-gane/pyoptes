@@ -10,9 +10,10 @@ from .utils import map_low_dim_x_to_high_dim
 
 # TODO complete documentation for parameters
 def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-           bounds, statistic, total_budget, parallel, num_cpu_cores, sigma):
+           bounds, statistic, total_budget, parallel, num_cpu_cores, sigma, popsize):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
+    @param popsize: int, population size
     @param num_cpu_cores: int, number of cores to use for parallelization of the objective function
     @param parallel: bool, whether to run the objective function in parallel
     @param total_budget: float, the total budget that is to be distributed along the nodes of the graph
@@ -34,7 +35,10 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
                 'parallel': parallel, 'num_cpu_cores': num_cpu_cores}
 
     es = cma.CMAEvolutionStrategy(initial_population, sigma0=sigma,
-                                  inopts={'maxiter': max_iterations, 'verbose': -8, 'bounds': bounds})
+                                  inopts={'maxiter': max_iterations,
+                                          'verbose': -8,
+                                          'bounds': bounds,
+                                          'popsize': popsize})
 
     t_start = time.time()
     time_for_optimization = []
@@ -43,11 +47,11 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
     while not es.stop():
         # sample a new population of solutions
         solutions = es.ask()
-        # evaluate all solutions on the objective function, list contains mean and stderr
+        # evaluate all solutions on the objective function, return only the mean (omit stderr)
         f_solution = [cma_objective_function(s, **f_kwargs)[0] for s in solutions]
             # parallelization is non-trivial, as the objective function is already parallelized and nested
-            # parallelization is not allowed
-
+            # parallelization is not allowed by python
+        print('size solutions: ', len(solutions))
         # use the solution and evaluation to update cma-es parameters (covariance-matrix ...)
         es.tell(solutions, f_solution)
 

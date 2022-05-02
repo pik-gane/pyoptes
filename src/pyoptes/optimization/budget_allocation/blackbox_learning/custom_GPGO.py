@@ -65,7 +65,8 @@ class GPGO:
 
         self.history = []
 
-        self.time_history = []
+        self.time_start = time.time()
+        self.time_for_optimization = []
         self.stderr = {}
 
         self.f_kwargs = f_kwargs
@@ -222,6 +223,8 @@ class GPGO:
             X.append(x)
             y, stderr = self.f(x, **self.f_kwargs)
             Y.append(y)
+            time_optim = time.time() - self.time_start
+            self.time_for_optimization.append(time_optim/60)
 
         self.GP.fit(np.array(X), np.array(Y))
         self.tau = np.max(y)
@@ -250,6 +253,7 @@ class GPGO:
         init_evals: int
             Initial function evaluations before fitting a GP. Default is 3.
         """
+
         if not use_prior:
             print('Running GPGO with surrogate function fitted on randomly sampled points\n')
             self.init_evals = init_evals
@@ -262,10 +266,8 @@ class GPGO:
 
         # print(f'Running GPGO for {max_iter} iterations.')
         for _ in tqdm(range(max_iter)):
-            time_ac = time.time()
+
             self._optimizeAcq()
-            time_ac = time.time() - time_ac
-            time_gp = time.time()
             self.updateGP()
-            time_gp = time.time() - time_gp
-            self.time_history.append([time_ac/60, time_gp/60])
+            time_optim = time.time() - self.time_start
+            self.time_for_optimization.append(time_optim/60)

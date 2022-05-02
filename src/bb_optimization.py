@@ -80,8 +80,14 @@ if __name__ == '__main__':
                              'Sets whether to use test strategies that mix highest degrees and capacities in the prior.'
                              'If set to no the prior has the same shape for all network sizes.')
 
-    parser.add_argument("--statistic", choices=['mean', 'rms'], default='rms',
-                        help="Choose the statistic to be used by the target function. Choose between mean and rms.")
+    parser.add_argument('--popsize', type=int, default=18,
+                        help='CMA-ES optimizer parameter. Defines the size of the population each iteration.'
+                             'CMA default is "4+int(3*log(n_nodes))" '
+                             '-> 18 of 120, 24 for 1040, 36 for 57590.')
+
+    parser.add_argument("--statistic", choices=['mean', 'rms', '95perc'], default='rms',
+                        help="Choose the statistic to be used by the target function. "
+                             "Choose between mean, rms (root-mean-square) or 95perc (95th-percentile).")
     parser.add_argument("--n_simulations", type=int, default=10000,
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
@@ -132,6 +138,10 @@ if __name__ == '__main__':
         statistic = mean_tia
     elif args.statistic == 'rms':
         statistic = rms_tia
+    elif args.statistic == '95perc':
+        statistic = percentile_tia
+    else:
+        raise ValueError('Statistic not supported')
 
     total_budget = args.scale_total_budget * args.n_nodes  # i.e., on average, nodes will do one test per year
     # define the first constraint, the boundaries of x_i
@@ -160,10 +170,13 @@ if __name__ == '__main__':
 
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
+        experiment_params['optimizer_hyperparameters']['popsize'] = args.popsize
     elif args.optimizer == 'gpgo':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
         experiment_params['optimizer_hyperparameters']['prior_mixed_strategies'] = args.prior_mixed_strategies
+    else:
+        raise ValueError('Optimizer not supported')
 
     save_hyperparameters(experiment_params, path_experiment)
 
@@ -219,6 +232,7 @@ if __name__ == '__main__':
         if not os.path.exists(path_sub_experiment):
             os.makedirs(path_sub_experiment)
 
+        # shared optimizer parameters
         optimizer_kwargs = {'n_nodes': args.n_nodes, 'node_indices': node_indices, 'eval_function': f.evaluate,
                             'n_simulations': args.n_simulations, 'statistic': statistic, 'total_budget': total_budget,
                             'max_iterations': args.max_iterations,
@@ -227,10 +241,10 @@ if __name__ == '__main__':
         t0 = time()
         if args.optimizer == 'cma':
 
-            # TODO check whether multiple initial solutions can be supplied
-            optimizer_kwargs['initial_population'] = prior[0]
+            optimizer_kwargs['initial_population'] = prior[0]   # CMA-ES can take only an initial population of one
             optimizer_kwargs['bounds'] = bounds
             optimizer_kwargs['sigma'] = cma_sigma
+            optimizer_kwargs['popsize'] = args.popsize
 
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
                 bo_cma(**optimizer_kwargs)
@@ -241,18 +255,11 @@ if __name__ == '__main__':
             optimizer_kwargs['acquisition_function'] = acquisition_function
             optimizer_kwargs['use_prior'] = args.use_prior
 
-            best_test_strategy, best_solution_history, stderr_history, time_for_optimization, time_history =\
+            best_test_strategy, best_solution_history, stderr_history, time_for_optimization, = \
                 bo_pyGPGO(**optimizer_kwargs)
 
-            plt.clf()
-            plt.plot(range(len(time_history)), time_history[:, 0], label='acquisition function')
-            plt.plot(range(len(time_history)), time_history[:, 1], label='surrogate function')
-            plt.title('Time for surrogate update and acquisition optimization')
-            plt.xlabel('Iteration')
-            plt.ylabel('Time in minutes')
-            plt.legend()
-            plt.savefig(os.path.join(path_sub_experiment, 'gp_and_acqui_time.png'))
-            plt.clf()
+        else:
+            raise ValueError('Optimizer not supported')
 
         print('------------------------------------------------------')
 
@@ -310,7 +317,8 @@ if __name__ == '__main__':
     # create an average otf plot
     average_history_mean = np.array(list_history)[:, 0]
     average_history_stderr = np.array(list_history)[:, 1]
-    plot_optimizer_history(np.mean(average_history_mean, axis=0), np.mean(average_history_stderr, axis=0),
+    plot_optimizer_history(np.mean(average_history_mean, axis=0),
+                           np.mean(average_history_stderr, axis=0),
                            average_baseline[0], average_baseline[1],
                            args.n_nodes, args.sentinels,
                            path_experiment, args.optimizer,

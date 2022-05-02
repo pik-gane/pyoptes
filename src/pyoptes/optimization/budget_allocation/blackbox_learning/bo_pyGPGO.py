@@ -27,9 +27,6 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
     @param num_cpu_cores:
     @return:
     """
-    # variables in uppercase are used in the objective function
-    # this is just done to keep them visually distinct from variables used inside the function
-    # as the optimizer doesn't allow passing of arguments to a function
 
     t_start = time.time()
     time_for_optimization = []
@@ -48,31 +45,29 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
                 f=pyGPGO_objective_function,
                 parameter_dict=parameters,
                 n_jobs=num_cpu_cores,
-                f_kwargs={'node_indices': node_indices, 't_start': t_start, 'total_budget': total_budget,
-                          'n_nodes': n_nodes, 'eval_function': eval_function, 'n_simulations': n_simulations,
-                          'parallel': parallel, 'num_cpu_cores': num_cpu_cores, 'time_for_optimization': time_for_optimization,
-                          'statistic': statistic})
+                f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
+                          'n_nodes': n_nodes, 'eval_function': eval_function,
+                          'n_simulations': n_simulations, 'parallel': parallel,
+                          'num_cpu_cores': num_cpu_cores, 'statistic': statistic})
     gpgo.run(max_iter=max_iterations,
              prior=prior,
              use_prior=use_prior)
 
-    # compute boundaries for each y by adding/subtracting the standard-error
+    best_test_strategy = gpgo.getResult()[0]
+    # gpgo.history contains the best y of the gp at each iteration
+    # reverse the sign change of optimizer history to get a more readable plot
+    best_solution_history = -np.array(gpgo.history)
+    # get the correct stderr of the solutions at each timestep
     stderr_history = [gpgo.stderr[y] for y in gpgo.history]
 
-    # TODO clean up the return of GPGO, only one time is necessary, maybe stderr is not needed in this format
-    # gpg.history contains the best y of the gp at each iteration
-    # reverse the sign change of optimizer history to get a more readable plot
-    return gpgo.getResult()[0], -np.array(gpgo.history), stderr_history, \
-           time_for_optimization, np.array(gpgo.time_history)
+    return best_test_strategy, best_solution_history, stderr_history, gpgo.time_for_optimization
 
 
-def pyGPGO_objective_function(x, node_indices, t_start, total_budget, n_nodes, eval_function,
-                              n_simulations, parallel, num_cpu_cores, time_for_optimization, statistic):
+def pyGPGO_objective_function(x, node_indices, total_budget, n_nodes, eval_function,
+                              n_simulations, parallel, num_cpu_cores, statistic):
     """
 
-    @param time_for_optimization:
     @param x:
-    @param t_start:
     @param n_simulations:
     @param node_indices:
     @param n_nodes:
@@ -84,8 +79,6 @@ def pyGPGO_objective_function(x, node_indices, t_start, total_budget, n_nodes, e
     """
     # TODO fix GPGO breaking when using the prior + sentinels less the n_nodes
     assert np.shape(x) == np.shape(node_indices)
-
-    time_for_optimization.append((time.time()-t_start)/60)
 
     # rescale strategy such that it satisfies sum constraint
     x = total_budget * np.exp(x) / sum(np.exp(x))
