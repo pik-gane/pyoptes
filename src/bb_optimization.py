@@ -51,8 +51,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("optimizer", choices=['cma', 'gpgo'],
                         help="Choose the optimizer to run on the SI-model. Choose between CMA-ES and GPGO")
-    parser.add_argument("name_experiment", help="The name of the folder where the results of the optimizer run are"
-                                                "saved to.")
+    parser.add_argument("name_experiment",
+                        help="The name of the folder where the results of the optimizer run are saved to.")
 
     parser.add_argument("--sentinels", type=int, default=120,
                         help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes. "
@@ -111,7 +111,8 @@ if __name__ == '__main__':
     parser.add_argument('--scale_total_budget', type=int, default=1, choices=[1, 4, 12],
                         help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.")
 
-    parser.add_argument('--plot_prior', type=bool, default='', help='')
+    parser.add_argument('--plot_prior', type=bool, default='',
+                        help='')
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
                         help="Optimizer parameter. Only effects SMAC and GPGO. Sets how often log messages appear. "
                              "Lower values mean more messages.")
@@ -341,7 +342,12 @@ if __name__ == '__main__':
         y_prior = []
         print(f'Evaluating prior {args.n_runs} times.')
         for prior in tqdm(list_prior):
-            y_prior.append(evaluate_prior(prior, args.n_simulations, f.evaluate, args.parallel, args.num_cpu_cores))
+            y_prior.append(evaluate_prior(prior,
+                                          n_simulations=args.n_simulations,
+                                          eval_function=f.evaluate,
+                                          parallel=args.parallel,
+                                          num_cpu_cores=args.num_cpu_cores,
+                                          statistic=statistic))
         y_prior = np.array(y_prior)
 
         y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)

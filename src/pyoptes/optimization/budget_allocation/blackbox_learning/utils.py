@@ -44,6 +44,8 @@ def save_hyperparameters(hyperparameters, base_path):
     print('saved hyperparameters\n')
 
 
+# TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capcities
+# maybe even a combination of both
 def choose_high_degree_nodes(node_degrees, n):
     """
     Returns the indices of n nodes with the highest degrees.
@@ -188,7 +190,7 @@ def test_function(x, *args, **kwargs):
     return x[0]**2
 
 
-def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores):
+def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores, statistic):
     """
     Evaluate the strategies in the prior and return the mean and standard error
     @param prior: list of numpy arrays, each array contains the values of a test strategy
@@ -199,12 +201,12 @@ def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores)
     @return: A list of the mean and standard error for every strategy in the prior
     """
     y_prior = []
-    # print(f'Evaluating prior with {n_simulations} simulations')
     for strategy in tqdm(prior, leave=False):
         m, stderr = eval_function(strategy,
                                   n_simulations=n_simulations,
                                   parallel=parallel,
-                                  num_cpu_cores=num_cpu_cores)
+                                  num_cpu_cores=num_cpu_cores,
+                                  statistic=statistic)
 
         y_prior.append(np.array([m, stderr]))
 

@@ -169,20 +169,19 @@ class GPGO:
             x_best = np.array([res.x for res in opt])
             f_best = np.array([np.atleast_1d(res.fun)[0] for res in opt])
 
-        # TODO rename to new/current measurement
-        self.best = x_best[np.argmin(f_best)]
+        self.current_best_measurement = x_best[np.argmin(f_best)]
 
     def updateGP(self):
         """
         Updates the internal model with the next acquired point and its evaluation.
         """
         # TODO how kw is created looks inefficient
-        kw = {param: self.best[i]
+        kw = {param: self.current_best_measurement[i]
               for i, param in enumerate(self.parameter_key)}
         param = np.array(list(kw.values()))
 
         f_new, stderr = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
-        self.GP.update(np.atleast_2d(self.best), np.atleast_1d(f_new))
+        self.GP.update(np.atleast_2d(self.current_best_measurement), np.atleast_1d(f_new))
 
         self.tau = np.max(self.GP.y)    # self.GP "saves" the y from the objective f,
         self.tau = np.round(self.tau, decimals=8)

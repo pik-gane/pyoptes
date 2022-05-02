@@ -65,6 +65,7 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
     plt.clf()
 
 
+# TODO add stderr to the plot
 def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
     """
 
