@@ -1,5 +1,4 @@
 import os.path
-import pylab as plt
 
 from pyoptes.optimization.budget_allocation import target_function as f
 
@@ -79,6 +78,9 @@ if __name__ == '__main__':
                         help='GPGO optimizer parameter. '
                              'Sets whether to use test strategies that mix highest degrees and capacities in the prior.'
                              'If set to no the prior has the same shape for all network sizes.')
+    parser.add_argument('--prior_only_baseline', type=bool, default=False,
+                        help='GPGO optimizer parameter. Sets whether to use only the baseline strategy in the prior.'
+                             'If true the prior consists of only one item.')
 
     parser.add_argument('--popsize', type=int, default=18,
                         help='CMA-ES optimizer parameter. Defines the size of the population each iteration.'
@@ -121,7 +123,8 @@ if __name__ == '__main__':
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
     parser.add_argument('--path_networks', default='../data',
-                        help='Location where the networks are saved to. ')
+                        help='Location where the networks are saved to. '
+                             'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data')
     args = parser.parse_args()
 
     # prepare the directory for the plots, hyperparameters and results
@@ -218,7 +221,8 @@ if __name__ == '__main__':
                                        node_capacities=capacities,
                                        total_budget=total_budget,
                                        sentinels=args.sentinels,
-                                       mixed_strategies=args.prior_mixed_strategies)
+                                       mixed_strategies=args.prior_mixed_strategies,
+                                       only_baseline=args.prior_only_baseline)
 
         # save a description of what each strategy is
         with open(os.path.join(path_experiment, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:

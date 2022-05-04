@@ -44,7 +44,7 @@ def save_hyperparameters(hyperparameters, base_path):
     print('saved hyperparameters\n')
 
 
-# TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capcities
+# TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capacities
 # maybe even a combination of both
 def choose_high_degree_nodes(node_degrees, n):
     """
@@ -81,11 +81,13 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
 # To make the prior work with an objective function where the number of sentinels is lower than the number of nodes
 # the budget had to always be allocated between the sentinels. This already disallows the creation of the baseline.
 #
-def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget, sentinels, mixed_strategies=True):
+def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget,
+                               sentinels, mixed_strategies=True, only_baseline=False):
     """
     Creates a list of test strategies to be used as a prior.
     First element in the list is a strategy where the budget is uniformly distributed over all sentinel nodes
     that the objective function is using.
+    @param only_baseline: bool, sets whether only the baseline strategy is used as a prior
     @param mixed_strategies: bool, sets whether strategies with a mix of high degree and high capacity nodes are used
     @param sentinels:
     @param n_nodes: int, number of nodes in the SI-simulation graph
@@ -121,46 +123,47 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
 
     test_strategy_parameter += f'\n0\tuniform distribution over all {n_nodes} nodes'
 
-    n = 1   # index for test strategies
-    for i, s in enumerate(sentinels_list):
-        # ------
-        # create strategy for s highest degree nodes, budget is allocated uniformly
-        indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
-        x_sentinels = np.array([total_budget / s for _ in range(s)])
-        prior_test_strategies.append(x_sentinels)
-        prior_node_indices.append(indices_highest_degree_nodes)
+    if not only_baseline:
+        n = 1   # index for test strategies
+        for i, s in enumerate(sentinels_list):
+            # ------
+            # create strategy for s highest degree nodes, budget is allocated uniformly
+            indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
+            x_sentinels = np.array([total_budget / s for _ in range(s)])
+            prior_test_strategies.append(x_sentinels)
+            prior_node_indices.append(indices_highest_degree_nodes)
 
-        test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest degree nodes'
-        n += 1
-        # ------
-        # create strategy for s highest capacity nodes, budget is allocated uniformly
-        indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
-        x_sentinels = np.array([total_budget / s for _ in range(s)])
-        prior_test_strategies.append(x_sentinels)
-        prior_node_indices.append(indices_highest_capacity_nodes)
+            test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest degree nodes'
+            n += 1
+            # ------
+            # create strategy for s highest capacity nodes, budget is allocated uniformly
+            indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
+            x_sentinels = np.array([total_budget / s for _ in range(s)])
+            prior_test_strategies.append(x_sentinels)
+            prior_node_indices.append(indices_highest_capacity_nodes)
 
-        test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
-        n += 1
-        # ------
-        # create strategies that are a mix of the highest degree and highest capacity nodes
-        if mixed_strategies:
-            for k in range(s)[1:]:
+            test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
+            n += 1
+            # ------
+            # create strategies that are a mix of the highest degree and highest capacity nodes
+            if mixed_strategies:
+                for k in range(s)[1:]:
 
-                # get the highest degree nodes and highest capacity nodes
-                indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:k]]
-                indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s-k]]
-                # check whether node indices would appear twice and remove the duplicates
-                # TODO maybe there is a better method for this check??
-                indices_combined = list(set(indices_highest_degree_nodes) | set(indices_highest_capacity_nodes))
-                # because of the missing nodes the strategies might violate the sum constraint (lightly)
-                # therefore of this the allocated budget is smaller or greater than the total budget
-                x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
-                prior_test_strategies.append(x_sentinels)
-                prior_node_indices.append(indices_combined)
+                    # get the highest degree nodes and highest capacity nodes
+                    indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:k]]
+                    indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s-k]]
+                    # check whether node indices would appear twice and remove the duplicates
+                    # TODO maybe there is a better method for this check??
+                    indices_combined = list(set(indices_highest_degree_nodes) | set(indices_highest_capacity_nodes))
+                    # because of the missing nodes the strategies might violate the sum constraint (lightly)
+                    # therefore of this the allocated budget is smaller or greater than the total budget
+                    x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
+                    prior_test_strategies.append(x_sentinels)
+                    prior_node_indices.append(indices_combined)
 
-                test_strategy_parameter += f'\n{n}\tuniform distribution over ' \
-                                           f'{k} highest degree nodes and {s-k} highest capacity nodes'
-                n += 1
+                    test_strategy_parameter += f'\n{n}\tuniform distribution over ' \
+                                               f'{k} highest degree nodes and {s-k} highest capacity nodes'
+                    n += 1
 
     return prior_test_strategies, prior_node_indices, test_strategy_parameter
 
