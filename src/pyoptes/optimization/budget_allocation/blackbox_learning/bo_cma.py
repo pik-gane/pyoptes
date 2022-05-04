@@ -51,7 +51,6 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
         f_solution = [cma_objective_function(s, **f_kwargs)[0] for s in solutions]
             # parallelization is non-trivial, as the objective function is already parallelized and nested
             # parallelization is not allowed by python
-        print('size solutions: ', len(solutions))
         # use the solution and evaluation to update cma-es parameters (covariance-matrix ...)
         es.tell(solutions, f_solution)
 
@@ -86,24 +85,28 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     If this constraint is violated the function return 1e10, otherwise the output of the eva function
     (the evaluate function of the SI-model) for n_simulations is returned.
 
-    @param num_cpu_cores:
-    @param parallel:
-    @param total_budget: float,
-    @param statistic: function object,
-    @param x: numpy array,
+    @param num_cpu_cores: int, number of cpu cores to use for parallelization
+    @param parallel: bool, whether to run the SI-simulation in parallel
+    @param total_budget: int, total budget to be allocated to the sentinels
+    @param statistic: function object, the statistic to be used for the SI-simulation
+    @param x: list of floats, the parameters to be optimized
     @param eval_function: function object,
     @param n_simulations: int, number of times the objective function will run a simulation for averaging the output
     @param node_indices: list, indices of x in the higher dimensional x
     @param n_nodes: int, dimension of the input of the objective function
-    @return: float, objective function value at x
+    @return: two floats, the SI-simulation result and standard error
     """
-    assert np.shape(x) == np.shape(node_indices)
-
+    # rescale strategy such that it satisfies sum constraint
     x = total_budget * np.exp(x) / sum(np.exp(x))
 
     x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
-    return eval_function(x, n_simulations=n_simulations, statistic=statistic,
-                         parallel=parallel, num_cpu_cores=num_cpu_cores)
+
+    y, stderr = eval_function(x,
+                              n_simulations=n_simulations,
+                              parallel=parallel,
+                              num_cpu_cores=num_cpu_cores,
+                              statistic=statistic)
+    return y, stderr
 
 
 if __name__ == '__main__':

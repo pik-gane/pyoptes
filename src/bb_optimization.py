@@ -32,7 +32,7 @@ def mean_tia(n_infected_animals):
 
 def percentile_tia(n_infected_animals):
     estimate = np.percentile(n_infected_animals, 95, axis=0)
-    stderr = np.std(estimate, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
+    stderr = np.std(n_infected_animals, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
     return estimate, stderr
 
 # def share_detected(unused_n_infected_animals):
@@ -195,6 +195,12 @@ if __name__ == '__main__':
     time_start = time()
     for n, network in enumerate(network_list[:args.n_runs]):
         print(f'Run {n + 1} of {args.n_runs}, start time: {strftime("%H:%M:%S", localtime())}')
+
+        # create a folder to save the results of the individual optimization run
+        path_sub_experiment = os.path.join(path_experiment, 'raw', f'{n}')
+        if not os.path.exists(path_sub_experiment):
+            os.makedirs(path_sub_experiment)
+
         # unpack the properties of the network
         transmissions, capacities, degrees = network
 
@@ -206,9 +212,17 @@ if __name__ == '__main__':
                   pre_transmissions=transmissions)
 
         # create a list of test strategies based on different heuristics
-        prior, prior_parameter = create_test_strategy_prior(args.n_nodes, degrees,
-                                                            capacities, total_budget, args.sentinels,
-                                                            mixed_strategies=args.prior_mixed_strategies)
+        prior, prior_node_indices, prior_parameter = \
+            create_test_strategy_prior(n_nodes=args.n_nodes,
+                                       node_degrees=degrees,
+                                       node_capacities=capacities,
+                                       total_budget=total_budget,
+                                       sentinels=args.sentinels,
+                                       mixed_strategies=args.prior_mixed_strategies)
+
+        # save a description of what each strategy is
+        with open(os.path.join(path_experiment, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:
+            fi.write(prior_parameter)
 
         # list_prior is only needed if the objective function values of the strategies in the prior
         # are to be plotted
@@ -221,17 +235,12 @@ if __name__ == '__main__':
 
         # compute the baseline, i.e., the expected value of the objective function for a uniform distribution of the
         # budget over all nodes (regardless of the number of sentinels)
-        baseline_mean, baseline_stderr = baseline(total_budget=total_budget,
-                                                  eval_function=f.evaluate,
-                                                  n_nodes=args.n_nodes,
-                                                  parallel=args.parallel,
-                                                  num_cpu_cores=args.num_cpu_cores,
-                                                  statistic=statistic)
-
-        # create a folder to save the results of the individual optimization run
-        path_sub_experiment = os.path.join(path_experiment, 'raw', f'{n}')
-        if not os.path.exists(path_sub_experiment):
-            os.makedirs(path_sub_experiment)
+        baseline_mean, baseline_stderr, x_baseline = baseline(total_budget=total_budget,
+                                                              eval_function=f.evaluate,
+                                                              n_nodes=args.n_nodes,
+                                                              parallel=args.parallel,
+                                                              num_cpu_cores=args.num_cpu_cores,
+                                                              statistic=statistic)
 
         # shared optimizer parameters
         optimizer_kwargs = {'n_nodes': args.n_nodes, 'node_indices': node_indices, 'eval_function': f.evaluate,
@@ -353,11 +362,8 @@ if __name__ == '__main__':
         y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)
         y_prior_stderr = np.mean(y_prior[:, :, 1], axis=0)
 
-        # save a description of what each strategy is
-        with open(os.path.join(args.path_plot, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:
-            fi.write(prior_parameter)
         # plot the objective function values of the prior
-        plot_prior(path_experiment=args.path_plot,
+        plot_prior(path_experiment=path_experiment,
                    n_nodes=args.n_nodes,
                    y_prior_mean=y_prior_mean,
                    y_prior_stderr=y_prior_stderr,

@@ -68,6 +68,7 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
     @param node_indices: list of integers
     @return: numpy array of size n_node, with values of x at indices node_indices
     """
+    assert np.shape(x) == np.shape(node_indices)
     # create a dummy vector to be filled with the values of x at the appropriate indices
     x_true = np.zeros(n_nodes)
     for i, xi in zip(node_indices, x):
@@ -76,43 +77,47 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
 
 
 # TODO restrict prior to a fixed number of strategies
-# TODO make prior with sentinels < n_nodes work with gpgg
+# TODO make prior with sentinels < n_nodes work with gpgo
+# To make the prior work with an objective function where the number of sentinels is lower than the number of nodes
+# the budget had to always be allocated between the sentinels. This already disallows the creation of the baseline.
+#
 def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget, sentinels, mixed_strategies=True):
     """
     Creates a list of test strategies to be used as a prior.
     First element in the list is a strategy where the budget is uniformly distributed over all sentinel nodes
     that the objective function is using.
-    @param mixed_strategies:
+    @param mixed_strategies: bool, sets whether strategies with a mix of high degree and high capacity nodes are used
     @param sentinels:
-    @param n_nodes: int, number of nodes in SI-simulation graph
+    @param n_nodes: int, number of nodes in the SI-simulation graph
     @param node_degrees: list, contains indices of nodes and their degree
-    @param node_capacities: list,capacity of each node
+    @param node_capacities: list, capacity of each node
     @param total_budget: float, total budget for the allocation
-    @return: list of numpy arrays, each array contains the budget distribution of a test strategy
-            a string containing descriptions for each test strategy
+    @return: three lists,
+        1. list of numpy arrays, each array defining the budget distribution over a number of sentinels
+        2. list of node indices for the sentinels in each strategy
+        3. a string containing descriptions for each test strategy
     """
-    # print('Assembling prior from test strategies created by different heuristics.\n')
-    test_strategy_prior = []
+    prior_test_strategies = []
+    prior_node_indices = []
+    test_strategy_parameter = 'number\tdescription'     # string containing descriptions for each test strategy
 
-    # specify increasing number of sentinels
+    # specify increasing number of sentinels TODO why these numbers in specific ?
     sentinels_list = [int(n_nodes / 6), int(n_nodes / 12), int(n_nodes / 24)]
 
     # sort list of nodes by degree
     nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
 
-    # sort nodes by capacities
-    nodes_capacities = [(i, c) for i, c in
-                        enumerate(node_capacities)]  # node_contains only capacities, add node_index
+    # sort nodes by capacities, node_contains only capacities, add node_index
+    nodes_capacities = [(i, c) for i, c in enumerate(node_capacities)]
     nodes_capacities_sorted = sorted(nodes_capacities, key=lambda nodes_capacities: nodes_capacities[1],
                                      reverse=True)
-
-    test_strategy_parameter = 'number\tdescription'
 
     # TODO has to be fixed to distribute over n_nodes instead of sentinels
     # the baseline strategy (equally distributed budget over all sentinels)
     indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:sentinels]]
     x_sentinels = np.array([total_budget / sentinels for _ in range(sentinels)])
-    test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
+    prior_test_strategies.append(x_sentinels)
+    prior_node_indices.append(indices_highest_degree_nodes)
 
     test_strategy_parameter += f'\n0\tuniform distribution over all {n_nodes} nodes'
 
@@ -122,7 +127,8 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
         # create strategy for s highest degree nodes, budget is allocated uniformly
         indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
         x_sentinels = np.array([total_budget / s for _ in range(s)])
-        test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
+        prior_test_strategies.append(x_sentinels)
+        prior_node_indices.append(indices_highest_degree_nodes)
 
         test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest degree nodes'
         n += 1
@@ -130,7 +136,8 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
         # create strategy for s highest capacity nodes, budget is allocated uniformly
         indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
         x_sentinels = np.array([total_budget / s for _ in range(s)])
-        test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_capacity_nodes))
+        prior_test_strategies.append(x_sentinels)
+        prior_node_indices.append(indices_highest_capacity_nodes)
 
         test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
         n += 1
@@ -148,25 +155,27 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
                 # because of the missing nodes the strategies might violate the sum constraint (lightly)
                 # therefore of this the allocated budget is smaller or greater than the total budget
                 x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
-                test_strategy_prior.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
+                prior_test_strategies.append(x_sentinels)
+                prior_node_indices.append(indices_combined)
 
                 test_strategy_parameter += f'\n{n}\tuniform distribution over ' \
                                            f'{k} highest degree nodes and {s-k} highest capacity nodes'
                 n += 1
 
-    return test_strategy_prior, test_strategy_parameter
+    return prior_test_strategies, prior_node_indices, test_strategy_parameter
 
 
 def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, statistic):
     """
-
-    @param statistic:
-    @param total_budget:
-    @param eval_function:
-    @param n_nodes:
-    @param parallel:
-    @param num_cpu_cores:
-    @return:
+    Creates a test strategy where the total budget is uniformly allocated to all nodes.
+    Evaluates the test strategy with the given evaluation function for 10000 simulation runs.
+    @param statistic: function, aggregates the results of the simulation runs
+    @param total_budget: int, total budget for the test strategy
+    @param eval_function: SI-simulation
+    @param n_nodes: int, number of nodes in the network
+    @param parallel: bool, whether to use parallelization for the SI-simulation
+    @param num_cpu_cores: int, number of cpu cores to use for parallelization
+    @return: mean and standard error of uniform baseline and the corresponding uniform test strategy
     """
     # distribute budget uniformly over all nodes
     x_baseline = np.array([total_budget / n_nodes for _ in range(n_nodes)])
@@ -178,7 +187,7 @@ def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, stat
                               statistic=statistic
                               )
 
-    return m, stderr
+    return m, stderr, x_baseline
 
 
 def test_function(x, *args, **kwargs):
