@@ -32,7 +32,7 @@ def mean_tia(n_infected_animals):
 
 def percentile_tia(n_infected_animals):
     estimate = np.percentile(n_infected_animals, 95, axis=0)
-    stderr = np.std(estimate, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
+    stderr = np.std(n_infected_animals, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
     return estimate, stderr
 
 # def share_detected(unused_n_infected_animals):

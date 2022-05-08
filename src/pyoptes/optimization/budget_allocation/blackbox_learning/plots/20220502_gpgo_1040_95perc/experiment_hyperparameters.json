@@ -1,0 +1,20 @@
+{
+    "optimizer_hyperparameters": {
+        "acquisition_function": "ExpectedImprovement",
+        "max_iterations": 50,
+        "optimizer": "gpgo",
+        "prior_mixed_strategies": false,
+        "use_prior": true
+    },
+    "simulation_hyperparameters": {
+        "delta_t_symptoms": 60,
+        "graph": "ba",
+        "n_nodes": 1040,
+        "n_runs": 100,
+        "n_simulations": 10000,
+        "p_infection_by_transmission": 0.5,
+        "sentinels": 1040,
+        "statistic": "95perc",
+        "total_budget": 1040
+    }
+}
