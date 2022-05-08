@@ -179,6 +179,7 @@ if __name__ == '__main__':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
         experiment_params['optimizer_hyperparameters']['prior_mixed_strategies'] = args.prior_mixed_strategies
+        experiment_params['optimizer_hyperparameters']['prior_only_baseline'] = args.prior_only_baseline
     else:
         raise ValueError('Optimizer not supported')
 

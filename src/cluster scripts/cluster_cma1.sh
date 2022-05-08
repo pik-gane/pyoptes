@@ -8,9 +8,9 @@
 
 #SBATCH --account=gane
 
-#SBATCH --output=cma1_outputs.out
+#SBATCH --output=outputs_cma1.out
 
-#SBATCH --error=cma1_errors.err
+#SBATCH --error=errors_cma1.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -24,9 +24,12 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 20220504_cma_100_runs_nodes_1040 \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 20220508_cma_nodes_1040_mean \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /home/loebkens/pyoptes/data \
-  --statistic rms \
+  --graph ba \
   --n_nodes 1040 \
-  --sentinels 1040
+  --sentinels 1040 \
+  --statistic mean \
+  --scale_total_budget 1
+

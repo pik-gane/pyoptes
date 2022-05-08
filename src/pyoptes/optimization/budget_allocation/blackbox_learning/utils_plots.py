@@ -42,10 +42,10 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
     # print(s_bounds)
 
     plt.clf()
-    plt.plot(range(len(optimizer_history)), optimizer_history, label='GPGO')
+    plt.plot(range(len(optimizer_history)), optimizer_history, label=optimizer)
     # add standard error of the mean
     plt.plot(range(len(optimizer_history)), s_bounds[:, 0],
-             linestyle='dotted', color='black', label='stderr GPGO')
+             linestyle='dotted', color='black', label=f'stderr {optimizer}')
     plt.plot(range(len(optimizer_history)), s_bounds[:, 1],
              linestyle='dotted', color='black')
 
