@@ -118,7 +118,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     # the baseline strategy (equally distributed budget over all sentinels)
     indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:sentinels]]
     x_sentinels = np.array([total_budget / sentinels for _ in range(sentinels)])
-    prior_test_strategies.append(x_sentinels)
+    prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
     prior_node_indices.append(indices_highest_degree_nodes)
 
     test_strategy_parameter += f'\n0\tuniform distribution over all {n_nodes} nodes'
@@ -130,7 +130,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
             # create strategy for s highest degree nodes, budget is allocated uniformly
             indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
             x_sentinels = np.array([total_budget / s for _ in range(s)])
-            prior_test_strategies.append(x_sentinels)
+            prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
             prior_node_indices.append(indices_highest_degree_nodes)
 
             test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest degree nodes'
@@ -139,7 +139,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
             # create strategy for s highest capacity nodes, budget is allocated uniformly
             indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
             x_sentinels = np.array([total_budget / s for _ in range(s)])
-            prior_test_strategies.append(x_sentinels)
+            prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_capacity_nodes))
             prior_node_indices.append(indices_highest_capacity_nodes)
 
             test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
@@ -158,7 +158,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
                     # because of the missing nodes the strategies might violate the sum constraint (lightly)
                     # therefore of this the allocated budget is smaller or greater than the total budget
                     x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
-                    prior_test_strategies.append(x_sentinels)
+                    prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
                     prior_node_indices.append(indices_combined)
 
                     test_strategy_parameter += f'\n{n}\tuniform distribution over ' \

@@ -1,3 +1,4 @@
+# TODO rewrite this to make the changes more clear
 '''
 Rewrite of the GPGO class from pyGPGO.
 Adjusted to support
@@ -115,7 +116,7 @@ class GPGO:
         self.tau = np.round(self.tau, decimals=8)
 
         self.history.append(self.tau)
-        self.stderr[self.tau] = stderr
+        self.stderr[self.tau] = stderr # TODO fix stderr like in _fitGP
 
     def _acqWrapper(self, xnew):
         """
@@ -215,18 +216,22 @@ class GPGO:
         """
 
         @param prior: list of test strategies
+        @param prior_node_indices: list of indices of the test strategies in the prior
         """
         Y = []
+        Y_stderr = []
         X = []
         for x in tqdm(prior):
             X.append(x)
             y, stderr = self.f(x, **self.f_kwargs)
             Y.append(y)
+            Y_stderr.append(stderr)
             time_optim = time.time() - self.time_start
             self.time_for_optimization.append(time_optim/60)
 
         self.GP.fit(np.array(X), np.array(Y))
-        self.tau = np.max(y)
+        self.tau = np.max(y) # TODO isn't just the max of one value ? Should be Y
+                            # maybe use argmax of Y to get Y and stderr ?
         self.tau = np.round(self.tau, decimals=8)
 
         # print('shape and type of GP.y: ', np.shape(self.GP.y), type(self.GP.y))
@@ -239,18 +244,17 @@ class GPGO:
         # plt.show()
 
         self.history.append(self.tau)
-        self.stderr[self.tau] = stderr
+        self.stderr[self.tau] = stderr # TODO this is not the correct stderr
 
     def run(self, max_iter=10, init_evals=3, prior=None, use_prior=False):
         """
         Runs the Bayesian Optimization procedure.
-
-        Parameters
-        ----------
-        max_iter: int
-            Number of iterations to run. Default is 10.
-        init_evals: int
-            Initial function evaluations before fitting a GP. Default is 3.
+        @param max_iter: maximum number of iterations for GPGO
+        @param init_evals:  number of random samples for fitting the GP
+        @param node_indices: list of node indices to use for the objective function
+        @param prior: list of test strategies
+        @param use_prior: boolean to use the prior
+        @param prior_node_indices: list of node indices to use for the prior
         """
 
         if not use_prior:
