@@ -96,7 +96,7 @@ class GPGO:
 
     def _firstRun(self, n_eval=3):
         """
-        Performs initial evaluations before fitting GP.
+        Performs initial evaluations on random samples of the parameters before fitting GP.
 
         Parameters
         ----------
@@ -104,19 +104,24 @@ class GPGO:
             Number of initial evaluations to perform. Default is 3.
 
         """
-        self.X = np.empty((n_eval, len(self.parameter_key)))
-        self.y = np.empty((n_eval,))
+        X = np.empty((n_eval, len(self.parameter_key)))
+        Y = np.empty((n_eval,))
+        Y_stderr = np.empty((n_eval,))
         for i in range(n_eval):
             s_param = self._sampleParam()
-            self.X[i] = s_param
-            self.y[i], stderr = self.f(s_param, **self.f_kwargs)
-        self.GP.fit(self.X, self.y)
+            X[i] = s_param
+            Y[i], Y_stderr[i] = self.f(s_param, **self.f_kwargs)
 
-        self.tau = np.max(self.y)
+        self.GP.fit(X, Y)
+
+        # get the best y and corresponding stderr
+        i = np.argmax(Y)
+        self.tau = Y[i]
+        tau_stderr = Y_stderr[i]
         self.tau = np.round(self.tau, decimals=8)
 
         self.history.append(self.tau)
-        self.stderr[self.tau] = stderr # TODO fix stderr like in _fitGP
+        self.stderr[self.tau] = tau_stderr
 
     def _acqWrapper(self, xnew):
         """
@@ -181,16 +186,18 @@ class GPGO:
               for i, param in enumerate(self.parameter_key)}
         param = np.array(list(kw.values()))
 
-        f_new, stderr = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
+        f_new, stderr_f_new = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
         self.GP.update(np.atleast_2d(self.current_best_measurement), np.atleast_1d(f_new))
 
+        # add new stderr to the stderr dictionary
+        self.stderr[f_new] = stderr_f_new
+
         self.tau = np.max(self.GP.y)    # self.GP "saves" the y from the objective f,
-        self.tau = np.round(self.tau, decimals=8)
 
         # test strategies return the same y for f and self.GP (+/- the standarderror)
         # GP.y is just a list
         self.history.append(self.tau)
-        self.stderr[self.tau] = stderr
+        # self.stderr[self.tau] = stderr # TODO this is not the correct stderr for tau
 
     def getResult(self):
         """
@@ -230,21 +237,14 @@ class GPGO:
             self.time_for_optimization.append(time_optim/60)
 
         self.GP.fit(np.array(X), np.array(Y))
-        self.tau = np.max(y) # TODO isn't just the max of one value ? Should be Y
-                            # maybe use argmax of Y to get Y and stderr ?
-        self.tau = np.round(self.tau, decimals=8)
 
-        # print('shape and type of GP.y: ', np.shape(self.GP.y), type(self.GP.y))
-        # print('sqrt of self.GP.y: ', -self.GP.y)
-        # print('min, max and mean of sqrt(self.GP.y): ', np.min(-self.GP.y), np.max(-self.GP.y), np.mean(-self.GP.y))
-        # plt.bar(range(len(-self.GP.y)), -self.GP.y, label='prior')
-        # plt.title(f'Objective function evaluation for {len(prior)} strategies')
-        # plt.xlabel('Prior')
-        # plt.ylabel('objective function value')
-        # plt.show()
+        # get the best y and corresponding stderr
+        i = np.argmax(Y)
+        self.tau = Y[i]
+        tau_stderr = Y_stderr[i]
 
         self.history.append(self.tau)
-        self.stderr[self.tau] = stderr # TODO this is not the correct stderr
+        self.stderr[self.tau] = tau_stderr
 
     def run(self, max_iter=10, init_evals=3, prior=None, use_prior=False):
         """
