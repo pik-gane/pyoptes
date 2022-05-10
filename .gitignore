@@ -7,7 +7,7 @@ __pycache__/
 /*/smac3*
 /*/outcmaes
 .idea
-/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/test/
+/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/test*/
 
 # C extensions
 *.so
