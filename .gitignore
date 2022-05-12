@@ -136,3 +136,5 @@ dmypy.json
 .project
 .pydevproject
 __pycache__
+
+.DS_Store
