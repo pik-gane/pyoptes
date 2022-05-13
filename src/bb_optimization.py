@@ -12,6 +12,7 @@ from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate
 import argparse
 import numpy as np
 from tqdm import tqdm
+from scipy.stats.mstats import mjci
 from time import time, localtime, strftime
 
 
@@ -31,7 +32,7 @@ def mean_tia(n_infected_animals):
 
 def percentile_tia(n_infected_animals):
     estimate = np.percentile(n_infected_animals, 95, axis=0)
-    stderr = np.std(n_infected_animals, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
+    stderr = mjci(n_infected_animals, prob=[0.95], axis=0)[0]
     return estimate, stderr
 
 # def share_detected(unused_n_infected_animals):
@@ -86,6 +87,9 @@ if __name__ == '__main__':
                         help='CMA-ES optimizer parameter. Defines the size of the population each iteration.'
                              'CMA default is "4+int(3*log(n_nodes))" '
                              '-> 18 of 120, 24 for 1040, 36 for 57590.')
+    parser.add_argument('--scale_sigma', type=float, default=0.25,
+                        help='CMA-ES optimizer parameter. Defines the scaling of the standard deviation. '
+                             'Default is a standard deviation of 0.25 of the total budget.')
 
     parser.add_argument("--statistic", choices=['mean', 'rms', '95perc'], default='rms',
                         help="Choose the statistic to be used by the target function. "
@@ -124,7 +128,8 @@ if __name__ == '__main__':
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
     parser.add_argument('--path_networks', default='../data',
                         help='Location where the networks are saved to. '
-                             'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data')
+                             'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
+                             '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/Synset120-180/syndata0')
     args = parser.parse_args()
 
     # prepare the directory for the plots, hyperparameters and results
@@ -132,7 +137,9 @@ if __name__ == '__main__':
     if not os.path.exists(path_experiment):
         os.makedirs(path_experiment)
 
-    # map acquisition function string to one useable by pyGPGO
+    # TODO change hyperparameter of acquisition function
+    # TODO test different acquisition functions
+    # map acquisition function string to one useable by pyGPGO. This is just to keep command-line args short
     af = {'EI': 'ExpectedImprovement', 'PI': 'ProbabilityImprovement', 'UCB': 'UCB',
           'Entropy': 'Entropy', 'tEI': 'tExpectedImprovement'}
     acquisition_function = af[args.acquisition_function]
@@ -147,12 +154,13 @@ if __name__ == '__main__':
     else:
         raise ValueError('Statistic not supported')
 
+    # The total budget is a function of the number of nodes in the network and
     total_budget = args.scale_total_budget * args.n_nodes  # i.e., on average, nodes will do one test per year
     # define the first constraint, the boundaries of x_i
     bounds = [0, total_budget]
 
     # for CMA-ES, sigma is set as 0.25 of the total budget
-    cma_sigma = 0.25 * total_budget
+    cma_sigma = args.scale_sigma * total_budget
 
     # save SI-model and optimizer parameters as .json-file
     experiment_params = {'simulation_hyperparameters': {'total_budget': total_budget,
@@ -169,6 +177,7 @@ if __name__ == '__main__':
                                                        'max_iterations': args.max_iterations,
                                                        }}
 
+    # TODO use Synthetic/Ansari-networks instead BA/waxman with budget N, 1040 nodes, RMS
     # creates a list of n_runs networks (either waxman or barabasi-albert)
     network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
 
@@ -188,13 +197,16 @@ if __name__ == '__main__':
     # lists for result aggregations
     list_prior = []
 
-    list_otf = []
-    list_ratio_otf = []
-    list_baseline_otf = []
-    list_solution_history = []
-    list_time_for_optimization = []
+    list_best_otf = []  # best optimizer function value on each network and corresponding standard error
+    list_best_otf_stderr = []
+    list_baseline_otf = []  # baseline  function value on each network and corresponding standard error
+    list_baseline_otf_stderr = []
 
-    list_history = []
+    list_ratio_otf = []     # ratio of best optimizer function value to baseline function value on each network
+    list_best_solution_history = []
+    list_stderr_history = []
+
+    list_time_for_optimization = []
 
     time_start = time()
     for n, network in enumerate(network_list[:args.n_runs]):
@@ -312,37 +324,51 @@ if __name__ == '__main__':
                      output=output)
 
         # save OTFs of baseline and optimizer
-        list_baseline_otf.append([baseline_mean, baseline_stderr])
-        list_otf.append([eval_best_test_strategy, best_test_strategy_stderr])
-        list_ratio_otf.append(eval_best_test_strategy / baseline_mean)
+        list_best_otf.append(eval_best_test_strategy)
+        list_best_otf_stderr.append(best_test_strategy_stderr)
+        list_baseline_otf.append(baseline_mean)
+        list_baseline_otf_stderr.append(baseline_stderr)
 
-        list_solution_history.append(best_solution_history)
+        list_ratio_otf.append(eval_best_test_strategy / baseline_mean)
+        list_best_solution_history.append(best_solution_history)
+        list_stderr_history.append(stderr_history)
+
         list_time_for_optimization.append(time_for_optimization)
 
-        list_history.append([best_solution_history, stderr_history])
     print(f'Optimization end: {strftime("%H:%M:%S", localtime())}\n')
     # ------------------------------------------------------------
     # postprocessing
     # ------------------------------------------------------------
     # compute the average OTFs, baseline and their standard errors
+    average_best_otf = np.mean(list_best_otf, axis=0)
+    s = np.mean(list_best_otf_stderr, axis=0)
+    v = np.var(list_best_otf, axis=0)
+    average_best_otf_stderr = np.sqrt(v/args.n_runs + s**2)
+
+    average_baseline = np.mean(list_baseline_otf, axis=0) # TODO computation of stderr is wrong, check in spreadsheet
+    s = np.mean(list_baseline_otf_stderr, axis=0)
+    v = np.var(list_baseline_otf, axis=0)
+    average_baseline_stderr = np.sqrt(v/args.n_runs + s**2)
+
     average_ratio_otf = np.mean(list_ratio_otf)
-    average_baseline = np.mean(list_baseline_otf, axis=0)
-    average_otf = np.mean(list_otf, axis=0)
 
     # create an average otf plot
-    average_history_mean = np.array(list_history)[:, 0]
-    average_history_stderr = np.array(list_history)[:, 1]
-    plot_optimizer_history(np.mean(average_history_mean, axis=0),
-                           np.mean(average_history_stderr, axis=0),
-                           average_baseline[0], average_baseline[1],
+    average_best_solution_history = np.mean(list_best_solution_history, axis=0)
+    s = np.mean(list_stderr_history, axis=0)
+    v = np.var(list_best_solution_history, axis=0)
+    average_stderr_history = np.sqrt(v/args.n_runs + s**2)
+
+    plot_optimizer_history(average_best_solution_history,
+                           average_stderr_history, # TODO computation of stderr is wrong, check in spreadsheet
+                           average_baseline, average_baseline_stderr,
                            args.n_nodes, args.sentinels,
                            path_experiment, args.optimizer,
                            name='_average_plot')
 
     output = f'Results averaged over {args.n_runs} optimizer runs' \
              f'\naverage ratio otf to baseline: {average_ratio_otf}' \
-             f'\naverage baseline: {average_baseline}' \
-             f'\naverage best strategy OTF and stderr: {average_otf}' \
+             f'\naverage baseline and stderr: {average_baseline}, {average_baseline_stderr}' \
+             f'\naverage best strategy OTF and stderr: {average_best_otf}, {average_best_otf_stderr}' \
              f'\nTime for optimization (in hours): {(time()-time_start) / 3600}'
 
     save_results(best_test_strategy=None,
@@ -350,6 +376,8 @@ if __name__ == '__main__':
                  path_experiment=path_experiment,
                  output=output)
     print(output)
+
+    # TODO scatterplot degree /capacity/ incoming transmissions vs strategy
 
     # evaluate each strategy in each prior of n_runs and plot the average objective function value of each strategy
     if args.plot_prior:

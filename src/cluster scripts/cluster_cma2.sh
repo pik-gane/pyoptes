@@ -2,15 +2,15 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=short
+#SBATCH --qos=medium
 
-#SBATCH --job-name=loebkens_gpgo2
+#SBATCH --job-name=loebkens_cma2
 
 #SBATCH --account=gane
 
-#SBATCH --output=outputs_gpgo2.out
+#SBATCH --output=outputs_cma2.out
 
-#SBATCH --error=errors_gpgo2.err
+#SBATCH --error=errors_cma2.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -24,12 +24,13 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220513_gpgo_mean \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 20220509_cma_nodes_1040_rms_popsize_9 \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /home/loebkens/pyoptes/data \
-  --prior_mixed_strategies True\
   --graph ba \
-  --n_nodes 120 \
-  --sentinels 120 \
-  --statistic mean \
-  --scale_total_budget 1
+  --n_nodes 1040 \
+  --sentinels 1040 \
+  --statistic rms \
+  --scale_total_budget 1 \
+  --popsize 9
+
