@@ -24,12 +24,12 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220508_gpgo_12N_budget \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220513_gpgo_rms_1040_nodes \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /home/loebkens/pyoptes/data \
-  --prior_mixed_strategies True\
+  --prior_mixed_strategies ''\
   --graph ba \
-  --n_nodes 120 \
-  --sentinels 120 \
+  --n_nodes 1040 \
+  --sentinels 1040 \
   --statistic rms \
-  --scale_total_budget 12
+  --scale_total_budget 1
