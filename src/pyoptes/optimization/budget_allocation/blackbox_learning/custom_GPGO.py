@@ -16,9 +16,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy.optimize import minimize
 
-import pylab as plt
 
-# TODO write check for availability of n_jobs
 class GPGO:
     def __init__(self, surrogate, acquisition, f, parameter_dict, n_jobs=15, f_kwargs={}):
         """
@@ -181,7 +179,6 @@ class GPGO:
         """
         Updates the internal model with the next acquired point and its evaluation.
         """
-        # TODO how kw is created looks inefficient
         kw = {param: self.current_best_measurement[i]
               for i, param in enumerate(self.parameter_key)}
         param = np.array(list(kw.values()))
@@ -189,7 +186,7 @@ class GPGO:
         f_new, stderr_f_new = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
         self.GP.update(np.atleast_2d(self.current_best_measurement), np.atleast_1d(f_new))
 
-        # add new stderr to the stderr dictionary
+        # add new stderr to the stderr dictionary. This ensures that there is always a stderr for each measurement
         self.stderr[f_new] = stderr_f_new
 
         self.tau = np.max(self.GP.y)    # self.GP "saves" the y from the objective f,
@@ -197,7 +194,6 @@ class GPGO:
         # test strategies return the same y for f and self.GP (+/- the standarderror)
         # GP.y is just a list
         self.history.append(self.tau)
-        # self.stderr[self.tau] = stderr # TODO this is not the correct stderr for tau
 
     def getResult(self):
         """
