@@ -236,8 +236,8 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
     """
     assert 0 < n_runs <= 100    # there are only 100 graphs available
     network_list = []
-    network_path = os.path.join(base_path, graph_type + '_networks', f'{n_nodes}')
     if graph_type == 'waxman':
+        network_path = os.path.join(base_path, graph_type + '_networks', f'{n_nodes}')
         print(f'Loading {n_runs} waxman graphs')
         for n in tqdm(range(n_runs)):
             transmission_path = os.path.join(network_path, f'WX{n}', 'transmissions.txt')
@@ -253,6 +253,7 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
                                  np.int_(capacities_waxman),
                                  degrees_waxman])
     elif graph_type == 'ba':
+        network_path = os.path.join(base_path, graph_type + '_networks', f'{n_nodes}')
         print(f'Loading {n_runs} barabasi-albert graphs')
         for n in tqdm(range(n_runs)):
             single_transmission_path = os.path.join(network_path, f'BA{n}', 'transmissions.txt')
@@ -267,7 +268,35 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
             network_list.append([transmissions_ba,
                                  np.int_(capacities_ba),
                                  degrees_ba])
+    elif graph_type == 'real':
+        network_path = os.path.join(base_path, f'Synset{n_nodes}-180')
+        print(f'Loading {n_runs} real graphs')
+        for n in tqdm(range(n_runs)):
+            transmissions_path = os.path.join(network_path, f"syndata{n}, dataset.txt")
+            transmissions = pd.read_csv(transmissions_path, header=None)
+            transmissions = transmissions[[2, 2, 0, 1, 3]]
+            transmissions = transmissions.to_numpy()
+
+            capacities_path = os.path.join(network_path, f"syndata{n}, barn_size.txt")
+            capacities = pd.read_csv(capacities_path, header=None)
+            capacities = capacities.iloc[0][:n_nodes].to_numpy()
+
+            degrees_path = os.path.join(network_path, f"syndata{n}, degree_sentil.txt")
+            degrees = pd.read_csv(degrees_path, header=None)
+            degrees = degrees.iloc[0][:-1].to_numpy(dtype=np.int64)
+
+            network_list.append([transmissions,
+                                 capacities,
+                                 degrees])
+
     else:
         Exception(f'Graph type {graph_type} not supported')
+
+    return network_list
+
+
+def load_real_networks(n_runs):
+    assert 0 < n_runs <= 100    # there are only 100 graphs available
+    network_list = []
 
     return network_list

@@ -13,7 +13,8 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 from scipy.stats.mstats import mjci
-from time import time, localtime, strftime
+from time import time
+import datetime
 
 
 def rms_tia(n_infected_animals):
@@ -98,7 +99,7 @@ if __name__ == '__main__':
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
-    parser.add_argument('--graph_type', choices=['waxman', 'ba'], default='ba',
+    parser.add_argument('--graph_type', choices=['waxman', 'ba', 'real'], default='ba',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
     parser.add_argument('--delta_t_symptoms', type=int, default=60,
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--path_networks', default='../data',
                         help='Location where the networks are saved to. '
                              'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
-                             '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/Synset120-180/syndata0')
+                             '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
     args = parser.parse_args()
 
     # prepare the directory for the plots, hyperparameters and results
@@ -181,6 +182,8 @@ if __name__ == '__main__':
     # creates a list of n_runs networks (either waxman or barabasi-albert)
     network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
 
+    print('np.shape(network_list)', np.shape(network_list))
+
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
         experiment_params['optimizer_hyperparameters']['popsize'] = args.popsize
@@ -210,7 +213,8 @@ if __name__ == '__main__':
 
     time_start = time()
     for n, network in enumerate(network_list[:args.n_runs]):
-        print(f'Run {n + 1} of {args.n_runs}, start time: {strftime("%H:%M:%S", localtime())}')
+        print(f'Run {n + 1} of {args.n_runs},'
+              f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
         # create a folder to save the results of the individual optimization run
         path_sub_experiment = os.path.join(path_experiment, 'raw', f'{n}')
@@ -323,6 +327,7 @@ if __name__ == '__main__':
                      path_experiment=path_sub_experiment,
                      output=output)
 
+        # TODO maybe save the lists
         # save OTFs of baseline and optimizer
         list_best_otf.append(eval_best_test_strategy)
         list_best_otf_stderr.append(best_test_strategy_stderr)
@@ -335,7 +340,7 @@ if __name__ == '__main__':
 
         list_time_for_optimization.append(time_for_optimization)
 
-    print(f'Optimization end: {strftime("%H:%M:%S", localtime())}\n')
+    print(f'Optimization end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
     # ------------------------------------------------------------
     # postprocessing
     # ------------------------------------------------------------
