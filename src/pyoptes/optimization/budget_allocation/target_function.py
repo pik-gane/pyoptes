@@ -58,7 +58,7 @@ def prepare(use_real_data=False,
         if static_network is not None:
             n_nodes = static_network.number_of_nodes()
             
-        transmissions_time_covered = 180  # typical lifetime of a pig
+        transmissions_time_covered = 181  # typical lifetime of a pig
         n_total_transmissions = 6e6 * n_nodes/60000 * transmissions_time_covered/1460  # proportional to HI-Tier German pig trade data
         transmission_delay = 1
     
@@ -105,8 +105,10 @@ def prepare(use_real_data=False,
                 )
             assert len(transmissions.events) == transmissions_time_covered * n_transmissions_per_day  
             network = static_network
-            
-        assert transmissions.max_delay == transmission_delay
+
+        if pre_transmissions is None:    
+            assert transmissions.max_delay == transmission_delay
+        
         transmissions_array = transmissions.get_data_array()
         
         if static_network is None and pre_transmissions is None:
@@ -143,13 +145,13 @@ def prepare(use_real_data=False,
         p_infection_from_outside = p_infection_from_outside,
         p_infection_by_transmission = p_infection_by_transmission,
         p_test_positive = 0.90,
-        delta_t_testable = 1,
-        delta_t_infectious = 1,
+        delta_t_testable = 0,
+        delta_t_infectious = 0,
         delta_t_symptoms = delta_t_symptoms,
         
         max_t = max_t,
         stop_when_detected = True,
-        stopping_delay = 1,
+        stopping_delay = 0,
         verbose = False,
         )
     
@@ -181,7 +183,8 @@ def mean_square_and_stderr(n_infected_animals):
 
 
 def task(unused_simulation_index, aggregation):
-    return aggregation(simulate_infection())
+    farms_infected = simulate_infection()
+    return aggregation(farms_infected)
 
 
 def evaluate(budget_allocation, 
