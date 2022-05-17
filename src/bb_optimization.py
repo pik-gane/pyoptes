@@ -6,7 +6,7 @@ from pyoptes import bo_cma, bo_pyGPGO
 
 from pyoptes import choose_high_degree_nodes, baseline
 from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
-from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs
+from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs, save_raw_data
 from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
 
 import argparse
@@ -182,8 +182,6 @@ if __name__ == '__main__':
     # creates a list of n_runs networks (either waxman or barabasi-albert)
     network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
 
-    print('np.shape(network_list)', np.shape(network_list))
-
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
         experiment_params['optimizer_hyperparameters']['popsize'] = args.popsize
@@ -217,7 +215,7 @@ if __name__ == '__main__':
               f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
         # create a folder to save the results of the individual optimization run
-        path_sub_experiment = os.path.join(path_experiment, 'raw', f'{n}')
+        path_sub_experiment = os.path.join(path_experiment, 'individual', f'{n}')
         if not os.path.exists(path_sub_experiment):
             os.makedirs(path_sub_experiment)
 
@@ -340,6 +338,10 @@ if __name__ == '__main__':
 
         list_time_for_optimization.append(time_for_optimization)
 
+    # save the raw data of the optimization runs
+    save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
+                  list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
+                  path_experiment)
     print(f'Optimization end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
     # ------------------------------------------------------------
     # postprocessing

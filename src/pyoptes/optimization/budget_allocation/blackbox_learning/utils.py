@@ -44,6 +44,35 @@ def save_hyperparameters(hyperparameters, base_path):
     print('saved hyperparameters\n')
 
 
+def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
+                  list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
+                  path_experiment):
+    """
+    Saves the raw data of the optimization process.
+    @param list_best_otf:
+    @param list_best_otf_stderr:
+    @param list_baseline_otf:
+    @param list_baseline_otf_stderr:
+    @param list_ratio_otf:
+    @param list_best_solution_history:
+    @param list_stderr_history:
+    @param list_time_for_optimization:
+    @param path_experiment:
+    """
+    path_experiment = os.path.join(path_experiment, 'raw_data')
+    if not os.path.isdir(path_experiment):
+        os.makedirs(path_experiment)
+    # turn lists into numpy arrays and save them in path_experiment
+    np.save(os.path.join(path_experiment, 'list_best_otf'), np.array(list_best_otf))
+    np.save(os.path.join(path_experiment, 'list_best_otf_stderr'), np.array(list_best_otf_stderr))
+    np.save(os.path.join(path_experiment, 'list_baseline_otf'), np.array(list_baseline_otf))
+    np.save(os.path.join(path_experiment, 'list_baseline_otf_stderr'), np.array(list_baseline_otf_stderr))
+    np.save(os.path.join(path_experiment, 'list_ratio_otf'), np.array(list_ratio_otf))
+    np.save(os.path.join(path_experiment, 'list_best_solution_history'), np.array(list_best_solution_history))
+    np.save(os.path.join(path_experiment, 'list_stderr_history'), np.array(list_stderr_history))
+    np.save(os.path.join(path_experiment, 'list_time_for_optimization'), np.array(list_time_for_optimization))
+
+
 # TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capacities
 # maybe even a combination of both
 def choose_high_degree_nodes(node_degrees, n):
@@ -291,12 +320,5 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
 
     else:
         Exception(f'Graph type {graph_type} not supported')
-
-    return network_list
-
-
-def load_real_networks(n_runs):
-    assert 0 < n_runs <= 100    # there are only 100 graphs available
-    network_list = []
 
     return network_list
