@@ -272,16 +272,16 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
         network_path = os.path.join(base_path, f'Synset{n_nodes}-180')
         print(f'Loading {n_runs} real graphs')
         for n in tqdm(range(n_runs)):
-            transmissions_path = os.path.join(network_path, f"syndata{n}, dataset.txt")
+            transmissions_path = os.path.join(network_path, f'syndata{n}', 'dataset.txt')
             transmissions = pd.read_csv(transmissions_path, header=None)
             transmissions = transmissions[[2, 2, 0, 1, 3]]
             transmissions = transmissions.to_numpy()
 
-            capacities_path = os.path.join(network_path, f"syndata{n}, barn_size.txt")
+            capacities_path = os.path.join(network_path, f'syndata{n}', 'barn_size.txt')
             capacities = pd.read_csv(capacities_path, header=None)
             capacities = capacities.iloc[0][:n_nodes].to_numpy()
 
-            degrees_path = os.path.join(network_path, f"syndata{n}, degree_sentil.txt")
+            degrees_path = os.path.join(network_path, f'syndata{n}', 'degree_sentil.txt')
             degrees = pd.read_csv(degrees_path, header=None)
             degrees = degrees.iloc[0][:-1].to_numpy(dtype=np.int64)
 
