@@ -43,7 +43,7 @@ def save_hyperparameters(hyperparameters, base_path):
         json.dump(hyperparameters, fp, sort_keys=True, indent=4)
     print('saved hyperparameters\n')
 
-
+# TODO add function to load raw data from file
 def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
                   list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
                   path_experiment):
