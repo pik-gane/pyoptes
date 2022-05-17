@@ -1,0 +1,40 @@
+number	description
+0	uniform distribution over all 120 nodes
+1	uniform distribution over 20 highest degree nodes
+2	uniform distribution over 20 highest capacity nodes
+3	uniform distribution over 1 highest degree nodes and 19 highest capacity nodes
+4	uniform distribution over 2 highest degree nodes and 18 highest capacity nodes
+5	uniform distribution over 3 highest degree nodes and 17 highest capacity nodes
+6	uniform distribution over 4 highest degree nodes and 16 highest capacity nodes
+7	uniform distribution over 5 highest degree nodes and 15 highest capacity nodes
+8	uniform distribution over 6 highest degree nodes and 14 highest capacity nodes
+9	uniform distribution over 7 highest degree nodes and 13 highest capacity nodes
+10	uniform distribution over 8 highest degree nodes and 12 highest capacity nodes
+11	uniform distribution over 9 highest degree nodes and 11 highest capacity nodes
+12	uniform distribution over 10 highest degree nodes and 10 highest capacity nodes
+13	uniform distribution over 11 highest degree nodes and 9 highest capacity nodes
+14	uniform distribution over 12 highest degree nodes and 8 highest capacity nodes
+15	uniform distribution over 13 highest degree nodes and 7 highest capacity nodes
+16	uniform distribution over 14 highest degree nodes and 6 highest capacity nodes
+17	uniform distribution over 15 highest degree nodes and 5 highest capacity nodes
+18	uniform distribution over 16 highest degree nodes and 4 highest capacity nodes
+19	uniform distribution over 17 highest degree nodes and 3 highest capacity nodes
+20	uniform distribution over 18 highest degree nodes and 2 highest capacity nodes
+21	uniform distribution over 19 highest degree nodes and 1 highest capacity nodes
+22	uniform distribution over 10 highest degree nodes
+23	uniform distribution over 10 highest capacity nodes
+24	uniform distribution over 1 highest degree nodes and 9 highest capacity nodes
+25	uniform distribution over 2 highest degree nodes and 8 highest capacity nodes
+26	uniform distribution over 3 highest degree nodes and 7 highest capacity nodes
+27	uniform distribution over 4 highest degree nodes and 6 highest capacity nodes
+28	uniform distribution over 5 highest degree nodes and 5 highest capacity nodes
+29	uniform distribution over 6 highest degree nodes and 4 highest capacity nodes
+30	uniform distribution over 7 highest degree nodes and 3 highest capacity nodes
+31	uniform distribution over 8 highest degree nodes and 2 highest capacity nodes
+32	uniform distribution over 9 highest degree nodes and 1 highest capacity nodes
+33	uniform distribution over 5 highest degree nodes
+34	uniform distribution over 5 highest capacity nodes
+35	uniform distribution over 1 highest degree nodes and 4 highest capacity nodes
+36	uniform distribution over 2 highest degree nodes and 3 highest capacity nodes
+37	uniform distribution over 3 highest degree nodes and 2 highest capacity nodes
+38	uniform distribution over 4 highest degree nodes and 1 highest capacity nodes
