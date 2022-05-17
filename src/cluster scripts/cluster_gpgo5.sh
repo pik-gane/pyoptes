@@ -8,9 +8,9 @@
 
 #SBATCH --account=gane
 
-#SBATCH --output=outputs_gpgo4.out
+#SBATCH --output=logs/outputs_gpgo4.out
 
-#SBATCH --error=errors_gpgo4.err
+#SBATCH --error=logs/errors_gpgo4.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -24,11 +24,11 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220513_gpgo_95perc_1040_nodes \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220517_gpgo_95perc_nodes_1040 \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
-  --path_networks /home/loebkens/pyoptes/data \
-  --prior_mixed_strategies ''\
-  --graph ba \
+  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --graph real \
+  --prior_mixed_strategies '' \
   --n_nodes 1040 \
   --sentinels 1040 \
   --statistic 95perc \

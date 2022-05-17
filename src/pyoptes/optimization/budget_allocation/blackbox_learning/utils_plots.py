@@ -59,7 +59,7 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
 
     plt.title(f'{optimizer}, {n_nodes} nodes, {sentinels} sentinels')
     plt.xlabel('Iteration')
-    plt.ylabel('SI-model output')
+    plt.ylabel('SI-model output') # TODO change name to something more descriptive, like number of infected animals
     plt.legend()
     plt.savefig(os.path.join(path_experiment, f'{optimizer}{name}.png'))
     plt.clf()
