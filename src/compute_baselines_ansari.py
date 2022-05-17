@@ -36,14 +36,12 @@ def compute_baseline(evaluation_params, n_inputs, total_budget, f, degree, netwo
     
     """uniform distribution among N/2 highest degree nodes"""
     highest_degrees = degree[:n_2]
-    print(highest_degrees)
     sentinels = highest_degrees
     weights = np.zeros(n_inputs)
     weights[sentinels] = 1
     shares = weights / weights.sum()
     budget_hd = shares * total_budget
     budget_hd = budget * budget_hd
-    print(budget_hd)
     ratio_infected, node_metrics, mean_sq_metrics, mean_metrics, p95_metrics = f.evaluate(budget_hd, **evaluation_params)
     metrics = np.concatenate((node_metrics, ratio_infected, mean_sq_metrics, mean_metrics, p95_metrics), axis = None)
     metrics_hd2 = metrics.reshape(1, len(metrics))
@@ -57,7 +55,6 @@ def compute_baseline(evaluation_params, n_inputs, total_budget, f, degree, netwo
     shares = weights / weights.sum()
     budget_hd = shares * total_budget
     budget_hd = budget * budget_hd
-    print(budget_hd)
 
     ratio_infected, node_metrics, mean_sq_metrics, mean_metrics, p95_metrics = f.evaluate(budget_hd, **evaluation_params)
     metrics = np.concatenate((node_metrics, ratio_infected, mean_sq_metrics, mean_metrics, p95_metrics), axis = None)
@@ -65,7 +62,6 @@ def compute_baseline(evaluation_params, n_inputs, total_budget, f, degree, netwo
 
     """uniform distribution among N/6 highest degree nodes"""
     highest_degrees = degree[:n_6]
-    print(highest_degrees)
     sentinels = highest_degrees
     weights = np.zeros(n_inputs)
     weights[sentinels] = 1
@@ -92,7 +88,6 @@ def compute_baseline(evaluation_params, n_inputs, total_budget, f, degree, netwo
 
     """uniform distribution among N/12 highest degree nodes"""
     highest_degrees = degree[:n_12]
-    print(f'10: {highest_degrees}')
     sentinels = highest_degrees
     weights = np.zeros(n_inputs)
     weights[sentinels] = 1
@@ -119,8 +114,6 @@ def compute_baseline(evaluation_params, n_inputs, total_budget, f, degree, netwo
 
     """uniform distribution among N/26 highest degree nodes"""
     highest_degrees = degree[:n_26]
-    print(highest_degrees)
-
     sentinels = highest_degrees
     weights = np.zeros(n_inputs)
     weights[sentinels] = 1
@@ -147,8 +140,6 @@ def compute_baseline(evaluation_params, n_inputs, total_budget, f, degree, netwo
 
     """uniform distribution among N/52 highest degree nodes"""
     highest_degrees = degree[:n_52]
-    print(highest_degrees)
-
     sentinels = highest_degrees
     weights = np.zeros(n_inputs)
     weights[sentinels] = 1
@@ -204,29 +195,25 @@ def compute_baseline(evaluation_params, n_inputs, total_budget, f, degree, netwo
     df = pd.DataFrame(metrics_matrix)
     df.to_csv(f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/baselines/{network}/{n_inputs}/{network}_{number}_{n_inputs}_{budget}N.csv", header = None, index=False)
 
+
 def evaluate_baselines(n_nodes, networks, evaluation_params, budget, dir):
-    
     for i in range(2):
         network = networks[i]
         net = dir[0]
         for n in range(2):
             nodes = n_nodes[n]
             for b in range(len(budget)):
-
                 budgets = budget[b]
-
                 for j in range(100):                    
-
 
                     transmissions = pd.read_csv(f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/{network}/{nodes}/{net}{j}/dataset.txt", header = None)
                     transmissions = transmissions[[2, 2, 0, 1, 3]]  
+                    transmissions = transmissions.to_numpy()
 
                     capacities = pd.read_csv(f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/{network}/{nodes}/{net}{j}/barn_size.txt", header = None)
-                    capacities = capacities.iloc[0][:nodes].to_numpy()
-                    transmissions = transmissions.to_numpy()
-                
+                    capacities = capacities.iloc[0][:nodes].to_numpy() #delete last nan entry
                     degrees = pd.read_csv(f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/{network}/{nodes}/{net}{j}/degree_sentil.txt", header = None)
-                    degrees = degrees.iloc[0][:-1].to_numpy(dtype=np.int64)
+                    degrees = degrees.iloc[0][:-1].to_numpy(dtype=np.int64) #delete last nan entry
 
                     # at the beginning, call prepare() once:
                     f.prepare(
@@ -243,10 +230,11 @@ def evaluate_baselines(n_nodes, networks, evaluation_params, budget, dir):
 
                     compute_baseline(evaluation_params = evaluation_params, n_inputs=nodes, total_budget=nodes, f=f, degree=degrees, network = network, number = j, budget=budgets)
 
+
 budget = [1.0, 4.0, 12.0]
 n_nodes = [120, 1040]
-networks = ["synthetic_networks", "waxman", "barabasi"]
-dir = ["syndata", "WX", "BA"]
+networks = ["synthetic_networks", "waxman", "barabasi"] #focus on syn_net
+dir = ["syndata", "WX", "BA"]  #focus on syn_net
 n_simulations = 100000
 num_cpu_cores = -1
 all_params = { 
