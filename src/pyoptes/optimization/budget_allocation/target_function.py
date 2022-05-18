@@ -1,7 +1,6 @@
 """
 Noisy target function to be minimized, based on the SIModelOnTransmissions,
 using transmissions data generated with get_scale_free_transmissions_data.
-
 Input: a budget allocation, i.e., a vector of nonnegative floats specifying
        the expected number of tests each node will take per year.
        
@@ -91,8 +90,6 @@ def prepare(use_real_data=False,
             n_backward_transmissions_per_day = n_transmissions_per_day - n_forward_transmissions_per_day
             
             transmissions = Transmissions(transmissions_time_covered, pre_transmissions)
-            assert len(transmissions.events) == transmissions_time_covered * (n_backward_transmissions_per_day + n_forward_transmissions_per_day)
-
 
         else:
             from pyoptes.networks.transmissions.static_network_based import get_static_network_based_transmissions_data
