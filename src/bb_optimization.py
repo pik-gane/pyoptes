@@ -108,6 +108,8 @@ if __name__ == '__main__':
     parser.add_argument('--p_infection_by_transmission', type=float, default=0.5,
                         help='Si-simulation parameter. The probability of how likely a trade animal '
                              'infects other animals. Default is 0.5.')
+    parser.add_argument('--expected_time_of_first_infection', type=int, default=30,
+                        help='Si-simulation parameter. The expected time (in days) after which the first infection occurs. ')
     parser.add_argument('--parallel', type=bool, default=True,
                         help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
                              'or sequentially. Default is set to parallel computation.')
@@ -224,10 +226,12 @@ if __name__ == '__main__':
 
         f.prepare(n_nodes=args.n_nodes,
                   capacity_distribution=capacities,
+                  pre_transmissions=transmissions,
                   p_infection_by_transmission=args.p_infection_by_transmission,
-                  static_network=None,
                   delta_t_symptoms=args.delta_t_symptoms,
-                  pre_transmissions=transmissions)
+                  expected_time_of_first_infection=args.expected_time_of_first_infection,
+                  static_network=None,
+                  use_real_data=False)
 
         # create a list of test strategies based on different heuristics
         prior, prior_node_indices, prior_parameter = \

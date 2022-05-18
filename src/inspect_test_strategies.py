@@ -4,6 +4,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 import argparse
 import numpy as np
 from tqdm import tqdm
+import os
 
 
 if __name__ == '__main__':
@@ -31,6 +32,14 @@ if __name__ == '__main__':
     parser.add_argument('--graph_type', choices=['waxman', 'ba'], default='ba',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
+    parser.add_argument('--delta_t_symptoms', type=int, default=60,
+                        help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
+                             ' automatically. Default is 60 days')
+    parser.add_argument('--p_infection_by_transmission', type=float, default=0.5,
+                        help='Si-simulation parameter. The probability of how likely a trade animal '
+                             'infects other animals. Default is 0.5.')
+    parser.add_argument('--expected_time_of_first_infection', type=int, default=30,
+                        help='Si-simulation parameter. The expected time (in days) after which the first infection occurs. ')
 
     args = parser.parse_args()
 
@@ -41,9 +50,7 @@ if __name__ == '__main__':
         # unpack the properties of the network
         transmissions, capacities, degrees = network
 
-        f.prepare(n_nodes=args.n_nodes,
-                  capacity_distribution=capacities,
-                  p_infection_by_transmission=args.p_infection_by_transmission,
-                  static_network=None,
-                  delta_t_symptoms=args.delta_t_symptoms,
-                  pre_transmissions=transmissions)
+        #
+        path_best_strategy = os.path.join(args.path_plot, args.name_experiment, f'raw/{n}', 'best_parameter.npy')
+        best_strategy = np.load(path_best_strategy)
+        print('shape of best_strategy: ', best_strategy.shape)
