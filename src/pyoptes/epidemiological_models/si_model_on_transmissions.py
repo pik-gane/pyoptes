@@ -201,6 +201,8 @@ class SIModelOnTransmissions (object):
                  stopping_delay=0,
                  verbose=False,
                  ):
+
+
         """Instantiate a new simulation model and set its parameters"""
         if verbose: print("\n    Setting up SI simulations on transmissions data") 
         # validate arguments:
@@ -365,7 +367,7 @@ class SIModelOnTransmissions (object):
                         if self._next_transmission_index < self.transmissions_array.shape[0]:
                             next_t_received = self._transmissions_time_offset + self.transmissions_array[self._next_transmission_index, 1]
                         else:
-                            # moved past end of ransmissions list, so next transmission, if any, is not on same day.
+                            # moved past end of transmissions list, so next transmission, if any, is not on same day.
                             # hence we can simply increment it since it will be overwritten next time anyway:
                             next_t_received += 1
                     # at this point, last extracted transmission was not performed because it is in the future
