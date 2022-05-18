@@ -60,7 +60,7 @@ def prepare(use_real_data=False,
             
         transmissions_time_covered = 181  # typical lifetime of a pig
         n_total_transmissions = 6e6 * n_nodes/60000 * transmissions_time_covered/1460  # proportional to HI-Tier German pig trade data
-        transmission_delay = 1
+        transmission_delay = 0
     
         # generate transmissions data:
         n_transmissions_per_day = int(n_total_transmissions // transmissions_time_covered)
