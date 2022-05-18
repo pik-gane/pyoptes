@@ -173,6 +173,7 @@ if __name__ == '__main__':
                                                         'n_simulations': args.n_simulations,
                                                         'delta_t_symptoms': args.delta_t_symptoms,
                                                         'p_infection_by_transmission': args.p_infection_by_transmission,
+                                                        'expected_time_of_first_infection': args.expected_time_of_first_infection,
                                                         'n_runs': args.n_runs,
                                                         'statistic': args.statistic,
                                                         },
