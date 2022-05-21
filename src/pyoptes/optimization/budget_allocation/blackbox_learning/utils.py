@@ -75,18 +75,29 @@ def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_b
 
 # TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capacities
 # maybe even a combination of both
-def choose_high_degree_nodes(node_degrees, n):
+def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
     """
-    Returns the indices of n nodes with the highest degrees.
+    Returns the indices with the highest degrees.
+    @param n_nodes: int, number of total nodes in the network
     @param node_degrees: list, contains indices of nodes and their degree
-    @param n: int, number of nodes to be returned
+    @param sentinels: int, number of nodes to be returned
     @return: list of ints
     """
-    # sort list of nodes by degree
-    nodes_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
-    # save the indices of the n highest degree nodes
-    indices_highest_degree_nodes = [i[0] for i in nodes_sorted[:n]]
-    return indices_highest_degree_nodes
+    # the synthetic networks only gives one a sorted list of node indices of the highest degree nodes
+    # excluding some nodes (slaughter houses). To work with the prior the missing nodes have to be added
+    if len(node_degrees) < n_nodes:
+        # create a list of all n_nodes node indices
+        all_node_indices = list(range(n_nodes))
+        # get the indices of the nodes that are missing in node_degrees
+        missing_nodes = list(set(all_node_indices) - set(node_degrees))
+        # add the missing nodes to node_degrees
+        indices_highest_degree_nodes = node_degrees + missing_nodes
+    else:
+        # sort list of nodes by degree and get their indices
+        nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
+        indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted]
+
+    return indices_highest_degree_nodes[:sentinels]
 
 
 def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
@@ -135,19 +146,33 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     # specify increasing number of sentinels TODO why these numbers in specific ?
     sentinels_list = [int(n_nodes / 6), int(n_nodes / 12), int(n_nodes / 24)]
 
-    # sort list of nodes by degree
-    nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
+    # the synthetic networks only gives one a sorted list of node indices of the highest degree nodes
+    # excluding some nodes (slaughter houses). To work with the prior the missing nodes have to be added
+    if len(node_degrees) < n_nodes:
+        # create a list of all n_nodes node indices
+        all_node_indices = list(range(n_nodes))
+        # get the indices of the nodes that are missing in node_degrees
+        missing_nodes = list(set(all_node_indices) - set(node_degrees))
+        # add the missing nodes to node_degrees
+        indices_highest_degree_nodes = node_degrees + missing_nodes
+    else:
+        # sort list of nodes by degree and get their indices
+        nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
+        indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted]
 
-    # sort nodes by capacities, node_contains only capacities, add node_index
+    print('np shape of highest degree nodes: ', np.shape(indices_highest_degree_nodes))
+
+    # node_capacities contains only capacities, add node_index sort nodes by capacities and get their indices
     nodes_capacities = [(i, c) for i, c in enumerate(node_capacities)]
     nodes_capacities_sorted = sorted(nodes_capacities, key=lambda nodes_capacities: nodes_capacities[1],
                                      reverse=True)
+    indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted]
 
     # TODO has to be fixed to distribute over n_nodes instead of sentinels
     # the baseline strategy (equally distributed budget over all sentinels)
-    indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:sentinels]]
     x_sentinels = np.array([total_budget / sentinels for _ in range(sentinels)])
-    prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
+    prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes,
+                                                           indices_highest_degree_nodes[:sentinels]))
     prior_node_indices.append(indices_highest_degree_nodes)
 
     test_strategy_parameter += f'\n0\tuniform distribution over all {n_nodes} nodes'
@@ -157,18 +182,18 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
         for i, s in enumerate(sentinels_list):
             # ------
             # create strategy for s highest degree nodes, budget is allocated uniformly
-            indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:s]]
             x_sentinels = np.array([total_budget / s for _ in range(s)])
-            prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_degree_nodes))
+            prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes,
+                                                                   indices_highest_degree_nodes[:s]))
             prior_node_indices.append(indices_highest_degree_nodes)
 
             test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest degree nodes'
             n += 1
             # ------
             # create strategy for s highest capacity nodes, budget is allocated uniformly
-            indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s]]
             x_sentinels = np.array([total_budget / s for _ in range(s)])
-            prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_highest_capacity_nodes))
+            prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes,
+                                                                   indices_highest_capacity_nodes[:s]))
             prior_node_indices.append(indices_highest_capacity_nodes)
 
             test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
@@ -178,12 +203,11 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
             if mixed_strategies:
                 for k in range(s)[1:]:
 
-                    # get the highest degree nodes and highest capacity nodes
-                    indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted[:k]]
-                    indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted[:s-k]]
+                    # get the highest degree nodes and highest capacity nodes and
                     # check whether node indices would appear twice and remove the duplicates
                     # TODO maybe there is a better method for this check??
-                    indices_combined = list(set(indices_highest_degree_nodes) | set(indices_highest_capacity_nodes))
+                    indices_combined = list(set(indices_highest_degree_nodes[:k]) |
+                                            set(indices_highest_capacity_nodes[:s-k]))
                     # because of the missing nodes the strategies might violate the sum constraint (lightly)
                     # therefore of this the allocated budget is smaller or greater than the total budget
                     x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])

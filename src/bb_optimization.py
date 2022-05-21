@@ -113,7 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--parallel', type=bool, default=True,
                         help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
                              'or sequentially. Default is set to parallel computation.')
-    parser.add_argument("--num_cpu_cores", type=int, default=-1,
+    parser.add_argument("--num_cpu_cores", type=int, default=32,
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 14 cpus.')
@@ -234,6 +234,7 @@ if __name__ == '__main__':
                   static_network=None,
                   use_real_data=False)
 
+        # TODO use args.use_prior
         # create a list of test strategies based on different heuristics
         prior, prior_node_indices, prior_parameter = \
             create_test_strategy_prior(n_nodes=args.n_nodes,
@@ -244,18 +245,18 @@ if __name__ == '__main__':
                                        mixed_strategies=args.prior_mixed_strategies,
                                        only_baseline=args.prior_only_baseline)
 
-        # save a description of what each strategy is
-        with open(os.path.join(path_experiment, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:
-            fi.write(prior_parameter)
-
         # list_prior is only needed if the objective function values of the strategies in the prior
         # are to be plotted
         list_prior.append(prior)
 
+        # save a description of what each strategy is
+        with open(os.path.join(path_experiment, f'prior_parameter_{args.n_nodes}_nodes.txt'), 'w') as fi:
+            fi.write(prior_parameter)
+
         # reduce the dimension of the input space by choosing to only allocate the budget between nodes with the highest
         # degrees. The function return the indices of these nodes
         # The indices correspond to the first item of the prior
-        node_indices = choose_high_degree_nodes(degrees, args.sentinels)
+        node_indices = choose_high_degree_nodes(degrees, args.n_nodes, args.sentinels)
 
         # compute the baseline, i.e., the expected value of the objective function for a uniform distribution of the
         # budget over all nodes (regardless of the number of sentinels)
