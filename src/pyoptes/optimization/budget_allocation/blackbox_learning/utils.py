@@ -77,7 +77,8 @@ def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_b
 # maybe even a combination of both
 def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
     """
-    Returns the indices with the highest degrees.
+    Returns the indices with the highest degrees. The nodes are sorted by degree, starting with the highest degree node.
+
     @param n_nodes: int, number of total nodes in the network
     @param node_degrees: list, contains indices of nodes and their degree
     @param sentinels: int, number of nodes to be returned
@@ -90,8 +91,8 @@ def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
         all_node_indices = list(range(n_nodes))
         # get the indices of the nodes that are missing in node_degrees
         missing_nodes = list(set(all_node_indices) - set(node_degrees))
-        # add the missing nodes to node_degrees
-        indices_highest_degree_nodes = node_degrees + missing_nodes
+        # add the missing node indices to the end of the node_degrees list
+        indices_highest_degree_nodes = [*node_degrees, *missing_nodes]
     else:
         # sort list of nodes by degree and get their indices
         nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
@@ -146,21 +147,8 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     # specify increasing number of sentinels TODO why these numbers in specific ?
     sentinels_list = [int(n_nodes / 6), int(n_nodes / 12), int(n_nodes / 24)]
 
-    # the synthetic networks only gives one a sorted list of node indices of the highest degree nodes
-    # excluding some nodes (slaughter houses). To work with the prior the missing nodes have to be added
-    if len(node_degrees) < n_nodes:
-        # create a list of all n_nodes node indices
-        all_node_indices = list(range(n_nodes))
-        # get the indices of the nodes that are missing in node_degrees
-        missing_nodes = list(set(all_node_indices) - set(node_degrees))
-        # add the missing nodes to node_degrees
-        indices_highest_degree_nodes = node_degrees + missing_nodes
-    else:
-        # sort list of nodes by degree and get their indices
-        nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
-        indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted]
-
-    print('np shape of highest degree nodes: ', np.shape(indices_highest_degree_nodes))
+    # get the (sorted) indices of the highest degree nodes
+    indices_highest_degree_nodes = choose_high_degree_nodes(node_degrees, n_nodes, sentinels)
 
     # node_capacities contains only capacities, add node_index sort nodes by capacities and get their indices
     nodes_capacities = [(i, c) for i, c in enumerate(node_capacities)]

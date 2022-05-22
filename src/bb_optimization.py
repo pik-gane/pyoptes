@@ -234,7 +234,6 @@ if __name__ == '__main__':
                   static_network=None,
                   use_real_data=False)
 
-        # TODO use args.use_prior
         # create a list of test strategies based on different heuristics
         prior, prior_node_indices, prior_parameter = \
             create_test_strategy_prior(n_nodes=args.n_nodes,
