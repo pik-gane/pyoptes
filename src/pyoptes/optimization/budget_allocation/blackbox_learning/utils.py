@@ -309,7 +309,7 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
             network_list.append([transmissions_ba,
                                  np.int_(capacities_ba),
                                  degrees_ba])
-    elif graph_type == 'real':
+    elif graph_type == 'syn':
         network_path = os.path.join(base_path, f'Synset{n_nodes}-180')
         print(f'Loading {n_runs} real graphs')
         for n in tqdm(range(n_runs)):

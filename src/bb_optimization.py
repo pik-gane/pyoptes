@@ -99,7 +99,7 @@ if __name__ == '__main__':
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
-    parser.add_argument('--graph_type', choices=['waxman', 'ba', 'real'], default='ba',
+    parser.add_argument('--graph_type', choices=['waxman', 'ba', 'syn'], default='ba',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
     parser.add_argument('--delta_t_symptoms', type=int, default=60,
