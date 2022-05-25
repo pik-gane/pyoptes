@@ -36,8 +36,9 @@ def percentile_tia(n_infected_animals):
     stderr = mjci(n_infected_animals, prob=[0.95], axis=0)[0]
     return estimate, stderr
 
-# def share_detected(unused_n_infected_animals):
-#     return model.detection_was_by_test.true
+# TODO add this
+def share_detected(unused_n_infected_animals):
+    return model.detection_was_by_test.true
 
 # TODO run GPGO-experiments without the prior but similar number of function evals
 # prior -> 39 evals for fit + 50 evals for optim
@@ -181,6 +182,7 @@ if __name__ == '__main__':
                                                        'max_iterations': args.max_iterations,
                                                        }}
 
+    # TODO move network creation into for loop
     # TODO use Synthetic/Ansari-networks instead BA/waxman with budget N, 1040 nodes, RMS
     # creates a list of n_runs networks (either waxman or barabasi-albert)
     network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
