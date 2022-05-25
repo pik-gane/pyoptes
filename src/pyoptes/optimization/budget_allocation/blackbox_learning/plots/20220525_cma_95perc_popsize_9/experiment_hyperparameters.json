@@ -1,0 +1,20 @@
+{
+    "optimizer_hyperparameters": {
+        "cma_sigma": 30.0,
+        "max_iterations": 50,
+        "optimizer": "cma",
+        "popsize": 9
+    },
+    "simulation_hyperparameters": {
+        "delta_t_symptoms": 60,
+        "expected_time_of_first_infection": 30,
+        "graph": "syn",
+        "n_nodes": 120,
+        "n_runs": 100,
+        "n_simulations": 10000,
+        "p_infection_by_transmission": 0.5,
+        "sentinels": 120,
+        "statistic": "95perc",
+        "total_budget": 120
+    }
+}
