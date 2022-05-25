@@ -20,7 +20,7 @@
 
 #SBATCH --cpus-per-task=32
 
-#SBATCH --mem=128000
+#SBATCH --mem=120000
 
 module load anaconda/5.0.0_py3
 source activate bbo
