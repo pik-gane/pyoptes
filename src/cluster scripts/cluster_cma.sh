@@ -27,7 +27,7 @@ source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 20220524_cma_95perc_1040_nodes_popsize_9_budget_4N \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
-  --graph real \
+  --graph syn \
   --n_nodes 1040 \
   --sentinels 1040 \
   --statistic 95perc \
