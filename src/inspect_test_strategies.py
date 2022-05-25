@@ -28,10 +28,12 @@ if __name__ == '__main__':
     parser.add_argument('--path_networks', default='../data',
                         help='Location where the networks are saved to. '
                              'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
-                             '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/Synset120-180/syndata0')
-    parser.add_argument('--graph_type', choices=['waxman', 'ba'], default='ba',
+                             '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
+
+    parser.add_argument('--graph_type', choices=['waxman', 'ba', 'syn'], default='ba',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
+
     parser.add_argument('--delta_t_symptoms', type=int, default=60,
                         help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
                              ' automatically. Default is 60 days')

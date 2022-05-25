@@ -183,13 +183,17 @@ class GPGO:
               for i, param in enumerate(self.parameter_key)}
         param = np.array(list(kw.values()))
 
+        # f_new is always the newest measurement for the objective function, not necessarily the best one
         f_new, stderr_f_new = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
         self.GP.update(np.atleast_2d(self.current_best_measurement), np.atleast_1d(f_new))
 
         # add new stderr to the stderr dictionary. This ensures that there is always a stderr for each measurement
+        f_new = np.round(f_new, decimals=8)
         self.stderr[f_new] = stderr_f_new
 
-        self.tau = np.max(self.GP.y)    # self.GP "saves" the y from the objective f,
+        # get the current optimum of the GP
+        self.tau = np.max(self.GP.y) # self.GP "saves" the y from the objective f,
+        self.tau = np.round(self.tau, decimals=8)
 
         # test strategies return the same y for f and self.GP (+/- the standarderror)
         # GP.y is just a list
@@ -236,7 +240,7 @@ class GPGO:
 
         # get the best y and corresponding stderr
         i = np.argmax(Y)
-        self.tau = Y[i]
+        self.tau = np.round(Y[i], decimals=8)
         tau_stderr = Y_stderr[i]
 
         self.history.append(self.tau)
