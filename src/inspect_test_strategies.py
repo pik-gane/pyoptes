@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 import os
+import glob
 
 
 if __name__ == '__main__':
@@ -47,12 +48,27 @@ if __name__ == '__main__':
 
     network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
 
+    # TODO investigate why NaNs in budget of cma
+    # TODO how to the values in the prior look like, compared to the baseline
+
     for n, network in enumerate(network_list[:args.n_runs]):
 
         # unpack the properties of the network
         transmissions, capacities, degrees = network
+        print('degress shape: ', np.shape(degrees)) # [index, degree]
 
         #
-        path_best_strategy = os.path.join(args.path_plot, args.name_experiment, f'raw/{n}', 'best_parameter.npy')
+        path_best_strategy = os.path.join(args.path_plot, args.name_experiment, f'individual/{n}', 'best_parameter.npy')
         best_strategy = np.load(path_best_strategy)
-        print('shape of best_strategy: ', best_strategy.shape)
+        print('shape of best_strategy: ', best_strategy.shape, best_strategy.sum())
+
+
+
+        break
+
+    # p = glob.glob('**/best_parameter.npy', recursive=True)
+    # print(len(p))
+    # for i in  p:
+    #     b = np.load(i)
+    #     print(np.shape(b), np.sum(b), i)
+

@@ -8,6 +8,15 @@ import networkx as nx
 from time import time
 
 
+def compute_average_otf_and_stderr(list_otf, list_stderr, n_runs):
+    average_best_otf = np.mean(list_otf, axis=0)
+    s = np.mean(list_stderr, axis=0)
+    v = np.var(list_otf, axis=0)
+    average_best_otf_stderr = np.sqrt(v/n_runs + s**2)
+
+    return average_best_otf, average_best_otf_stderr
+
+
 def save_results(best_test_strategy, path_experiment, output, save_test_strategy=True):
     """
     Saves the evaluation of the output and the corresponding best parameter.
@@ -43,9 +52,11 @@ def save_hyperparameters(hyperparameters, base_path):
         json.dump(hyperparameters, fp, sort_keys=True, indent=4)
     print('saved hyperparameters\n')
 
+
 # TODO add function to load raw data from file
 def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
                   list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
+                  list_all_prior_tf, list_all_prior_stderr,
                   path_experiment):
     """
     Saves the raw data of the optimization process.
@@ -71,6 +82,8 @@ def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_b
     np.save(os.path.join(path_experiment, 'list_best_solution_history'), np.array(list_best_solution_history))
     np.save(os.path.join(path_experiment, 'list_stderr_history'), np.array(list_stderr_history))
     np.save(os.path.join(path_experiment, 'list_time_for_optimization'), np.array(list_time_for_optimization))
+    np.save(os.path.join(path_experiment, 'list_all_prior_tf'), list_all_prior_tf)
+    np.save(os.path.join(path_experiment, 'list_all_prior_stderr'), list_all_prior_stderr)
 
 
 # TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capacities

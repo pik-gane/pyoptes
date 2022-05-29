@@ -228,7 +228,7 @@ class GPGO:
         Y = []
         Y_stderr = []
         X = []
-        for x in tqdm(prior):
+        for x in tqdm(prior, leave=False):
             X.append(x)
             y, stderr = self.f(x, **self.f_kwargs)
             Y.append(y)
@@ -268,7 +268,7 @@ class GPGO:
             print('GP fitted.')
 
         # print(f'Running GPGO for {max_iter} iterations.')
-        for _ in tqdm(range(max_iter)):
+        for _ in tqdm(range(max_iter), leave=False):
 
             self._optimizeAcq()
             self.updateGP()

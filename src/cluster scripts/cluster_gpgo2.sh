@@ -18,7 +18,7 @@
 
 #SBATCH --ntasks=1      # tasks requested
 
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=10
 
 #SBATCH --mem=120000
 

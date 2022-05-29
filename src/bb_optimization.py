@@ -8,6 +8,7 @@ from pyoptes import choose_high_degree_nodes, baseline
 from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
 from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs, save_raw_data
 from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
+from pyoptes import compute_average_otf_and_stderr
 
 import argparse
 import numpy as np
@@ -212,6 +213,9 @@ if __name__ == '__main__':
     list_best_solution_history = []
     list_stderr_history = []
 
+    list_all_prior_tf = []
+    list_all_prior_stderr = []
+
     list_time_for_optimization = []
 
     time_start = time()
@@ -246,17 +250,19 @@ if __name__ == '__main__':
                                        mixed_strategies=args.prior_mixed_strategies,
                                        only_baseline=args.prior_only_baseline)
 
-        # # evaluate the strategies in the prior
-        # list_p = []
-        # for p in prior:
-        #     m, stderr = f.evaluate(budget_allocation=p,
-        #                            n_simulations=10000,
-        #                            parallel=args.parallel,
-        #                            num_cpu_cores=args.num_cpu_cores,
-        #                            statistic=statistic)
-        #     list_p.append([m, stderr])
-
-
+        # evaluate the strategies in the prior
+        list_prior_tf = []
+        list_prior_stderr = []
+        for p in tqdm(prior, leave=False):
+            m, stderr = f.evaluate(budget_allocation=p,
+                                   n_simulations=args.n_simulations,
+                                   parallel=args.parallel,
+                                   num_cpu_cores=args.num_cpu_cores,
+                                   statistic=statistic)
+            list_prior_tf.append(m)
+            list_prior_stderr.append(stderr)
+        list_all_prior_tf.append(list_prior_tf)
+        list_all_prior_stderr.append(list_prior_stderr)
 
         # list_prior is only needed if the objective function values of the strategies in the prior
         # are to be plotted
@@ -344,6 +350,7 @@ if __name__ == '__main__':
                  f' ratio stderr/mean: {best_test_strategy_stderr/eval_best_test_strategy}' \
                  f'\nRatio OTF: {ratio_otf}'
 
+        #
         save_results(best_test_strategy=best_test_strategy,
                      path_experiment=path_sub_experiment,
                      output=output)
@@ -360,32 +367,37 @@ if __name__ == '__main__':
 
         list_time_for_optimization.append(time_for_optimization)
 
+    # TODO move the whole postprocessing step and saving of results into seperate step to save memory
+
     # save the raw data of the optimization runs
     save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
                   list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
+                  list_all_prior_tf, list_all_prior_stderr,
                   path_experiment=path_experiment)
     print(f'Optimization end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
     # ------------------------------------------------------------
     # postprocessing of all runs
     # ------------------------------------------------------------
-    # compute the average OTFs, baseline and their standard errors
-    average_best_otf = np.mean(list_best_otf, axis=0)
-    s = np.mean(list_best_otf_stderr, axis=0)
-    v = np.var(list_best_otf, axis=0)
-    average_best_otf_stderr = np.sqrt(v/args.n_runs + s**2)
 
-    average_baseline = np.mean(list_baseline_otf, axis=0) # TODO computation of stderr is wrong, check in spreadsheet
-    s = np.mean(list_baseline_otf_stderr, axis=0)
-    v = np.var(list_baseline_otf, axis=0)
-    average_baseline_stderr = np.sqrt(v/args.n_runs + s**2)
+    average_prior_tf, average_prior_stderr = compute_average_otf_and_stderr(list_all_prior_tf,
+                                                                            list_all_prior_stderr,
+                                                                            n_runs=args.n_runs)
+    # compute the average OTFs, baseline and their standard errors
+    # TODO move into sepearte function
+    average_best_otf, average_best_otf_stderr = compute_average_otf_and_stderr(list_best_otf,
+                                                                               list_best_otf_stderr,
+                                                                               n_runs=args.n_runs)
+
+    average_baseline, average_baseline_stderr = compute_average_otf_and_stderr(list_baseline_otf,
+                                                                               list_baseline_otf_stderr,
+                                                                               n_runs=args.n_runs)
 
     average_ratio_otf = np.mean(list_ratio_otf)
 
     # create an average otf plot
-    average_best_solution_history = np.mean(list_best_solution_history, axis=0)
-    s = np.mean(list_stderr_history, axis=0)
-    v = np.var(list_best_solution_history, axis=0)
-    average_stderr_history = np.sqrt(v/args.n_runs + s**2)
+    average_best_solution_history, average_stderr_history = compute_average_otf_and_stderr(list_best_solution_history,
+                                                                                           list_stderr_history,
+                                                                                           n_runs=args.n_runs)
 
     plot_optimizer_history(average_best_solution_history,
                            average_stderr_history, # TODO computation of stderr is wrong, check in spreadsheet
