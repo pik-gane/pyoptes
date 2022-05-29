@@ -246,6 +246,18 @@ if __name__ == '__main__':
                                        mixed_strategies=args.prior_mixed_strategies,
                                        only_baseline=args.prior_only_baseline)
 
+        # # evaluate the strategies in the prior
+        # list_p = []
+        # for p in prior:
+        #     m, stderr = f.evaluate(budget_allocation=p,
+        #                            n_simulations=10000,
+        #                            parallel=args.parallel,
+        #                            num_cpu_cores=args.num_cpu_cores,
+        #                            statistic=statistic)
+        #     list_p.append([m, stderr])
+
+
+
         # list_prior is only needed if the objective function values of the strategies in the prior
         # are to be plotted
         list_prior.append(prior)
@@ -268,6 +280,8 @@ if __name__ == '__main__':
                                                               num_cpu_cores=args.num_cpu_cores,
                                                               statistic=statistic)
 
+        # ----------------------------------------
+        # start the chosen optimizer
         # shared optimizer parameters
         optimizer_kwargs = {'n_nodes': args.n_nodes, 'node_indices': node_indices, 'eval_function': f.evaluate,
                             'n_simulations': args.n_simulations, 'statistic': statistic, 'total_budget': total_budget,
@@ -318,6 +332,8 @@ if __name__ == '__main__':
                                                                         num_cpu_cores=args.num_cpu_cores,
                                                                         statistic=statistic)
 
+        ratio_otf = 100 - (eval_best_test_strategy / baseline_mean)
+
         output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
                  f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
                  f'\n Baseline standard-error:  {baseline_stderr}, ' \
@@ -326,20 +342,19 @@ if __name__ == '__main__':
                  f'\nObjective value:   {eval_best_test_strategy}' \
                  f'\nStandard error:  {best_test_strategy_stderr},' \
                  f' ratio stderr/mean: {best_test_strategy_stderr/eval_best_test_strategy}' \
-                 f'\nRatio OTF: {eval_best_test_strategy / baseline_mean}'
+                 f'\nRatio OTF: {ratio_otf}'
 
         save_results(best_test_strategy=best_test_strategy,
                      path_experiment=path_sub_experiment,
                      output=output)
 
-        # TODO maybe save the lists
         # save OTFs of baseline and optimizer
         list_best_otf.append(eval_best_test_strategy)
         list_best_otf_stderr.append(best_test_strategy_stderr)
         list_baseline_otf.append(baseline_mean)
         list_baseline_otf_stderr.append(baseline_stderr)
 
-        list_ratio_otf.append(eval_best_test_strategy / baseline_mean)
+        list_ratio_otf.append(ratio_otf)
         list_best_solution_history.append(best_solution_history)
         list_stderr_history.append(stderr_history)
 
@@ -348,10 +363,10 @@ if __name__ == '__main__':
     # save the raw data of the optimization runs
     save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
                   list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
-                  path_experiment)
+                  path_experiment=path_experiment)
     print(f'Optimization end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
     # ------------------------------------------------------------
-    # postprocessing
+    # postprocessing of all runs
     # ------------------------------------------------------------
     # compute the average OTFs, baseline and their standard errors
     average_best_otf = np.mean(list_best_otf, axis=0)
@@ -393,6 +408,7 @@ if __name__ == '__main__':
 
     # TODO scatterplot degree /capacity/ incoming transmissions vs strategy
 
+    # TODO this has to be changed, right now the evaluation is only done on one network
     # evaluate each strategy in each prior of n_runs and plot the average objective function value of each strategy
     if args.plot_prior:
         y_prior = []
@@ -407,6 +423,7 @@ if __name__ == '__main__':
         y_prior = np.array(y_prior)
 
         y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)
+        # TODO this has to be corrected to the right formula above
         y_prior_stderr = np.mean(y_prior[:, :, 1], axis=0)
 
         # plot the objective function values of the prior
