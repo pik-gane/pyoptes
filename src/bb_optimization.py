@@ -301,6 +301,8 @@ if __name__ == '__main__':
             optimizer_kwargs['bounds'] = bounds
             optimizer_kwargs['sigma'] = cma_sigma
             optimizer_kwargs['popsize'] = args.popsize
+            optimizer_kwargs['log_path'] = path_sub_experiment
+
 
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
                 bo_cma(**optimizer_kwargs)

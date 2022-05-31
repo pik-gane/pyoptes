@@ -4,13 +4,14 @@ import time
 import numpy as np
 import matplotlib.pyplot
 import pylab as plt
+from tqdm import tqdm
 
 from .utils import map_low_dim_x_to_high_dim
 
 
 # TODO complete documentation for parameters
 def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-           bounds, statistic, total_budget, parallel, num_cpu_cores, sigma, popsize):
+           bounds, statistic, total_budget, parallel, num_cpu_cores, sigma, popsize, log_path):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
     @param popsize: int, population size
@@ -44,16 +45,21 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
     time_for_optimization = []
     best_solution_history = []
     best_solution_stderr_history = []
+
+    p = os.path.join(log_path, 'budget')
+    if not os.path.isdir(p):
+        os.mkdir(p)
+    i = 0
     while not es.stop():
         # sample a new population of solutions
         solutions = es.ask()
         # evaluate all solutions on the objective function, return only the mean (omit stderr)
-        f_solution = [cma_objective_function(s, **f_kwargs)[0] for s in solutions]
+        f_solution = [cma_objective_function(s, **f_kwargs)[0] for s in tqdm(solutions, leave=False)]
             # parallelization is non-trivial, as the objective function is already parallelized and nested
             # parallelization is not allowed by python
         # use the solution and evaluation to update cma-es parameters (covariance-matrix ...)
         es.tell(solutions, f_solution)
-
+        np.save(os.path.join(p, f'xbest{i}'), np.array(es.result.xbest))
         # evaluate the current best parameter and save mean + standard error
         best_s, best_s_stderr = cma_objective_function(es.result.xbest, **f_kwargs)
         best_solution_history.append(best_s)
@@ -62,9 +68,9 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
         es.logger.add()
         es.disp()   # prints the progress of the optimizer
         time_for_optimization.append((time.time() - t_start) / 60)
+        i += 1
 
     best_parameter = es.result.xbest
-
     # es.logger.plot()
     # cma.s.figsave = matplotlib.pyplot.savefig
     # path_plot = os.path.join(path_experiment, 'cma_plot_full.png')

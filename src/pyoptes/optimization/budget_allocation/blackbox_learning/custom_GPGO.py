@@ -195,8 +195,6 @@ class GPGO:
         self.tau = np.max(self.GP.y) # self.GP "saves" the y from the objective f,
         self.tau = np.round(self.tau, decimals=8)
 
-        # test strategies return the same y for f and self.GP (+/- the standarderror)
-        # GP.y is just a list
         self.history.append(self.tau)
 
     def getResult(self):
@@ -238,9 +236,12 @@ class GPGO:
 
         self.GP.fit(np.array(X), np.array(Y))
 
+        print('Y', Y)
         # get the best y and corresponding stderr
         i = np.argmax(Y)
+        print('i', i)
         self.tau = np.round(Y[i], decimals=8)
+        print('tau', self.tau)
         tau_stderr = Y_stderr[i]
 
         self.history.append(self.tau)

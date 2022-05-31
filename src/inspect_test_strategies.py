@@ -1,12 +1,13 @@
-from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs
-from pyoptes.optimization.budget_allocation import target_function as f
+from pyoptes import choose_high_degree_nodes, create_graphs
+# from pyoptes.optimization.budget_allocation import target_function as f
 
 import argparse
 import numpy as np
+import pylab as plt
 from tqdm import tqdm
 import os
 import glob
-
+import json
 
 if __name__ == '__main__':
 
@@ -15,13 +16,6 @@ if __name__ == '__main__':
     parser.add_argument("name_experiment",
                         help="The name of the folder where the results of the optimizer run are saved to.")
 
-    parser.add_argument("--n_nodes", type=int, default=120, choices=[120, 1040, 57590],
-                        help="Si-simulation parameter. "
-                             "Defines the number of nodes used by the SI-model to create a graph. "
-                             "Default value is 120 nodes.")
-    parser.add_argument('--n_runs', type=int, default=100,
-                        help='The number of times the optimizer is run. Results are then averaged over all runs.'
-                             'Default is 100 runs.')
     parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "
@@ -31,44 +25,106 @@ if __name__ == '__main__':
                              'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
                              '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
 
-    parser.add_argument('--graph_type', choices=['waxman', 'ba', 'syn'], default='ba',
-                        help='Si-simulation parameter. Set the type of graph the simulation uses.'
-                             ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
-
-    parser.add_argument('--delta_t_symptoms', type=int, default=60,
-                        help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
-                             ' automatically. Default is 60 days')
-    parser.add_argument('--p_infection_by_transmission', type=float, default=0.5,
-                        help='Si-simulation parameter. The probability of how likely a trade animal '
-                             'infects other animals. Default is 0.5.')
-    parser.add_argument('--expected_time_of_first_infection', type=int, default=30,
-                        help='Si-simulation parameter. The expected time (in days) after which the first infection occurs. ')
-
     args = parser.parse_args()
 
-    network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
+    # TODO first, get all experiments that are to be inspected
+    paths_experiment_params = glob.glob(os.path.join(args.path_plot, '**/experiment_hyperparameters.json'))
+    # TODO get the experiment parameters from the .json-file
+    for experiment_params in paths_experiment_params:
 
-    # TODO investigate why NaNs in budget of cma
-    # TODO how to the values in the prior look like, compared to the baseline
+        # get experiment specific hyperparameters
+        with open(experiment_params, 'r') as f:
+            hyperparameters = json.load(f)
 
-    for n, network in enumerate(network_list[:args.n_runs]):
+        optimizer = hyperparameters['optimizer_hyperparameters']['optimizer']
+        network_type = 'ba' #hyperparameters['simulation_hyperparameters']['graph']
+        n_runs = hyperparameters['simulation_hyperparameters']['n_runs']
+        n_nodes = hyperparameters['simulation_hyperparameters']['n_nodes']
+        sentinels = hyperparameters['simulation_hyperparameters']['sentinels']
 
-        # unpack the properties of the network
-        transmissions, capacities, degrees = network
-        print('degress shape: ', np.shape(degrees)) # [index, degree]
+        experiment_directory = os.path.split(experiment_params)[0]
+        experiment_name = os.path.split(experiment_directory)[1][9:]
+        print(experiment_name)
 
-        #
-        path_best_strategy = os.path.join(args.path_plot, args.name_experiment, f'individual/{n}', 'best_parameter.npy')
-        best_strategy = np.load(path_best_strategy)
-        print('shape of best_strategy: ', best_strategy.shape, best_strategy.sum())
+        if optimizer == 'gpgo':
 
+            # load the networks with the experiment specific ..
+            network_list = create_graphs(n_runs, network_type, n_nodes, args.path_networks)
 
+            all_degrees = []
+            all_capacities = []
+            all_budgets = []
 
-        break
+            for n in range(n_runs):
+                # get best strategy
+                path_best_strategy = os.path.join(experiment_directory, f'individual/{n}', 'best_parameter.npy')
+                best_strategy = np.load(path_best_strategy)
 
-    # p = glob.glob('**/best_parameter.npy', recursive=True)
-    # print(len(p))
-    # for i in  p:
-    #     b = np.load(i)
-    #     print(np.shape(b), np.sum(b), i)
+                # get the network and its attribute
+                network = network_list[n]
+                transmissions, capacities, degrees = network
 
+                # get the degrees and capacity of the network, sorted by node indice
+                if network_type == 'syn':
+                    degrees = []
+                else:
+                    # degrees_sorted = sorted(degrees, key=lambda degrees: degrees[1], reverse=True)
+                    degrees = [i[1] for i in degrees]
+
+                all_degrees.extend(degrees)
+                all_capacities.extend(capacities)
+                all_budgets.extend(best_strategy)
+
+            plt.clf()
+            plt.scatter(all_degrees, all_budgets)
+            plt.title(f'Node degree vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}')
+            plt.xlabel('Node degree')
+            plt.ylabel('Budget')
+
+            plt.savefig(os.path.join(experiment_directory, 'Scatter-plot_node_degree_vs_budget.png'))
+            # plt.show()
+
+        elif optimizer == 'cma' and n_nodes == 120:
+
+            # load the networks with the experiment specific ..
+            network_list = create_graphs(n_runs, network_type, n_nodes, args.path_networks)
+
+            all_degrees = []
+            all_capacities = []
+            all_budgets = []
+
+            for n in range(n_runs):
+                # get best strategy
+                path_best_strategy = os.path.join(experiment_directory, f'individual/{n}', 'best_parameter.npy')
+                best_strategy = np.load(path_best_strategy)
+
+                # get the network and its attribute
+                network = network_list[n]
+                transmissions, capacities, degrees = network
+
+                # get the degrees and capacity of the network, sorted by node indice
+                if network_type == 'syn':
+                    degrees = []
+                else:
+                    # degrees_sorted = sorted(degrees, key=lambda degrees: degrees[1], reverse=True)
+                    degrees = [i[1] for i in degrees]
+
+                all_degrees.extend(degrees)
+                all_capacities.extend(capacities)
+                all_budgets.extend(best_strategy)
+
+            all_degrees.extend(degrees)
+            all_capacities.extend(capacities)
+            all_budgets.extend(best_strategy)
+
+            plt.clf()
+            plt.scatter(all_degrees, all_budgets)
+            plt.title(f'Node degree vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}')
+            plt.xlabel('Node degree')
+            plt.ylabel('Budget')
+
+            plt.savefig(os.path.join(experiment_directory, 'Scatter-plot_node_degree_vs_budget.png'))
+            # plt.show()
+
+    # # TODO investigate why NaNs in budget of cma
+    # # TODO how to the values in the prior look like, compared to the baseline
