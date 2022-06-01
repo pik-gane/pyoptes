@@ -28,10 +28,10 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
   --graph syn \
-  --prior_mixed_strategies True \
+  --prior_mixed_strategies '' \
   --n_nodes 57590 \
   --sentinels 57590 \
   --statistic rms \
   --scale_total_budget 1 \
-  --num_cpu_cores 10 \
+  --num_cpu_cores 1 \
   --n_runs 10
