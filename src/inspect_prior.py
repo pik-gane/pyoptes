@@ -39,7 +39,7 @@ if __name__ == '__main__':
         plt.bar(range(len(av_prior_tf)), av_prior_tf, label='prior')
         plt.title(f'Objective function evaluation for {len(av_prior_tf)} strategies,\naverage over {len(list_all_prior_tf)} networks')
         plt.xlabel('Prior')
-        plt.ylabel('objective function value')
+        plt.ylabel('Number of infected animals')
         # TODO move text in the top right corner of the plot
         # plt.text(25, 1000, f'min: {min_y_prior_mean:2f}\nmax: {max_y_prior_mean:2f}',
         #          bbox=dict(facecolor='red', alpha=0.5))

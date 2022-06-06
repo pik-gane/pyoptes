@@ -20,10 +20,6 @@ if __name__ == '__main__':
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
-    parser.add_argument('--path_networks', default='../data',
-                        help='Location where the networks are saved to. '
-                             'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
-                             '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
 
     args = parser.parse_args()
 
@@ -37,7 +33,7 @@ if __name__ == '__main__':
             hyperparameters = json.load(f)
 
         optimizer = hyperparameters['optimizer_hyperparameters']['optimizer']
-        network_type = 'ba' #hyperparameters['simulation_hyperparameters']['graph']
+        network_type = hyperparameters['simulation_hyperparameters']['graph']
         n_runs = hyperparameters['simulation_hyperparameters']['n_runs']
         n_nodes = hyperparameters['simulation_hyperparameters']['n_nodes']
         sentinels = hyperparameters['simulation_hyperparameters']['sentinels']
@@ -48,8 +44,14 @@ if __name__ == '__main__':
 
         if optimizer == 'gpgo':
 
+            if network_type == 'ba' or network_type == 'waxman':
+                path_networks = '../data'
+            elif network_type == 'syn':
+                path_networks = '../../networks/data'
+            else:
+                raise Exception('Network type not supported')
             # load the networks with the experiment specific ..
-            network_list = create_graphs(n_runs, network_type, n_nodes, args.path_networks)
+            network_list = create_graphs(n_runs, network_type, n_nodes, path_networks)
 
             all_degrees = []
             all_capacities = []

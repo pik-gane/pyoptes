@@ -38,8 +38,6 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
     """
 
     s_bounds = np.array([[m+s, m-s] for m, s in zip(optimizer_history, stderr_history)])
-    # print('shape of s:', np.shape(s_bounds))
-    # print(s_bounds)
 
     plt.clf()
     plt.plot(range(len(optimizer_history)), optimizer_history, label=optimizer)
@@ -59,7 +57,7 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
 
     plt.title(f'{optimizer}, {n_nodes} nodes, {sentinels} sentinels')
     plt.xlabel('Iteration')
-    plt.ylabel('SI-model output') # TODO change name to something more descriptive, like number of infected animals
+    plt.ylabel('Number of infected animals') # TODO change name to something more descriptive, like number of infected animals
     plt.legend()
     plt.savefig(os.path.join(path_experiment, f'{optimizer}{name}.png'))
     plt.clf()
@@ -82,7 +80,7 @@ def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
     plt.bar(range(len(y_prior_mean)), y_prior_mean, label='prior')
     plt.title(f'Objective function evaluation for {len(y_prior_mean)} strategies, average over {n_runs} networks')
     plt.xlabel('Prior')
-    plt.ylabel('objective function value')
+    plt.ylabel('Infected animals')
     # TODO move text in the top right corner of the plot
     plt.text(25, 1000, f'min: {min_y_prior_mean:2f}\nmax: {max_y_prior_mean:2f}',
              bbox=dict(facecolor='red', alpha=0.5))

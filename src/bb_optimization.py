@@ -49,6 +49,7 @@ def share_detected(unused_n_infected_animals):
 # or just always use 50 evals for optim, for better comparison
 
 
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -135,6 +136,9 @@ if __name__ == '__main__':
                         help='Location where the networks are saved to. '
                              'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
                              '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
+
+    # scp -r loebkens@cluster.pik-potsdam.de:"/p/projects/ou/labs/gane/optes/mcmc_100nets/data/" /home/jacob/Documents/networks
+
     args = parser.parse_args()
 
     # prepare the directory for the plots, hyperparameters and results

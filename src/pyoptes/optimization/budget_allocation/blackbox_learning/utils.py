@@ -86,6 +86,30 @@ def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_b
     np.save(os.path.join(path_experiment, 'list_all_prior_stderr'), list_all_prior_stderr)
 
 
+def load_raw_data(path_experiment):
+    """
+
+    @param path_experiment:
+    @return:
+    """
+    list_best_otf = np.load(os.path.join(path_experiment, 'list_best_otf.npy'))
+    list_best_otf_stderr = np.load(os.path.join(path_experiment, 'list_best_otf_stderr.npy'))
+    list_baseline_otf = np.load(os.path.join(path_experiment, 'list_baseline_otf.npy'))
+    list_baseline_otf_stderr = np.load(os.path.join(path_experiment, 'list_baseline_otf_stderr.npy'))
+    list_ratio_otf = np.load(os.path.join(path_experiment, 'list_ratio_otf.npy'))
+    list_best_solution_history = np.load(os.path.join(path_experiment, 'list_best_solution_history.npy'))
+    list_stderr_history = np.load(os.path.join(path_experiment, 'list_stderr_history.npy'))
+    list_time_for_optimization = np.load(os.path.join(path_experiment, 'list_time_for_optimization.npy'))
+    list_all_prior_tf = np.load(os.path.join(path_experiment, 'list_all_prior_tf.npy'))
+    list_all_prior_stderr = np.load(os.path.join(path_experiment, 'list_all_prior_stderr.npy'), )
+    return {'list_best_otf': list_best_otf, 'list_best_otf_stderr': list_best_otf_stderr,
+            'list_baseline_otf': list_baseline_otf, 'list_baseline_otf_stderr': list_baseline_otf_stderr,
+            'list_ratio_otf': list_ratio_otf,
+            'list_best_solution_history': list_best_solution_history, 'list_stderr_history': list_stderr_history,
+            'list_time_for_optimization': list_time_for_optimization,
+            'list_all_prior_tf': list_all_prior_tf, 'list_all_prior_stderr': list_all_prior_stderr}
+
+
 # TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capacities
 # maybe even a combination of both
 def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
@@ -169,6 +193,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
                                      reverse=True)
     indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted]
 
+    # ------------------------------------------------------------------------
     # TODO has to be fixed to distribute over n_nodes instead of sentinels
     # the baseline strategy (equally distributed budget over all sentinels)
     x_sentinels = np.array([total_budget / sentinels for _ in range(sentinels)])
