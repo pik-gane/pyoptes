@@ -102,7 +102,7 @@ if __name__ == '__main__':
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
-    parser.add_argument('--graph_type', choices=['waxman', 'ba', 'syn'], default='ba',
+    parser.add_argument('--graph_type', choices=['waxman', 'ba', 'syn'], default='syn',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
     parser.add_argument('--delta_t_symptoms', type=int, default=60,
@@ -132,7 +132,7 @@ if __name__ == '__main__':
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
-    parser.add_argument('--path_networks', default='../data',
+    parser.add_argument('--path_networks', default='../../networks/data',
                         help='Location where the networks are saved to. '
                              'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
                              '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
