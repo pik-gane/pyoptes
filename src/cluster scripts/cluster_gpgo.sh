@@ -33,5 +33,5 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo
   --sentinels 57590 \
   --statistic 95perc \
   --scale_total_budget 1 \
-  --num_cpu_cores 10 \
+  --num_cpu_cores 1 \
   --n_runs 10

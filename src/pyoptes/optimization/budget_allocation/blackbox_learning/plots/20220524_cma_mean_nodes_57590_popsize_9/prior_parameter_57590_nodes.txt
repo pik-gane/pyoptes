@@ -1,0 +1,8 @@
+number	description
+0	uniform distribution over all 57590 nodes
+1	uniform distribution over 9598 highest degree nodes
+2	uniform distribution over 9598 highest capacity nodes
+3	uniform distribution over 4799 highest degree nodes
+4	uniform distribution over 4799 highest capacity nodes
+5	uniform distribution over 2399 highest degree nodes
+6	uniform distribution over 2399 highest capacity nodes
