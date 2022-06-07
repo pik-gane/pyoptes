@@ -86,6 +86,30 @@ def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_b
     np.save(os.path.join(path_experiment, 'list_all_prior_stderr'), list_all_prior_stderr)
 
 
+def load_raw_data(path_experiment):
+    """
+
+    @param path_experiment:
+    @return:
+    """
+    list_best_otf = np.load(os.path.join(path_experiment, 'list_best_otf.npy'))
+    list_best_otf_stderr = np.load(os.path.join(path_experiment, 'list_best_otf_stderr.npy'))
+    list_baseline_otf = np.load(os.path.join(path_experiment, 'list_baseline_otf.npy'))
+    list_baseline_otf_stderr = np.load(os.path.join(path_experiment, 'list_baseline_otf_stderr.npy'))
+    list_ratio_otf = np.load(os.path.join(path_experiment, 'list_ratio_otf.npy'))
+    list_best_solution_history = np.load(os.path.join(path_experiment, 'list_best_solution_history.npy'))
+    list_stderr_history = np.load(os.path.join(path_experiment, 'list_stderr_history.npy'))
+    list_time_for_optimization = np.load(os.path.join(path_experiment, 'list_time_for_optimization.npy'))
+    list_all_prior_tf = np.load(os.path.join(path_experiment, 'list_all_prior_tf.npy'))
+    list_all_prior_stderr = np.load(os.path.join(path_experiment, 'list_all_prior_stderr.npy'), )
+    return {'list_best_otf': list_best_otf, 'list_best_otf_stderr': list_best_otf_stderr,
+            'list_baseline_otf': list_baseline_otf, 'list_baseline_otf_stderr': list_baseline_otf_stderr,
+            'list_ratio_otf': list_ratio_otf,
+            'list_best_solution_history': list_best_solution_history, 'list_stderr_history': list_stderr_history,
+            'list_time_for_optimization': list_time_for_optimization,
+            'list_all_prior_tf': list_all_prior_tf, 'list_all_prior_stderr': list_all_prior_stderr}
+
+
 # TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capacities
 # maybe even a combination of both
 def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
@@ -100,12 +124,15 @@ def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
     # the synthetic networks only gives one a sorted list of node indices of the highest degree nodes
     # excluding some nodes (slaughter houses). To work with the prior the missing nodes have to be added
     if len(node_degrees) < n_nodes:
-        # create a list of all n_nodes node indices
-        all_node_indices = list(range(n_nodes))
-        # get the indices of the nodes that are missing in node_degrees
-        missing_nodes = list(set(all_node_indices) - set(node_degrees))
+        # # create a list of all n_nodes node indices
+        # all_node_indices = list(range(n_nodes))
+        # # get the indices of the nodes that are missing in node_degrees
+        # missing_nodes = list(set(all_node_indices) - set(node_degrees))
         # add the missing node indices to the end of the node_degrees list
-        indices_highest_degree_nodes = [*node_degrees, *missing_nodes]
+        # TODO this is useless, degrees are converted into indices
+        nodes_degrees_sorted = sorted(node_degrees, reverse=True)
+        missing_nodes = np.zeros(n_nodes-len(node_degrees))
+        indices_highest_degree_nodes = [*nodes_degrees_sorted, *missing_nodes]
     else:
         # sort list of nodes by degree and get their indices
         nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
@@ -169,6 +196,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
                                      reverse=True)
     indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted]
 
+    # ------------------------------------------------------------------------
     # TODO has to be fixed to distribute over n_nodes instead of sentinels
     # the baseline strategy (equally distributed budget over all sentinels)
     x_sentinels = np.array([total_budget / sentinels for _ in range(sentinels)])
@@ -324,7 +352,7 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
                                  degrees_ba])
     elif graph_type == 'syn':
         network_path = os.path.join(base_path, f'Synset{n_nodes}-180')
-        print(f'Loading {n_runs} real graphs')
+        print(f'Loading {n_runs} synthetic graphs')
         for n in tqdm(range(n_runs)):
             transmissions_path = os.path.join(network_path, f'syndata{n}', 'dataset.txt')
             transmissions = pd.read_csv(transmissions_path, header=None)
@@ -335,9 +363,15 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
             capacities = pd.read_csv(capacities_path, header=None)
             capacities = capacities.iloc[0][:n_nodes].to_numpy()
 
-            degrees_path = os.path.join(network_path, f'syndata{n}', 'degree_sentil.txt')
+            degrees_path = os.path.join(network_path, f'syndata{n}', 'degreen.txt')
             degrees = pd.read_csv(degrees_path, header=None)
             degrees = degrees.iloc[0][:-1].to_numpy(dtype=np.int64)
+
+            if len(degrees) < n_nodes:
+                # synthetic networks
+                missing_nodes = np.zeros(n_nodes - len(degrees))
+                degree_nodes = [*degrees, *missing_nodes]
+                degrees = [[i, d] for i, d in enumerate(degree_nodes)]
 
             network_list.append([transmissions,
                                  capacities,

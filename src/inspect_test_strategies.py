@@ -13,17 +13,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("name_experiment",
-                        help="The name of the folder where the results of the optimizer run are saved to.")
+    # parser.add_argument("name_experiment",
+    #                     help="The name of the folder where the results of the optimizer run are saved to.")
 
     parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
-    parser.add_argument('--path_networks', default='../data',
-                        help='Location where the networks are saved to. '
-                             'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
-                             '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
 
     args = parser.parse_args()
 
@@ -37,7 +33,7 @@ if __name__ == '__main__':
             hyperparameters = json.load(f)
 
         optimizer = hyperparameters['optimizer_hyperparameters']['optimizer']
-        network_type = 'ba' #hyperparameters['simulation_hyperparameters']['graph']
+        network_type = hyperparameters['simulation_hyperparameters']['graph']
         n_runs = hyperparameters['simulation_hyperparameters']['n_runs']
         n_nodes = hyperparameters['simulation_hyperparameters']['n_nodes']
         sentinels = hyperparameters['simulation_hyperparameters']['sentinels']
@@ -46,14 +42,20 @@ if __name__ == '__main__':
         experiment_name = os.path.split(experiment_directory)[1][9:]
         print(experiment_name)
 
+        if network_type == 'ba' or network_type == 'waxman':
+            path_networks = '../data'
+        elif network_type == 'syn':
+            path_networks = '../../networks/data'
+        else:
+            raise Exception('Network type not supported')
+        # load the networks with the experiment specific ..
+        network_list = create_graphs(n_runs, network_type, n_nodes, path_networks)
+
+        all_degrees = []
+        all_capacities = []
+        all_budgets = []
+
         if optimizer == 'gpgo':
-
-            # load the networks with the experiment specific ..
-            network_list = create_graphs(n_runs, network_type, n_nodes, args.path_networks)
-
-            all_degrees = []
-            all_capacities = []
-            all_budgets = []
 
             for n in range(n_runs):
                 # get best strategy
@@ -86,13 +88,6 @@ if __name__ == '__main__':
 
         elif optimizer == 'cma' and n_nodes == 120:
 
-            # load the networks with the experiment specific ..
-            network_list = create_graphs(n_runs, network_type, n_nodes, args.path_networks)
-
-            all_degrees = []
-            all_capacities = []
-            all_budgets = []
-
             for n in range(n_runs):
                 # get best strategy
                 path_best_strategy = os.path.join(experiment_directory, f'individual/{n}', 'best_parameter.npy')
@@ -112,6 +107,31 @@ if __name__ == '__main__':
                 all_degrees.extend(degrees)
                 all_capacities.extend(capacities)
                 all_budgets.extend(best_strategy)
+
+        elif optimizer == 'cma' and n_nodes == 1040:
+
+            for n in range(n_runs):
+                # get best strategy
+                path_best_strategy = os.path.join(experiment_directory, f'individual/{n}', 'best_parameter.npy')
+                best_strategy = np.load(path_best_strategy)
+                print(best_strategy)
+                print(best_strategy.shape, best_strategy.mean(), best_strategy.min(), best_strategy.max())
+
+                # get the network and its attribute
+                network = network_list[n]
+                transmissions, capacities, degrees = network
+
+                # get the degrees and capacity of the network, sorted by node indice
+                if network_type == 'syn':
+                    degrees = []
+                else:
+                    # degrees_sorted = sorted(degrees, key=lambda degrees: degrees[1], reverse=True)
+                    degrees = [i[1] for i in degrees]
+
+                all_degrees.extend(degrees)
+                all_capacities.extend(capacities)
+                all_budgets.extend(best_strategy)
+
 
             all_degrees.extend(degrees)
             all_capacities.extend(capacities)
