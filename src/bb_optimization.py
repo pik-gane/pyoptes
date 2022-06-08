@@ -8,7 +8,7 @@ from pyoptes import choose_high_degree_nodes, baseline
 from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
 from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs, save_raw_data
 from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
-from pyoptes import compute_average_otf_and_stderr
+from pyoptes import compute_average_otf_and_stderr, softmax
 
 import argparse
 import numpy as np
@@ -335,7 +335,7 @@ if __name__ == '__main__':
                                    args.n_nodes, args.sentinels,
                                    path_sub_experiment, args.optimizer)
 
-        best_test_strategy = total_budget * np.exp(best_test_strategy) / sum(np.exp(best_test_strategy))
+        best_test_strategy = total_budget * softmax(best_test_strategy)
         best_test_strategy = map_low_dim_x_to_high_dim(best_test_strategy, args.n_nodes, node_indices)
 
         eval_best_test_strategy, best_test_strategy_stderr = f.evaluate(best_test_strategy,
