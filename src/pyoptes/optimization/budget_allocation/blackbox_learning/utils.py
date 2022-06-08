@@ -12,7 +12,7 @@ def softmax(x):
     @param x: budget vector, numpy array
     @return: scaled budget vector, numpy array
     """
-    x -= np.max(x)  # for numerical stability. Prevents infinities in the denominator.
+    x = x - np.max(x)  # for numerical stability. Prevents infinities in the denominator.
     x = np.exp(x) / sum(np.exp(x))
     return x
 

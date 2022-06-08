@@ -58,10 +58,10 @@ if __name__ == '__main__':
     parser.add_argument("name_experiment",
                         help="The name of the folder where the results of the optimizer run are saved to.")
 
-    parser.add_argument("--sentinels", type=int, default=120,
+    parser.add_argument("--sentinels", type=int, default=1040,
                         help="Set the number of nodes that are used. Has to be smaller than or equal to n_nodes. "
                              "Default is 120 nodes.")
-    parser.add_argument("--n_nodes", type=int, default=120, choices=[120, 1040, 57590],
+    parser.add_argument("--n_nodes", type=int, default=1040, choices=[120, 1040, 57590],
                         help="Si-simulation parameter. "
                              "Defines the number of nodes used by the SI-model to create a graph. "
                              "Default value is 120 nodes.")
@@ -79,7 +79,7 @@ if __name__ == '__main__':
                         help='GPGO optimizer parameter. Sets whether the surrogate function is fitted with priors '
                              'created by heuristics or by sampling random point. Only works when n_nodes and sentinels'
                              'are the same size. Default is True.')
-    parser.add_argument('--prior_mixed_strategies', type=bool, default=True,
+    parser.add_argument('--prior_mixed_strategies', type=bool, default=False,
                         help='GPGO optimizer parameter. '
                              'Sets whether to use test strategies that mix highest degrees and capacities in the prior.'
                              'If set to no the prior has the same shape for all network sizes.')
@@ -87,10 +87,11 @@ if __name__ == '__main__':
                         help='GPGO optimizer parameter. Sets whether to use only the baseline strategy in the prior.'
                              'If true the prior consists of only one item.')
 
-    parser.add_argument('--popsize', type=int, default=18,
+    parser.add_argument('--popsize', type=int, default=9,
                         help='CMA-ES optimizer parameter. Defines the size of the population each iteration.'
                              'CMA default is "4+int(3*log(n_nodes))" '
-                             '-> 18 of 120, 24 for 1040, 36 for 57590.')
+                             '-> 18 of 120, 24 for 1040, 36 for 57590.'
+                             'Is set to 9 for performance reasons.')
     parser.add_argument('--scale_sigma', type=float, default=0.25,
                         help='CMA-ES optimizer parameter. Defines the scaling of the standard deviation. '
                              'Default is a standard deviation of 0.25 of the total budget.')
@@ -301,12 +302,13 @@ if __name__ == '__main__':
         t0 = time()
         if args.optimizer == 'cma':
 
-            optimizer_kwargs['initial_population'] = prior[0]   # CMA-ES can take only an initial population of one
+            # CMA-ES can take only an initial population of one. For this the uniform baseline is used
+            # TODO maybe change to/test with highest degree baseline ?
+            optimizer_kwargs['initial_population'] = prior[0]
             optimizer_kwargs['bounds'] = bounds
             optimizer_kwargs['sigma'] = cma_sigma
             optimizer_kwargs['popsize'] = args.popsize
             optimizer_kwargs['log_path'] = path_sub_experiment
-
 
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
                 bo_cma(**optimizer_kwargs)
