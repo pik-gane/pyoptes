@@ -260,6 +260,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     return prior_test_strategies, prior_node_indices, test_strategy_parameter
 
 
+# TODO can maybe be replaced ? Is redundant with the prior
 def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, statistic):
     """
     Creates a test strategy where the total budget is uniformly allocated to all nodes.

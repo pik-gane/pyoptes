@@ -1,7 +1,6 @@
-import time
 import numpy as np
 
-from .utils import map_low_dim_x_to_high_dim
+from .utils import map_low_dim_x_to_high_dim, softmax
 
 from pyGPGO.acquisition import Acquisition
 from pyGPGO.covfunc import squaredExponential
@@ -10,11 +9,14 @@ from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 from .custom_GPGO import GPGO
 
 
-def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
+def bo_pyGPGO(prior, prior_y, prior_stderr,
+              max_iterations, n_simulations, node_indices, n_nodes, eval_function,
               total_budget, parallel, num_cpu_cores, acquisition_function, statistic, use_prior=True):
     """
     Run GPGO, a Bayesian optimization algorithm with a gaussian process surrogate.
 
+    @param prior_stderr:
+    @param prior_y:
     @param use_prior: bool, sets whether the surrogate function is pre-fit with a prior or random samples
     @param prior: list of arrays, the prior for the surrogate function
     @param acquisition_function: string, defines the acquisition function to be used.
@@ -55,6 +57,8 @@ def bo_pyGPGO(prior, max_iterations, n_simulations, node_indices, n_nodes, eval_
 
     gpgo.run(max_iter=max_iterations,
              prior=prior,
+             prior_y=prior_y,
+             prior_stderr=prior_stderr,
              use_prior=use_prior)
 
     best_test_strategy = gpgo.getResult()[0]
@@ -88,11 +92,10 @@ def pyGPGO_objective_function(x, node_indices, total_budget, n_nodes, eval_funct
     # TODO fix GPGO breaking when using the prior + sentinels less the n_nodes
 
     # rescale strategy such that it satisfies sum constraint
-    x = total_budget * np.exp(x) / sum(np.exp(x))
-
+    x = total_budget * softmax(x)
     x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
 
-    y, stderr = eval_function(x,
+    y, stderr = eval_function(budget_allocation=x,
                               n_simulations=n_simulations,
                               parallel=parallel,
                               num_cpu_cores=num_cpu_cores,

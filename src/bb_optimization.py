@@ -49,7 +49,6 @@ def share_detected(unused_n_infected_animals):
 # or just always use 50 evals for optim, for better comparison
 
 
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -105,7 +104,7 @@ if __name__ == '__main__':
                              "Default value is 1000.")
     parser.add_argument('--graph_type', choices=['waxman', 'ba', 'syn'], default='syn',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
-                             ' Either Waxman or Barabasi-Albert (ba) can be used. Default is Barabasi-Albert.')
+                             ' Either Waxman,Synthetic or Barabasi-Albert (ba) can be used. Default is Synthetic.')
     parser.add_argument('--delta_t_symptoms', type=int, default=60,
                         help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
                              ' automatically. Default is 60 days')
@@ -316,6 +315,8 @@ if __name__ == '__main__':
         elif args.optimizer == 'gpgo':
 
             optimizer_kwargs['prior'] = prior
+            optimizer_kwargs['prior_y'] = list_prior_tf
+            optimizer_kwargs['prior_stderr'] = list_prior_stderr
             optimizer_kwargs['acquisition_function'] = acquisition_function
             optimizer_kwargs['use_prior'] = args.use_prior
 

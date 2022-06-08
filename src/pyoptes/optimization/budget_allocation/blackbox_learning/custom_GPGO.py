@@ -1,11 +1,7 @@
 # TODO rewrite this to make the changes more clear
 '''
-Rewrite of the GPGO class from pyGPGO.
-Adjusted to support
-
-    Adaption of the GPGO-class. Extended to support fitting the surrogate function with a prior.
-    run has been changed to reduce the verbosity of the class.
-
+Adaption of the GPGO-class. Extended to support fitting the surrogate function with a prior.
+The class also returns the stderr of objective function calls, as well as the time spent for the optimization.
 '''
 
 import time
@@ -189,13 +185,11 @@ class GPGO:
 
         # add new stderr to the stderr dictionary. This ensures that there is always a stderr for each measurement
         f_new = np.round(f_new, decimals=8)
-        print('f_new ', f_new)
         self.stderr[f_new] = stderr_f_new
 
         # get the current optimum of the GP
         self.tau = np.max(self.GP.y) # self.GP "saves" the y from the objective f,
         self.tau = np.round(self.tau, decimals=8)
-        print('tau', self.tau)
         self.history.append(self.tau)
 
     def getResult(self):
@@ -218,55 +212,45 @@ class GPGO:
                 res_d.append(opt_x[i])
         return res_d, self.tau
 
-    def _fitGP(self, prior):
+    def _fitGP(self, prior, prior_y, prior_stderr):
         """
 
         @param prior: list of test strategies
-        @param prior_node_indices: list of indices of the test strategies in the prior
+        @param prior_y: list of corresponding function evaluations
+        @param prior_stderr: list of corresponding stderr
         """
-        Y = []
-        Y_stderr = []
-        X = []
-        for x in tqdm(prior, leave=False):
-            X.append(x)
-            y, stderr = self.f(x, **self.f_kwargs)
-            Y.append(y)
-            Y_stderr.append(stderr)
-            time_optim = time.time() - self.time_start
-            self.time_for_optimization.append(time_optim/60)
+        prior_y = -1 * np.array(prior_y)
+        self.GP.fit(np.array(prior), np.array(prior_y))
 
-        self.GP.fit(np.array(X), np.array(Y))
-
-        print('Y', Y)
         # get the best y and corresponding stderr
-        i = np.argmax(Y)
-        print('i', i)
-        self.tau = np.round(Y[i], decimals=8)
-        print('tau', self.tau)
-        tau_stderr = Y_stderr[i]
+        i = np.argmax(prior_y)
+        self.tau = np.round(prior_y[i], decimals=8)
+        tau_stderr = prior_stderr[i]
 
         self.history.append(self.tau)
         self.stderr[self.tau] = tau_stderr
 
-    def run(self, max_iter=10, init_evals=3, prior=None, use_prior=False):
+    def run(self, max_iter=10, init_evals=3, use_prior=False,
+            prior=None, prior_y=None, prior_stderr=None):
         """
         Runs the Bayesian Optimization procedure.
+        @param prior_y:
+        @param prior_stderr:
         @param max_iter: maximum number of iterations for GPGO
         @param init_evals:  number of random samples for fitting the GP
-        @param node_indices: list of node indices to use for the objective function
         @param prior: list of test strategies
         @param use_prior: boolean to use the prior
-        @param prior_node_indices: list of node indices to use for the prior
         """
 
         if not use_prior:
             print('Running GPGO with surrogate function fitted on randomly sampled points\n')
-            self.init_evals = init_evals
-            self._firstRun(self.init_evals)
+            self._firstRun(init_evals)
         else:
             print('Running GPGO with surrogate function fitted on prior.\n'
                   'Fitting the GP takes about a minute (depending on the size of the prior and the size of the graph)')
-            self._fitGP(prior)
+            self._fitGP(prior=prior,
+                        prior_y=prior_y,
+                        prior_stderr=prior_stderr)
             print('GP fitted.')
 
         # print(f'Running GPGO for {max_iter} iterations.')
