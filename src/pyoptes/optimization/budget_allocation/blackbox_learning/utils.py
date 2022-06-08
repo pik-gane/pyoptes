@@ -1,11 +1,20 @@
 import os
 import json
 import numpy as np
-import pylab as plt
 from tqdm import tqdm
 import pandas as pd
 import networkx as nx
-from time import time
+
+
+def softmax(x):
+    """
+    Softmax function.
+    @param x: budget vector, numpy array
+    @return: scaled budget vector, numpy array
+    """
+    x -= np.max(x)  # for numerical stability. Prevents infinities in the denominator.
+    x = np.exp(x) / sum(np.exp(x))
+    return x
 
 
 def compute_average_otf_and_stderr(list_otf, list_stderr, n_runs):
@@ -149,6 +158,7 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
     @param node_indices: list of integers
     @return: numpy array of size n_node, with values of x at indices node_indices
     """
+    # print('x, node_indices: ', np.shape(x), np.shape(node_indices))
     assert np.shape(x) == np.shape(node_indices)
     # create a dummy vector to be filled with the values of x at the appropriate indices
     x_true = np.zeros(n_nodes)
@@ -185,7 +195,7 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     test_strategy_parameter = 'number\tdescription'     # string containing descriptions for each test strategy
 
     # specify increasing number of sentinels TODO why these numbers in specific ?
-    sentinels_list = [int(n_nodes / 6), int(n_nodes / 12), int(n_nodes / 24)]
+    sentinels_list = [int(sentinels / 6), int(sentinels / 12), int(sentinels / 24)]
 
     # get the (sorted) indices of the highest degree nodes
     indices_highest_degree_nodes = choose_high_degree_nodes(node_degrees, n_nodes, sentinels)

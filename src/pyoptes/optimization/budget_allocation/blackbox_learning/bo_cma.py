@@ -6,7 +6,7 @@ import matplotlib.pyplot
 import pylab as plt
 from tqdm import tqdm
 
-from .utils import map_low_dim_x_to_high_dim
+from .utils import map_low_dim_x_to_high_dim, softmax
 
 
 # TODO complete documentation for parameters
@@ -46,10 +46,6 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
     best_solution_history = []
     best_solution_stderr_history = []
 
-    p = os.path.join(log_path, 'budget')
-    if not os.path.isdir(p):
-        os.mkdir(p)
-    i = 0
     while not es.stop():
         # sample a new population of solutions
         solutions = es.ask()
@@ -59,7 +55,6 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
             # parallelization is not allowed by python
         # use the solution and evaluation to update cma-es parameters (covariance-matrix ...)
         es.tell(solutions, f_solution)
-        np.save(os.path.join(p, f'xbest{i}'), np.array(es.result.xbest))
         # evaluate the current best parameter and save mean + standard error
         best_s, best_s_stderr = cma_objective_function(es.result.xbest, **f_kwargs)
         best_solution_history.append(best_s)
@@ -68,14 +63,8 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
         es.logger.add()
         es.disp()   # prints the progress of the optimizer
         time_for_optimization.append((time.time() - t_start) / 60)
-        i += 1
 
     best_parameter = es.result.xbest
-    # es.logger.plot()
-    # cma.s.figsave = matplotlib.pyplot.savefig
-    # path_plot = os.path.join(path_experiment, 'cma_plot_full.png')
-    # cma.s.figsave(path_plot, dpi=400)
-    # plt.clf()
 
     return best_parameter, best_solution_history, best_solution_stderr_history, time_for_optimization
 
@@ -85,11 +74,7 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     """
     An optimizeable objective function.
     Maps a lower dimensional x to their corresponding indices in the input vector of the given objective function.
-    The input vector x_true is zero at every index except at the indices of x.
 
-    The sum of all values of x_true (or x) is checked to be smaller or equal to the total budget.
-    If this constraint is violated the function return 1e10, otherwise the output of the eva function
-    (the evaluate function of the SI-model) for n_simulations is returned.
 
     @param num_cpu_cores: int, number of cpu cores to use for parallelization
     @param parallel: bool, whether to run the SI-simulation in parallel
@@ -103,7 +88,13 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     @return: two floats, the SI-simulation result and standard error
     """
     # rescale strategy such that it satisfies sum constraint
-    x = total_budget * np.exp(x) / sum(np.exp(x))
+    # print('budget', x, np.max(x), np.min(x), np.mean(x), '\n')
+    # print('budget', np.exp(x), np.max(np.exp(x)), np.min(np.exp(x)), np.mean(np.exp(x)))
+    # TODO when the budgets get to big, exp(x) leads to infinities
+    # and then to nan in the budget
+    # Why does the target function not break, when given NaNs ?
+    # if we want to keep the softmax, we can do x-max(x) and then softmax
+    x = total_budget * softmax(x)
 
     x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
 
