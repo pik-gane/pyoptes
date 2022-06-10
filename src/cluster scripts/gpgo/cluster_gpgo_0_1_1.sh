@@ -4,13 +4,13 @@
 
 #SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_gpgo14
+#SBATCH --job-name=loebkens_gpgo_0_1_1
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_gpgo14.out
+#SBATCH --output=logs/outputs_gpgo_0_1_1.out
 
-#SBATCH --error=logs/errors_gpgo14.err
+#SBATCH --error=logs/errors_gpgo_0_1_1.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -24,12 +24,12 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220525_gpgo_95perc_budget_4N \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 202200611_gpgo_mean_nodes_1040_budget_4N \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
   --graph syn \
   --prior_mixed_strategies '' \
-  --n_nodes 120 \
-  --sentinels 120 \
-  --statistic 95perc \
+  --n_nodes 1040 \
+  --sentinels 1040 \
+  --statistic mean \
   --scale_total_budget 4

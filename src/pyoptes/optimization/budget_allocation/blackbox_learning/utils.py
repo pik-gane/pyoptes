@@ -130,22 +130,10 @@ def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
     @param sentinels: int, number of nodes to be returned
     @return: list of ints
     """
-    # the synthetic networks only gives one a sorted list of node indices of the highest degree nodes
-    # excluding some nodes (slaughter houses). To work with the prior the missing nodes have to be added
-    if len(node_degrees) < n_nodes:
-        # # create a list of all n_nodes node indices
-        # all_node_indices = list(range(n_nodes))
-        # # get the indices of the nodes that are missing in node_degrees
-        # missing_nodes = list(set(all_node_indices) - set(node_degrees))
-        # add the missing node indices to the end of the node_degrees list
-        # TODO this is useless, degrees are converted into indices
-        nodes_degrees_sorted = sorted(node_degrees, reverse=True)
-        missing_nodes = np.zeros(n_nodes-len(node_degrees))
-        indices_highest_degree_nodes = [*nodes_degrees_sorted, *missing_nodes]
-    else:
-        # sort list of nodes by degree and get their indices
-        nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
-        indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted]
+
+    # sort list of nodes by degree and get their indices
+    nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[1], reverse=True)
+    indices_highest_degree_nodes = [i[0] for i in nodes_degrees_sorted]
 
     return indices_highest_degree_nodes[:sentinels]
 
@@ -368,21 +356,26 @@ def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
             transmissions_path = os.path.join(network_path, f'syndata{n}', 'dataset.txt')
             transmissions = pd.read_csv(transmissions_path, header=None)
             transmissions = transmissions[[2, 2, 0, 1, 3]]
+            edge_list = transmissions[[0, 1]]
             transmissions = transmissions.to_numpy()
+
+            G = nx.from_pandas_edgelist(edge_list, source=0, target=1, create_using=nx.DiGraph())
+            degrees = np.array(list(G.degree()))
+
+            # some nodes don't have transmissions and therefore no degrees.
+            # Consequently, they don't exist in the network although they are needed for the simulation
+            if np.shape(degrees)[0] < n_nodes:
+                # get the indices of the missing nodes
+                all_node_indices = list(range(n_nodes))
+                missing_node_indices = list(set(all_node_indices) - set(degrees[:, 0]))
+                # assign the missing nodes a degree of 0
+                missing_degrees = np.array([[i, 0] for i in missing_node_indices])
+                # join the missing degrees with the existing degrees
+                degrees = np.concatenate((degrees, missing_degrees), axis=0)
 
             capacities_path = os.path.join(network_path, f'syndata{n}', 'barn_size.txt')
             capacities = pd.read_csv(capacities_path, header=None)
             capacities = capacities.iloc[0][:n_nodes].to_numpy()
-
-            degrees_path = os.path.join(network_path, f'syndata{n}', 'degreen.txt')
-            degrees = pd.read_csv(degrees_path, header=None)
-            degrees = degrees.iloc[0][:-1].to_numpy(dtype=np.int64)
-
-            if len(degrees) < n_nodes:
-                # synthetic networks
-                missing_nodes = np.zeros(n_nodes - len(degrees))
-                degree_nodes = [*degrees, *missing_nodes]
-                degrees = [[i, d] for i, d in enumerate(degree_nodes)]
 
             network_list.append([transmissions,
                                  capacities,

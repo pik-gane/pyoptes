@@ -105,6 +105,9 @@ if __name__ == '__main__':
     parser.add_argument('--graph_type', choices=['waxman', 'ba', 'syn'], default='syn',
                         help='Si-simulation parameter. Set the type of graph the simulation uses.'
                              ' Either Waxman,Synthetic or Barabasi-Albert (ba) can be used. Default is Synthetic.')
+    parser.add_argument('--scale_total_budget', type=int, default=1, choices=[1, 4, 12],
+                        help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.")
+
     parser.add_argument('--delta_t_symptoms', type=int, default=60,
                         help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
                              ' automatically. Default is 60 days')
@@ -119,9 +122,8 @@ if __name__ == '__main__':
     parser.add_argument("--num_cpu_cores", type=int, default=32,
                         help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
-                             '-1 selects all available cpus. Default are 14 cpus.')
-    parser.add_argument('--scale_total_budget', type=int, default=1, choices=[1, 4, 12],
-                        help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.")
+                             '-1 selects all available cpus. Default are 32 cpus.')
+
 
     parser.add_argument('--plot_prior', type=bool, default='',
                         help='')

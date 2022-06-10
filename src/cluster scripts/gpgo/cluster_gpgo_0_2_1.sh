@@ -2,15 +2,15 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_gpgo2
+#SBATCH --job-name=loebkens_gpgo_0_2_1
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_gpgo2.out
+#SBATCH --output=logs/outputs_gpgo_0_2_1.out
 
-#SBATCH --error=logs/errors_gpgo2.err
+#SBATCH --error=logs/errors_gpgo_0_2_1.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -18,20 +18,18 @@
 
 #SBATCH --ntasks=1      # tasks requested
 
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=32
 
-#SBATCH --mem=120000
+#SBATCH --mem=64000
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220603_gpgo_mean_nodes_57590 \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220611_gpgo_95perc_nodes_1040_budget_4N \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
   --graph syn \
   --prior_mixed_strategies '' \
-  --n_nodes 57590 \
-  --sentinels 57590 \
-  --statistic mean \
-  --scale_total_budget 1 \
-  --num_cpu_cores 9 \
-  --n_runs 10
+  --n_nodes 1040 \
+  --sentinels 1040 \
+  --statistic 95perc \
+  --scale_total_budget 4
