@@ -11,7 +11,8 @@ from .custom_GPGO import GPGO
 
 def bo_pyGPGO(prior, prior_y, prior_stderr,
               max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-              total_budget, parallel, num_cpu_cores, acquisition_function, statistic, use_prior=True):
+              total_budget, parallel, num_cpu_cores, acquisition_function, statistic, use_prior=True,
+              save_test_strategies=False, save_test_strategies_path=None):
     """
     Run GPGO, a Bayesian optimization algorithm with a gaussian process surrogate.
 
@@ -50,6 +51,8 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
                 f=pyGPGO_objective_function,
                 parameter_dict=parameters,
                 n_jobs=num_cpu_cores,
+                save_test_strategies=save_test_strategies,
+                save_test_strategies_path=save_test_strategies_path,
                 f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
                           'n_nodes': n_nodes, 'eval_function': eval_function,
                           'n_simulations': n_simulations, 'parallel': parallel,

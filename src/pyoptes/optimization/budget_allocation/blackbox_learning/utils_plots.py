@@ -48,10 +48,10 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
              linestyle='dotted', color='black')
 
     b = np.ones(len(optimizer_history)) * baseline_mean
-    plt.plot(range(len(optimizer_history)), b, label='baseline')
+    plt.plot(range(len(optimizer_history)), b, label='uniform baseline')
     # add standard error of the baseline
     plt.plot(range(len(optimizer_history)), b + baseline_stderr,
-             label='stderr baseline', linestyle='dotted', color='red')
+             label='stderr uniform baseline', linestyle='dotted', color='red')
     plt.plot(range(len(optimizer_history)), b - baseline_stderr,
              linestyle='dotted', color='red')
 
@@ -63,7 +63,47 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
     plt.clf()
 
 
-# TODO add stderr to the plot
+def plot_optimizer_history_with_two_baselines(optimizer_history, stderr_history, baseline_mean, baseline_stderr,
+                                              prior_mean, prior_stderr, n_nodes, sentinels,
+                                              path_experiment, optimizer, name='_plot'):
+
+    plot_path = os.path.join(path_experiment, f'{optimizer}{name}.png')
+
+    plt.clf()
+    # plot the trajectory of the optimizer
+    stderr_bounds = np.array([[m + s, m - s] for m, s in zip(optimizer_history, stderr_history)])
+    plt.plot(range(len(optimizer_history)), optimizer_history, label=optimizer)
+    # add standard error of the mean
+    plt.plot(range(len(optimizer_history)), stderr_bounds[:, 0],
+             linestyle='dotted', color='black', label=f'stderr {optimizer}')
+    plt.plot(range(len(optimizer_history)), stderr_bounds[:, 1],
+             linestyle='dotted', color='black')
+
+    # plot the uniform baseline
+    b = np.ones(len(optimizer_history)) * baseline_mean
+    plt.plot(range(len(optimizer_history)), b, label='uniform baseline')
+    # add standard error of the baseline
+    plt.plot(range(len(optimizer_history)), b + baseline_stderr,
+             label='stderr uniform baseline', linestyle='dotted', color='red')
+    plt.plot(range(len(optimizer_history)), b - baseline_stderr,
+             linestyle='dotted', color='red')
+
+    # plot the highest degree baseline
+    b = np.ones(len(optimizer_history)) * prior_mean[1]
+    plt.plot(range(len(optimizer_history)), b, label='highest degree baseline')
+    # add standard error of the highest degree baseline
+    plt.plot(range(len(optimizer_history)), b + prior_stderr[1],
+             label='stderr highest degree baseline', linestyle='dotted', color='green')
+    plt.plot(range(len(optimizer_history)), b - prior_stderr[1],
+             linestyle='dotted', color='green')
+
+    plt.title(f'{optimizer}, {n_nodes} nodes, {sentinels} sentinels')
+    plt.xlabel('Iteration')
+    plt.ylabel('Number of infected animals')
+    plt.legend()
+    plt.savefig(plot_path)
+
+
 def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
     """
 
@@ -76,8 +116,10 @@ def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
 
     min_y_prior_mean = y_prior_mean.min()
     max_y_prior_mean = y_prior_mean.max()
+    plt.clf()
 
     plt.bar(range(len(y_prior_mean)), y_prior_mean, label='prior')
+    plt.errorbar(range(len(y_prior_mean)), y_prior_mean, yerr=y_prior_stderr, fmt='o', color="r")
     plt.title(f'Objective function evaluation for {len(y_prior_mean)} strategies, average over {n_runs} networks')
     plt.xlabel('Prior')
     plt.ylabel('Infected animals')

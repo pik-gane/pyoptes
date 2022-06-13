@@ -124,7 +124,8 @@ if __name__ == '__main__':
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 32 cpus.')
 
-
+    parser.add_argument('--save_test_strategies', type=bool, default='',
+                        help='Sets whether to save the test strategies that are evaluatef in the optimization.')
     parser.add_argument('--plot_prior', type=bool, default='',
                         help='')
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
@@ -138,8 +139,6 @@ if __name__ == '__main__':
                         help='Location where the networks are saved to. '
                              'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
                              '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
-
-    # scp -r loebkens@cluster.pik-potsdam.de:"/p/projects/ou/labs/gane/optes/mcmc_100nets/data/" /home/jacob/Documents/networks
 
     args = parser.parse_args()
 
@@ -190,7 +189,6 @@ if __name__ == '__main__':
                                                        }}
 
     # TODO move network creation into for loop
-    # TODO use Synthetic/Ansari-networks instead BA/waxman with budget N, 1040 nodes, RMS
     # creates a list of n_runs networks (either waxman or barabasi-albert)
     network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
 
@@ -295,10 +293,14 @@ if __name__ == '__main__':
         # ----------------------------------------
         # start the chosen optimizer
         # shared optimizer parameters
+        save_test_strategies_path = os.path.join(path_sub_experiment, 'raw_data/test_strategies_history')
+        if not os.path.exists(save_test_strategies_path) and args.save_test_strategies:
+            os.makedirs(save_test_strategies_path)
         optimizer_kwargs = {'n_nodes': args.n_nodes, 'node_indices': node_indices, 'eval_function': f.evaluate,
                             'n_simulations': args.n_simulations, 'statistic': statistic, 'total_budget': total_budget,
-                            'max_iterations': args.max_iterations,
-                            'parallel': args.parallel, 'num_cpu_cores': args.num_cpu_cores}
+                            'max_iterations': args.max_iterations, 'parallel': args.parallel,
+                            'num_cpu_cores': args.num_cpu_cores, 'save_test_strategies': args.save_test_strategies,
+                            'save_test_strategies_path': save_test_strategies_path}
 
         t0 = time()
         if args.optimizer == 'cma':
@@ -309,7 +311,6 @@ if __name__ == '__main__':
             optimizer_kwargs['bounds'] = bounds
             optimizer_kwargs['sigma'] = cma_sigma
             optimizer_kwargs['popsize'] = args.popsize
-            optimizer_kwargs['log_path'] = path_sub_experiment
 
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
                 bo_cma(**optimizer_kwargs)
@@ -378,7 +379,7 @@ if __name__ == '__main__':
 
         list_time_for_optimization.append(time_for_optimization)
 
-    # TODO move the whole postprocessing step and saving of results into seperate step to save memory
+    # TODO move the whole postprocessing step and saving of results into separate step to save memory
 
     # save the raw data of the optimization runs
     save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
@@ -394,7 +395,6 @@ if __name__ == '__main__':
                                                                             list_all_prior_stderr,
                                                                             n_runs=args.n_runs)
     # compute the average OTFs, baseline and their standard errors
-    # TODO move into sepearte function
     average_best_otf, average_best_otf_stderr = compute_average_otf_and_stderr(list_best_otf,
                                                                                list_best_otf_stderr,
                                                                                n_runs=args.n_runs)
@@ -430,28 +430,3 @@ if __name__ == '__main__':
     print(output)
 
     # TODO scatterplot degree /capacity/ incoming transmissions vs strategy
-
-    # TODO this has to be changed, right now the evaluation is only done on one network
-    # evaluate each strategy in each prior of n_runs and plot the average objective function value of each strategy
-    if args.plot_prior:
-        y_prior = []
-        print(f'Evaluating prior {args.n_runs} times.')
-        for prior in tqdm(list_prior):
-            y_prior.append(evaluate_prior(prior,
-                                          n_simulations=args.n_simulations,
-                                          eval_function=f.evaluate,
-                                          parallel=args.parallel,
-                                          num_cpu_cores=args.num_cpu_cores,
-                                          statistic=statistic))
-        y_prior = np.array(y_prior)
-
-        y_prior_mean = np.mean(y_prior[:, :, 0], axis=0)
-        # TODO this has to be corrected to the right formula above
-        y_prior_stderr = np.mean(y_prior[:, :, 1], axis=0)
-
-        # plot the objective function values of the prior
-        plot_prior(path_experiment=path_experiment,
-                   n_nodes=args.n_nodes,
-                   y_prior_mean=y_prior_mean,
-                   y_prior_stderr=y_prior_stderr,
-                   n_runs=args.n_runs)

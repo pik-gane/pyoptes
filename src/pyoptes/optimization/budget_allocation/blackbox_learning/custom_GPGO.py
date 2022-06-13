@@ -4,6 +4,7 @@ Adaption of the GPGO-class. Extended to support fitting the surrogate function w
 The class also returns the stderr of objective function calls, as well as the time spent for the optimization.
 '''
 
+import os
 import time
 from tqdm import tqdm
 from multiprocessing import cpu_count
@@ -14,7 +15,8 @@ from scipy.optimize import minimize
 
 
 class GPGO:
-    def __init__(self, surrogate, acquisition, f, parameter_dict, n_jobs=15, f_kwargs={}):
+    def __init__(self, surrogate, acquisition, f, parameter_dict, n_jobs=15, f_kwargs={},
+                 save_test_strategies=False, save_test_strategies_path=None):
         """
         Bayesian Optimization class.
 
@@ -66,6 +68,9 @@ class GPGO:
 
         self.f_kwargs = f_kwargs
 
+        self.n = 0
+        self.save_test_strategies = save_test_strategies
+        self.save_test_strategies_path = save_test_strategies_path
 
     def _sampleParam(self):
         """
@@ -152,6 +157,9 @@ class GPGO:
         # TODO check which part here is the slowest
         # TODO maybe test different acqui-functions
         start_points_arr = np.array([self._sampleParam() for i in range(n_start)])
+        if self.save_test_strategies:
+            np.save(os.path.join(self.save_test_strategies_path, f'test_strategy_{self.n}'), start_points_arr)
+            self.n += 1
 
         x_best = np.empty((n_start, len(self.parameter_key)))
         f_best = np.empty((n_start,))

@@ -11,7 +11,8 @@ from .utils import map_low_dim_x_to_high_dim, softmax
 
 # TODO complete documentation for parameters
 def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-           bounds, statistic, total_budget, parallel, num_cpu_cores, sigma, popsize, log_path):
+           bounds, statistic, total_budget, parallel, num_cpu_cores, sigma, popsize,
+           save_test_strategies=False, save_test_strategies_path=None):
     """
     Runs CMA-ES on the objective function, finding the inputs x for which the output y is minimal.
     @param popsize: int, population size
@@ -45,7 +46,7 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
     time_for_optimization = []
     best_solution_history = []
     best_solution_stderr_history = []
-
+    n = 0
     while not es.stop():
         # sample a new population of solutions
         solutions = es.ask()
@@ -63,6 +64,10 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
         es.logger.add()
         es.disp()   # prints the progress of the optimizer
         time_for_optimization.append((time.time() - t_start) / 60)
+
+        if save_test_strategies:
+            np.save(os.path.join(save_test_strategies_path, f'test_strategy_{n}'), solutions)
+            n += 1
 
     best_parameter = es.result.xbest
 

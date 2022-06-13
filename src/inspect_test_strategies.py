@@ -1,5 +1,5 @@
 from pyoptes import choose_high_degree_nodes, create_graphs
-# from pyoptes.optimization.budget_allocation import target_function as f
+from pyoptes.optimization.budget_allocation import target_function as f
 
 import argparse
 import numpy as np
@@ -8,6 +8,7 @@ from tqdm import tqdm
 import os
 import glob
 import json
+
 
 if __name__ == '__main__':
 
@@ -24,7 +25,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # TODO first, get all experiments that are to be inspected
-    paths_experiment_params = glob.glob(os.path.join(args.path_plot, '**/experiment_hyperparameters.json'))
+    paths_experiment_params = glob.glob(os.path.join(args.path_plot, '20220531**/experiment_hyperparameters.json'))
+    print(paths_experiment_params)
     # TODO get the experiment parameters from the .json-file
     for experiment_params in paths_experiment_params:
 
@@ -113,9 +115,21 @@ if __name__ == '__main__':
             for n in range(n_runs):
                 # get best strategy
                 path_best_strategy = os.path.join(experiment_directory, f'individual/{n}', 'best_parameter.npy')
+                xbest = glob.glob(os.path.join(experiment_directory, f'individual/{n}', 'budget/*.npy'))
+                for x in xbest:
+                    b = np.load(x)
+                    # print(b)
+                    # print('mean, min, max', b.mean(), b.min(), b.max())
+                    # print(np.exp(b))
+                    # print(sum(np.exp(b)))
+                    b = b - np.max(b)
+                    b = 1040 * np.exp(b) / sum(np.exp(b))
+                    print('mean, min, max', b.mean(), b.min(), b.max())
+                    print('---')
+
                 best_strategy = np.load(path_best_strategy)
                 print(best_strategy)
-                print(best_strategy.shape, best_strategy.mean(), best_strategy.min(), best_strategy.max())
+                print('mean, min, max', best_strategy.mean(), best_strategy.min(), best_strategy.max(), '\n')
 
                 # get the network and its attribute
                 network = network_list[n]
@@ -132,7 +146,6 @@ if __name__ == '__main__':
                 all_capacities.extend(capacities)
                 all_budgets.extend(best_strategy)
 
-
             all_degrees.extend(degrees)
             all_capacities.extend(capacities)
             all_budgets.extend(best_strategy)
@@ -146,5 +159,4 @@ if __name__ == '__main__':
             plt.savefig(os.path.join(experiment_directory, 'Scatter-plot_node_degree_vs_budget.png'))
             # plt.show()
 
-    # # TODO investigate why NaNs in budget of cma
-    # # TODO how to the values in the prior look like, compared to the baseline
+    # TODO how to the values in the prior look like, compared to the baseline
