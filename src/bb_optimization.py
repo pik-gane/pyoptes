@@ -6,7 +6,7 @@ from pyoptes import bo_cma, bo_pyGPGO
 
 from pyoptes import choose_high_degree_nodes, baseline
 from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
-from pyoptes import save_hyperparameters, save_results, plot_prior, create_graphs, save_raw_data
+from pyoptes import save_hyperparameters, save_results, plot_prior, create_graph, save_raw_data
 from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
 from pyoptes import compute_average_otf_and_stderr, softmax
 
@@ -94,6 +94,9 @@ if __name__ == '__main__':
     parser.add_argument('--scale_sigma', type=float, default=0.25,
                         help='CMA-ES optimizer parameter. Defines the scaling of the standard deviation. '
                              'Default is a standard deviation of 0.25 of the total budget.')
+    parser.add_argument('--cma_prior', type=int, default=0,
+                        help='CMA-ES optimizer parameter. Sets which test strategy in the prior is used as the initial '
+                             'population for cma.')
 
     parser.add_argument("--statistic", choices=['mean', 'rms', '95perc'], default='rms',
                         help="Choose the statistic to be used by the target function. "
@@ -188,10 +191,6 @@ if __name__ == '__main__':
                                                        'max_iterations': args.max_iterations,
                                                        }}
 
-    # TODO move network creation into for loop
-    # creates a list of n_runs networks (either waxman or barabasi-albert)
-    network_list = create_graphs(args.n_runs, args.graph_type, args.n_nodes, args.path_networks)
-
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
         experiment_params['optimizer_hyperparameters']['popsize'] = args.popsize
@@ -223,7 +222,7 @@ if __name__ == '__main__':
     list_time_for_optimization = []
 
     time_start = time()
-    for n, network in enumerate(network_list[:args.n_runs]):
+    for n in range(args.n_runs):
         print(f'Run {n + 1} of {args.n_runs},'
               f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
@@ -232,8 +231,8 @@ if __name__ == '__main__':
         if not os.path.exists(path_sub_experiment):
             os.makedirs(path_sub_experiment)
 
-        # unpack the properties of the network
-        transmissions, capacities, degrees = network
+        #
+        transmissions, capacities, degrees = create_graph(n, args.graph_type, args.n_nodes, args.path_networks)
 
         f.prepare(n_nodes=args.n_nodes,
                   capacity_distribution=capacities,
@@ -268,8 +267,6 @@ if __name__ == '__main__':
         list_all_prior_tf.append(list_prior_tf)
         list_all_prior_stderr.append(list_prior_stderr)
 
-        # list_prior is only needed if the objective function values of the strategies in the prior
-        # are to be plotted
         list_prior.append(prior)
 
         # save a description of what each strategy is
@@ -307,7 +304,7 @@ if __name__ == '__main__':
 
             # CMA-ES can take only an initial population of one. For this the uniform baseline is used
             # TODO maybe change to/test with highest degree baseline ?
-            optimizer_kwargs['initial_population'] = prior[0]
+            optimizer_kwargs['initial_population'] = prior[args.cma_prior]
             optimizer_kwargs['bounds'] = bounds
             optimizer_kwargs['sigma'] = cma_sigma
             optimizer_kwargs['popsize'] = args.popsize

@@ -286,6 +286,7 @@ def test_function(x, *args, **kwargs):
 def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores, statistic):
     """
     Evaluate the strategies in the prior and return the mean and standard error
+    @param statistic:
     @param prior: list of numpy arrays, each array contains the values of a test strategy
     @param n_simulations: int, number of simulations to be performed
     @param eval_function: function, function to be evaluated
@@ -306,82 +307,82 @@ def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores,
     return np.array(y_prior)
 
 
-def create_graphs(n_runs, graph_type, n_nodes, base_path='../data/'):
+def create_graph(n, graph_type, n_nodes, base_path='../data/'):
     """
     Loads n_runs graphs from disk and returns them as a list
     @param n_nodes:
     @param base_path:
-    @param n_runs: int, the number of different networks to be loaded
-    @param graph_type: string, barabasi-albert or waxman
-    @return: list of dictionaries with the graph and the node indices
+    @param n: int, the number of the graph to be loaded
+    @param graph_type: string, barabasi-albert, waxman or synthetic
+    @return: three lists, containing transmissions, capacities and degrees for the loaded graph respectively
     """
-    assert 0 < n_runs <= 100    # there are only 100 graphs available
-    network_list = []
     if graph_type == 'waxman':
         network_path = os.path.join(base_path, graph_type + '_networks', f'{n_nodes}')
-        print(f'Loading {n_runs} waxman graphs')
-        for n in tqdm(range(n_runs)):
-            transmission_path = os.path.join(network_path, f'WX{n}', 'transmissions.txt')
-            transmissions_waxman = pd.read_csv(transmission_path, header=None).to_numpy()
+        print(f'Loading waxman graph number {n}')
 
-            capacities_path = os.path.join(network_path, f'WX{n}', 'capacity.txt')
-            capacities_waxman = pd.read_csv(capacities_path, header=None).to_numpy().squeeze()
+        transmission_path = os.path.join(network_path, f'WX{n}', 'transmissions.txt')
+        transmissions_waxman = pd.read_csv(transmission_path, header=None).to_numpy()
 
-            degrees_path = os.path.join(network_path, f'WX{n}', 'degree.txt')
-            degrees_waxman = pd.read_csv(degrees_path, header=None).to_numpy()
+        capacities_path = os.path.join(network_path, f'WX{n}', 'capacity.txt')
+        capacities_waxman = pd.read_csv(capacities_path, header=None).to_numpy().squeeze()
 
-            network_list.append([transmissions_waxman,
-                                 np.int_(capacities_waxman),
-                                 degrees_waxman])
+        degrees_path = os.path.join(network_path, f'WX{n}', 'degree.txt')
+        degrees_waxman = pd.read_csv(degrees_path, header=None).to_numpy()
+
+        transmissions = transmissions_waxman
+        capacities = np.int_(capacities_waxman)
+        degrees = degrees_waxman
+
     elif graph_type == 'ba':
         network_path = os.path.join(base_path, graph_type + '_networks', f'{n_nodes}')
-        print(f'Loading {n_runs} barabasi-albert graphs')
-        for n in tqdm(range(n_runs)):
-            single_transmission_path = os.path.join(network_path, f'BA{n}', 'transmissions.txt')
-            transmissions_ba = pd.read_csv(single_transmission_path, header=None).to_numpy()
+        print(f'Loading barabasi-albert graph number {n}')
 
-            capacities_path = os.path.join(network_path, f'BA{n}', 'capacity.txt')
-            capacities_ba = pd.read_csv(capacities_path, header=None).to_numpy().squeeze()
+        single_transmission_path = os.path.join(network_path, f'BA{n}', 'transmissions.txt')
+        transmissions_ba = pd.read_csv(single_transmission_path, header=None).to_numpy()
 
-            degrees_path = os.path.join(network_path, f'BA{n}', 'degree.txt')
-            degrees_ba = pd.read_csv(degrees_path, header=None).to_numpy()
+        capacities_path = os.path.join(network_path, f'BA{n}', 'capacity.txt')
+        capacities_ba = pd.read_csv(capacities_path, header=None).to_numpy().squeeze()
 
-            network_list.append([transmissions_ba,
-                                 np.int_(capacities_ba),
-                                 degrees_ba])
+        degrees_path = os.path.join(network_path, f'BA{n}', 'degree.txt')
+        degrees_ba = pd.read_csv(degrees_path, header=None).to_numpy()
+
+        transmissions = transmissions_ba
+        capacities = np.int_(capacities_ba)
+        degrees = degrees_ba
+
     elif graph_type == 'syn':
         network_path = os.path.join(base_path, f'Synset{n_nodes}-180')
-        print(f'Loading {n_runs} synthetic graphs')
-        for n in tqdm(range(n_runs)):
-            transmissions_path = os.path.join(network_path, f'syndata{n}', 'dataset.txt')
-            transmissions = pd.read_csv(transmissions_path, header=None)
-            transmissions = transmissions[[2, 2, 0, 1, 3]]
-            edge_list = transmissions[[0, 1]]
-            transmissions = transmissions.to_numpy()
+        print(f'Loading synthetic graph number {n}')
 
-            G = nx.from_pandas_edgelist(edge_list, source=0, target=1, create_using=nx.DiGraph())
-            degrees = np.array(list(G.degree()))
+        transmissions_path = os.path.join(network_path, f'syndata{n}', 'dataset.txt')
+        transmissions = pd.read_csv(transmissions_path, header=None)
+        transmissions = transmissions[[2, 2, 0, 1, 3]]
+        edge_list = transmissions[[0, 1]]
+        transmissions_syn = transmissions.to_numpy()
 
-            # some nodes don't have transmissions and therefore no degrees.
-            # Consequently, they don't exist in the network although they are needed for the simulation
-            if np.shape(degrees)[0] < n_nodes:
-                # get the indices of the missing nodes
-                all_node_indices = list(range(n_nodes))
-                missing_node_indices = list(set(all_node_indices) - set(degrees[:, 0]))
-                # assign the missing nodes a degree of 0
-                missing_degrees = np.array([[i, 0] for i in missing_node_indices])
-                # join the missing degrees with the existing degrees
-                degrees = np.concatenate((degrees, missing_degrees), axis=0)
+        G = nx.from_pandas_edgelist(edge_list, source=0, target=1, create_using=nx.DiGraph())
+        degrees_syn = np.array(list(G.degree()))
 
-            capacities_path = os.path.join(network_path, f'syndata{n}', 'barn_size.txt')
-            capacities = pd.read_csv(capacities_path, header=None)
-            capacities = capacities.iloc[0][:n_nodes].to_numpy()
+        # some nodes don't have transmissions and therefore no degrees.
+        # Consequently, they don't exist in the network although they are needed for the simulation
+        if np.shape(degrees_syn)[0] < n_nodes:
+            # get the indices of the missing nodes
+            all_node_indices = list(range(n_nodes))
+            missing_node_indices = list(set(all_node_indices) - set(degrees_syn[:, 0]))
+            # assign the missing nodes a degree of 0
+            missing_degrees = np.array([[i, 0] for i in missing_node_indices])
+            # join the missing degrees with the existing degrees
+            degrees_syn = np.concatenate((degrees_syn, missing_degrees), axis=0)
 
-            network_list.append([transmissions,
-                                 capacities,
-                                 degrees])
+        capacities_path = os.path.join(network_path, f'syndata{n}', 'barn_size.txt')
+        capacities = pd.read_csv(capacities_path, header=None)
+        capacities_syn = capacities.iloc[0][:n_nodes].to_numpy()
+
+        transmissions = transmissions_syn
+        capacities = capacities_syn
+        degrees = degrees_syn
 
     else:
         Exception(f'Graph type {graph_type} not supported')
 
-    return network_list
+    return transmissions, capacities, degrees

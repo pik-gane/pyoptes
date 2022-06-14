@@ -1,4 +1,4 @@
-from pyoptes import choose_high_degree_nodes, create_graphs
+from pyoptes import choose_high_degree_nodes, create_graph
 from pyoptes.optimization.budget_allocation import target_function as f
 
 import argparse
@@ -50,8 +50,6 @@ if __name__ == '__main__':
             path_networks = '../../networks/data'
         else:
             raise Exception('Network type not supported')
-        # load the networks with the experiment specific ..
-        network_list = create_graphs(n_runs, network_type, n_nodes, path_networks)
 
         all_degrees = []
         all_capacities = []
@@ -65,8 +63,7 @@ if __name__ == '__main__':
                 best_strategy = np.load(path_best_strategy)
 
                 # get the network and its attribute
-                network = network_list[n]
-                transmissions, capacities, degrees = network
+                transmissions, capacities, degrees = create_graph(n, network_type, n_nodes, path_networks)
 
                 # get the degrees and capacity of the network, sorted by node indice
                 if network_type == 'syn':
@@ -96,8 +93,7 @@ if __name__ == '__main__':
                 best_strategy = np.load(path_best_strategy)
 
                 # get the network and its attribute
-                network = network_list[n]
-                transmissions, capacities, degrees = network
+                transmissions, capacities, degrees = create_graph(n, network_type, n_nodes, path_networks)
 
                 # get the degrees and capacity of the network, sorted by node indice
                 if network_type == 'syn':
@@ -132,8 +128,7 @@ if __name__ == '__main__':
                 print('mean, min, max', best_strategy.mean(), best_strategy.min(), best_strategy.max(), '\n')
 
                 # get the network and its attribute
-                network = network_list[n]
-                transmissions, capacities, degrees = network
+                transmissions, capacities, degrees = create_graph(n, network_type, n_nodes, path_networks)
 
                 # get the degrees and capacity of the network, sorted by node indice
                 if network_type == 'syn':
