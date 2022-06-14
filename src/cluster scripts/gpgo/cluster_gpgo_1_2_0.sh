@@ -24,7 +24,7 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220611_gpgo_95perc_nodes_57590 \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220616_gpgo_95perc_nodes_57590 \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
   --graph syn \
@@ -33,5 +33,5 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo
   --sentinels 57590 \
   --statistic 95perc \
   --scale_total_budget 1 \
-  --num_cpu_cores 8 \
+  --num_cpu_cores 6 \
   --n_runs 10
