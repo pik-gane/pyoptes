@@ -256,7 +256,11 @@ if __name__ == '__main__':
         # evaluate the strategies in the prior
         list_prior_tf = []
         list_prior_stderr = []
-        for p in tqdm(prior, leave=False):
+        for i, p in tqdm(enumerate(prior), leave=False):
+            #
+            p = map_low_dim_x_to_high_dim(p, n_nodes=args.n_nodes,
+                                          node_indices=prior_node_indices[i])
+
             m, stderr = f.evaluate(budget_allocation=p,
                                    n_simulations=args.n_simulations,
                                    parallel=args.parallel,
@@ -276,7 +280,7 @@ if __name__ == '__main__':
         # reduce the dimension of the input space by choosing to only allocate the budget between nodes with the highest
         # degrees. The function return the indices of these nodes
         # The indices correspond to the first item of the prior
-        node_indices = choose_high_degree_nodes(degrees, args.n_nodes, args.sentinels)
+        node_indices = choose_high_degree_nodes(degrees, args.sentinels)
 
         # compute the baseline, i.e., the expected value of the objective function for a uniform distribution of the
         # budget over all nodes (regardless of the number of sentinels)

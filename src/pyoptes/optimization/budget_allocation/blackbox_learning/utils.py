@@ -121,9 +121,10 @@ def load_raw_data(path_experiment):
 
 # TODO change function to "choose_n_sentinels", allowing switching between n highest degrees and capacities
 # maybe even a combination of both
-def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
+def choose_high_degree_nodes(node_degrees, sentinels):
     """
-    Returns the indices with the highest degrees. The nodes are sorted by degree, starting with the highest degree node.
+    Returns the indices with the highest degrees.
+    The nodes are sorted by degree, starting with the highest degree node.
 
     @param n_nodes: int, number of total nodes in the network
     @param node_degrees: list, contains indices of nodes and their degree
@@ -138,6 +139,25 @@ def choose_high_degree_nodes(node_degrees, n_nodes, sentinels):
     return indices_highest_degree_nodes[:sentinels]
 
 
+def choose_high_capacity_nodes(node_capacities, sentinels):
+    """
+    Returns the indices with the highest capacities.
+    The nodes are sorted by capacity, starting with the highest capacity node.
+
+    @param n_nodes: int, number of total nodes in the network
+    @param node_capacities: list, contains capacity of nodes
+    @param sentinels: int, number of nodes to be returned
+    @return: list of ints
+    """
+    # node_capacities contains only capacities, add node_index sort nodes by capacities and get their indices
+    node_capacities = [(i, c) for i, c in enumerate(node_capacities)]
+    # sort list of nodes by capacity and get only their indices
+    node_capacities_sorted = sorted(node_capacities, key=lambda node_capacities: node_capacities[1], reverse=True)
+    indices_highest_capacity_nodes = [i[0] for i in node_capacities_sorted]
+
+    return indices_highest_capacity_nodes[:sentinels]
+
+
 def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
     """
     Map the values in an array x to an empty array of size n_nodes. The location of each xi is based on node_indices.
@@ -146,7 +166,6 @@ def map_low_dim_x_to_high_dim(x, n_nodes, node_indices):
     @param node_indices: list of integers
     @return: numpy array of size n_node, with values of x at indices node_indices
     """
-    # print('x, node_indices: ', np.shape(x), np.shape(node_indices))
     assert np.shape(x) == np.shape(node_indices)
     # create a dummy vector to be filled with the values of x at the appropriate indices
     x_true = np.zeros(n_nodes)
@@ -186,64 +205,61 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     sentinels_list = [int(sentinels / 6), int(sentinels / 12), int(sentinels / 24)]
 
     # get the (sorted) indices of the highest degree nodes
-    indices_highest_degree_nodes = choose_high_degree_nodes(node_degrees, n_nodes, sentinels)
+    indices_highest_degree_nodes = choose_high_degree_nodes(node_degrees, sentinels)
+    print('indices_highest_degree_nodes', np.shape(indices_highest_degree_nodes))
 
-    # node_capacities contains only capacities, add node_index sort nodes by capacities and get their indices
-    nodes_capacities = [(i, c) for i, c in enumerate(node_capacities)]
-    nodes_capacities_sorted = sorted(nodes_capacities, key=lambda nodes_capacities: nodes_capacities[1],
-                                     reverse=True)
-    indices_highest_capacity_nodes = [i[0] for i in nodes_capacities_sorted]
+    indices_highest_capacity_nodes = choose_high_capacity_nodes(node_capacities, sentinels)
 
     # ------------------------------------------------------------------------
     # TODO has to be fixed to distribute over n_nodes instead of sentinels
-    # the baseline strategy (equally distributed budget over all sentinels)
+    # the uniform distribution of the total budget over all sentinels
     x_sentinels = np.array([total_budget / sentinels for _ in range(sentinels)])
-    prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes,
-                                                           indices_highest_degree_nodes[:sentinels]))
+    print('x_sentinels', np.shape(x_sentinels))
+    prior_test_strategies.append(x_sentinels)
     prior_node_indices.append(indices_highest_degree_nodes)
 
     test_strategy_parameter += f'\n0\tuniform distribution over all {n_nodes} nodes'
 
-    if not only_baseline:
-        n = 1   # index for test strategies
-        for i, s in enumerate(sentinels_list):
-            # ------
-            # create strategy for s highest degree nodes, budget is allocated uniformly
-            x_sentinels = np.array([total_budget / s for _ in range(s)])
-            prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes,
-                                                                   indices_highest_degree_nodes[:s]))
-            prior_node_indices.append(indices_highest_degree_nodes)
-
-            test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest degree nodes'
-            n += 1
-            # ------
-            # create strategy for s highest capacity nodes, budget is allocated uniformly
-            x_sentinels = np.array([total_budget / s for _ in range(s)])
-            prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes,
-                                                                   indices_highest_capacity_nodes[:s]))
-            prior_node_indices.append(indices_highest_capacity_nodes)
-
-            test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
-            n += 1
-            # ------
-            # create strategies that are a mix of the highest degree and highest capacity nodes
-            if mixed_strategies:
-                for k in range(s)[1:]:
-
-                    # get the highest degree nodes and highest capacity nodes and
-                    # check whether node indices would appear twice and remove the duplicates
-                    # TODO maybe there is a better method for this check??
-                    indices_combined = list(set(indices_highest_degree_nodes[:k]) |
-                                            set(indices_highest_capacity_nodes[:s-k]))
-                    # because of the missing nodes the strategies might violate the sum constraint (lightly)
-                    # therefore of this the allocated budget is smaller or greater than the total budget
-                    x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
-                    prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
-                    prior_node_indices.append(indices_combined)
-
-                    test_strategy_parameter += f'\n{n}\tuniform distribution over ' \
-                                               f'{k} highest degree nodes and {s-k} highest capacity nodes'
-                    n += 1
+    # if not only_baseline:
+    #     n = 1   # index for test strategies
+    #     for i, s in enumerate(sentinels_list):
+    #         # ------
+    #         # create strategy for s highest degree nodes, budget is allocated uniformly
+    #         x_sentinels = np.array([total_budget / s for _ in range(s)])
+    #         prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes,
+    #                                                                indices_highest_degree_nodes[:s]))
+    #         prior_node_indices.append(indices_highest_degree_nodes)
+    #
+    #         test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest degree nodes'
+    #         n += 1
+    #         # ------
+    #         # create strategy for s highest capacity nodes, budget is allocated uniformly
+    #         x_sentinels = np.array([total_budget / s for _ in range(s)])
+    #         prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes,
+    #                                                                indices_highest_capacity_nodes[:s]))
+    #         prior_node_indices.append(indices_highest_capacity_nodes)
+    #
+    #         test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
+    #         n += 1
+    #         # ------
+    #         # create strategies that are a mix of the highest degree and highest capacity nodes
+    #         if mixed_strategies:
+    #             for k in range(s)[1:]:
+    #
+    #                 # get the highest degree nodes and highest capacity nodes and
+    #                 # check whether node indices would appear twice and remove the duplicates
+    #                 # TODO maybe there is a better method for this check??
+    #                 indices_combined = list(set(indices_highest_degree_nodes[:k]) |
+    #                                         set(indices_highest_capacity_nodes[:s-k]))
+    #                 # because of the missing nodes the strategies might violate the sum constraint (lightly)
+    #                 # therefore of this the allocated budget is smaller or greater than the total budget
+    #                 x_sentinels = np.array([total_budget / len(indices_combined) for _ in indices_combined])
+    #                 prior_test_strategies.append(map_low_dim_x_to_high_dim(x_sentinels, n_nodes, indices_combined))
+    #                 prior_node_indices.append(indices_combined)
+    #
+    #                 test_strategy_parameter += f'\n{n}\tuniform distribution over ' \
+    #                                            f'{k} highest degree nodes and {s-k} highest capacity nodes'
+    #                 n += 1
 
     return prior_test_strategies, prior_node_indices, test_strategy_parameter
 
@@ -315,10 +331,11 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
     @param n: int, the number of the graph to be loaded
     @param graph_type: string, barabasi-albert, waxman or synthetic
     @return: three lists, containing transmissions, capacities and degrees for the loaded graph respectively
+            all lists are sorted by node index
     """
     if graph_type == 'waxman':
         network_path = os.path.join(base_path, graph_type + '_networks', f'{n_nodes}')
-        print(f'Loading waxman graph number {n}')
+        # print(f'Loading waxman graph number {n}')
 
         transmission_path = os.path.join(network_path, f'WX{n}', 'transmissions.txt')
         transmissions_waxman = pd.read_csv(transmission_path, header=None).to_numpy()
@@ -335,7 +352,7 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
 
     elif graph_type == 'ba':
         network_path = os.path.join(base_path, graph_type + '_networks', f'{n_nodes}')
-        print(f'Loading barabasi-albert graph number {n}')
+        # print(f'Loading barabasi-albert graph number {n}')
 
         single_transmission_path = os.path.join(network_path, f'BA{n}', 'transmissions.txt')
         transmissions_ba = pd.read_csv(single_transmission_path, header=None).to_numpy()
@@ -352,7 +369,7 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
 
     elif graph_type == 'syn':
         network_path = os.path.join(base_path, f'Synset{n_nodes}-180')
-        print(f'Loading synthetic graph number {n}')
+        # print(f'Loading synthetic graph number {n}')
 
         transmissions_path = os.path.join(network_path, f'syndata{n}', 'dataset.txt')
         transmissions = pd.read_csv(transmissions_path, header=None)
@@ -363,8 +380,9 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
         G = nx.from_pandas_edgelist(edge_list, source=0, target=1, create_using=nx.DiGraph())
         degrees_syn = np.array(list(G.degree()))
 
-        # some nodes don't have transmissions and therefore no degrees.
+        # some nodes are slaughterhouses which have no trading partners, only incoming transmissions
         # Consequently, they don't exist in the network although they are needed for the simulation
+        # they get assigned a degree of 0
         if np.shape(degrees_syn)[0] < n_nodes:
             # get the indices of the missing nodes
             all_node_indices = list(range(n_nodes))

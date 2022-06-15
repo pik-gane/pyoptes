@@ -227,6 +227,7 @@ class GPGO:
         @param prior_y: list of corresponding function evaluations
         @param prior_stderr: list of corresponding stderr
         """
+
         prior_y = -1 * np.array(prior_y)
         self.GP.fit(np.array(prior), np.array(prior_y))
 
