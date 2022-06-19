@@ -4,7 +4,7 @@ from pyoptes.optimization.budget_allocation import target_function as f
 
 from pyoptes import bo_cma, bo_pyGPGO
 
-from pyoptes import choose_high_degree_nodes, baseline
+from pyoptes import choose_sentinels, baseline
 from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
 from pyoptes import save_hyperparameters, save_results, plot_prior, create_graph, save_raw_data
 from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
@@ -127,6 +127,8 @@ if __name__ == '__main__':
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 32 cpus.')
 
+    parser.add_argument('--mode_choose_sentinels', choices=['degree', 'capacity', 'transmission'], default='degree',
+                        help='Sets the mode of how sentinels are chosen. ')
     parser.add_argument('--save_test_strategies', type=bool, default='',
                         help='Sets whether to save the test strategies that are evaluatef in the optimization.')
     parser.add_argument('--plot_prior', type=bool, default='',
@@ -256,9 +258,11 @@ if __name__ == '__main__':
         # evaluate the strategies in the prior
         list_prior_tf = []
         list_prior_stderr = []
-        for i, p in tqdm(enumerate(prior), leave=False):
-            #
-            p = map_low_dim_x_to_high_dim(p, n_nodes=args.n_nodes,
+
+        for i, p in tqdm(enumerate(prior), leave=False, total=len(prior)):
+
+            p = map_low_dim_x_to_high_dim(x=p,
+                                          number_of_nodes=args.n_nodes,
                                           node_indices=prior_node_indices[i])
 
             m, stderr = f.evaluate(budget_allocation=p,
@@ -280,7 +284,10 @@ if __name__ == '__main__':
         # reduce the dimension of the input space by choosing to only allocate the budget between nodes with the highest
         # degrees. The function return the indices of these nodes
         # The indices correspond to the first item of the prior
-        node_indices = choose_high_degree_nodes(degrees, args.sentinels)
+        node_attributes = [degrees, capacities, transmissions]
+        node_indices = choose_sentinels(node_attributes,
+                                        args.sentinels,
+                                        mode=args.mode_choose_sentinels)
 
         # compute the baseline, i.e., the expected value of the objective function for a uniform distribution of the
         # budget over all nodes (regardless of the number of sentinels)
