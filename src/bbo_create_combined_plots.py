@@ -19,9 +19,25 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    paths_experiment_params = glob.glob(os.path.join(args.path_plot, '**/experiment_hyperparameters.json'))
-    for experiment_params in tqdm(paths_experiment_params):
-        # get experiment specific hyperparameters
+    # TODO make this work for multiple optimizers
+
+    p = glob.glob(os.path.join(args.path_plot, '**nodes_1040*'))
+
+    print(p)
+    print(daf)
+
+    c = os.path.join(args.path_plot, '20220611_cma_rms_nodes_1040')
+    g = os.path.join(args.path_plot, '20220611_gpgo_rms_nodes_1040')
+
+    path_data_optimizer = [c, g]
+
+    data_optimizer = []
+    data_baseline = []
+
+    # TODO glob all directories, but use if statments to extract only data specified in arguments (optimizer, statistic, etc.)
+    for path_data in path_data_optimizer:
+cluster_gpgo_1_0_1
+        experiment_params = os.path.join(path_data, 'experiment_hyperparameters.json')
         with open(experiment_params, 'r') as f:
             hyperparameters = json.load(f)
 
@@ -33,14 +49,9 @@ if __name__ == '__main__':
 
         statistic = hyperparameters['simulation_hyperparameters']['statistic']
 
-        # get the path to the experiment
-        path_experiment = os.path.split(experiment_params)[0]
+        raw_data = load_raw_data(os.path.join(path_data, 'raw_data/'))
 
-        # load the raw data from the experiment and compute the average OTF and STDERR
-        # for the optimizer, the baseline and the prior
-        path_raw_data = os.path.join(path_experiment, 'raw_data/')
-        raw_data = load_raw_data(path_raw_data)
-
+        # compute the averages of the c_raw_data
         optimizer_history, stderr_history = compute_average_otf_and_stderr(raw_data['list_best_solution_history'],
                                                                            raw_data['list_stderr_history'],
                                                                            n_runs)
@@ -53,15 +64,20 @@ if __name__ == '__main__':
                                                                   raw_data['list_all_prior_stderr'],
                                                                   n_runs)
 
-        # ---------------------------------------------------------------------------------------------------------
-        # plot optimizer history against uniform and highest degree baseline
-        plot_name = '_average_plot2'
-        plot_optimizer_history_with_two_baselines(optimizer_history, stderr_history,
-                                                  baseline_mean, baseline_stderr,
-                                                  prior_mean, prior_stderr,
-                                                  n_nodes, sentinels, path_experiment, optimizer, plot_name)
+        do = {'optimizer_history': optimizer_history,
+              'stderr_history': stderr_history,
+              'optimizer': optimizer}
 
-        # create a bar plot of all strategies in the prior
-        plot_prior(path_experiment, n_nodes, prior_mean, prior_stderr, n_runs)
+        data_optimizer.append(do)
 
-        # TODO plot prior for each optimizer
+    # TODO add option to plot multiple baselines
+    data_baseline = [{'baseline_mean': baseline_mean,
+                      'baseline_stderr': baseline_stderr,
+                      'name': 'uniform'},
+                     {'baseline_mean': prior_mean[1],
+                      'baseline_stderr': prior_stderr[1],
+                      'name': 'highest degree'}]
+
+    plot_multiple_optimizer(args.path_plot, data_optimizer, data_baseline)
+
+
