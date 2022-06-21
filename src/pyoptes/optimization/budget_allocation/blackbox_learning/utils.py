@@ -166,11 +166,6 @@ def map_low_dim_x_to_high_dim(x, number_of_nodes, node_indices):
     return x_true
 
 
-# TODO restrict prior to a fixed number of strategies
-# TODO make prior with sentinels < n_nodes work with gpgo
-# To make the prior work with an objective function where the number of sentinels is lower than the number of nodes
-# the budget had to always be allocated between the sentinels. This already disallows the creation of the baseline.
-#
 def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget,
                                sentinels, mixed_strategies=True, only_baseline=False):
     """
@@ -247,6 +242,8 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
 
             test_strategy_parameter += f'\n{n}\tuniform distribution over {s} highest capacity nodes'
             n += 1
+            # TODO the mixed priors don't work if sentinels < n_nodes
+            # in that case it is not sufficient to just take the first n sentinels as indices
             # # ------
             # # create strategies that are a mix of the highest degree and highest capacity nodes
             # if mixed_strategies:
@@ -282,7 +279,6 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     return prior_test_strategies, prior_node_indices, test_strategy_parameter
 
 
-# TODO can maybe be replaced ? Is redundant with the prior
 def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, statistic):
     """
     Creates a test strategy where the total budget is uniformly allocated to all nodes.

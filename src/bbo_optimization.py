@@ -130,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode_choose_sentinels', choices=['degree', 'capacity', 'transmission'], default='degree',
                         help='Sets the mode of how sentinels are chosen. ')
     parser.add_argument('--save_test_strategies', type=bool, default='',
-                        help='Sets whether to save the test strategies that are evaluatef in the optimization.')
+                        help='Sets whether to save the test strategies that are evaluate in the optimization.')
     parser.add_argument('--plot_prior', type=bool, default='',
                         help='')
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",

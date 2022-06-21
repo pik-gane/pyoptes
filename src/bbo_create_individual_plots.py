@@ -6,7 +6,7 @@ import glob
 import json
 from tqdm import tqdm
 from pyoptes import load_raw_data, compute_average_otf_and_stderr
-from pyoptes import plot_optimizer_history_with_two_baselines, plot_prior
+from pyoptes import plot_optimizer_history_with_two_baselines, plot_prior, plot_multiple_optimizer
 
 if __name__ == '__main__':
 
@@ -31,6 +31,8 @@ if __name__ == '__main__':
         n_nodes = hyperparameters['simulation_hyperparameters']['n_nodes']
         sentinels = hyperparameters['simulation_hyperparameters']['sentinels']
 
+        statistic = hyperparameters['simulation_hyperparameters']['statistic']
+
         # get the path to the experiment
         path_experiment = os.path.split(experiment_params)[0]
 
@@ -50,6 +52,8 @@ if __name__ == '__main__':
         prior_mean, prior_stderr = compute_average_otf_and_stderr(raw_data['list_all_prior_tf'],
                                                                   raw_data['list_all_prior_stderr'],
                                                                   n_runs)
+
+        # ---------------------------------------------------------------------------------------------------------
         # plot optimizer history against uniform and highest degree baseline
         plot_name = '_average_plot2'
         plot_optimizer_history_with_two_baselines(optimizer_history, stderr_history,
@@ -59,3 +63,5 @@ if __name__ == '__main__':
 
         # create a bar plot of all strategies in the prior
         plot_prior(path_experiment, n_nodes, prior_mean, prior_stderr, n_runs)
+
+        # TODO plot prior for each optimizer
