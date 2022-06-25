@@ -24,7 +24,7 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 20220620_cma_mean_nodes_57590 \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 20220625_cma_mean_nodes_57590 \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
   --graph syn \
@@ -33,6 +33,6 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 
   --statistic mean \
   --scale_total_budget 1 \
   --popsize 9 \
-  --num_cpu_cores 7 \
+  --num_cpu_cores 32 \
   --prior_mixed_strategies '' \
   --n_runs 10
