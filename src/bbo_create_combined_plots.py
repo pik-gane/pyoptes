@@ -35,8 +35,9 @@ if __name__ == '__main__':
     data_baseline = []
 
     # TODO glob all directories, but use if statments to extract only data specified in arguments (optimizer, statistic, etc.)
+    # or give the name of directories directly
     for path_data in path_data_optimizer:
-cluster_gpgo_1_0_1
+
         experiment_params = os.path.join(path_data, 'experiment_hyperparameters.json')
         with open(experiment_params, 'r') as f:
             hyperparameters = json.load(f)
@@ -78,6 +79,6 @@ cluster_gpgo_1_0_1
                       'baseline_stderr': prior_stderr[1],
                       'name': 'highest degree'}]
 
-    plot_multiple_optimizer(args.path_plot, data_optimizer, data_baseline)
+    plot_multiple_optimizer(args.path_plot, data_optimizer, data_baseline, n_nodes, sentinels)
 
 

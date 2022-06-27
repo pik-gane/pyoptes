@@ -1,5 +1,4 @@
-from pyoptes import choose_high_degree_nodes, create_graph
-from pyoptes.optimization.budget_allocation import target_function as f
+from pyoptes import create_graph, scatter_plot
 
 import argparse
 import numpy as np
@@ -24,9 +23,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # TODO first, get all experiments that are to be inspected
     paths_experiment_params = glob.glob(os.path.join(args.path_plot, '**/experiment_hyperparameters.json'))
-    # TODO get the experiment parameters from the .json-file
     for experiment_params in tqdm(paths_experiment_params):
 
         # get experiment specific hyperparameters
@@ -41,7 +38,6 @@ if __name__ == '__main__':
 
         experiment_directory = os.path.split(experiment_params)[0]
         experiment_name = os.path.split(experiment_directory)[1][9:]
-        # print(experiment_name)
 
         if network_type == 'ba' or network_type == 'waxman':
             path_networks = '../data'
@@ -62,101 +58,53 @@ if __name__ == '__main__':
             # get the network and its attribute
             transmissions, capacities, degrees = create_graph(n, network_type, n_nodes, path_networks)
 
-            # print shape of transmissions, capacities, degrees
-            print(transmissions.shape)
-            print(capacities.shape)
-            print(degrees.shape)
+            # sort the degree list descending by degree and ascending by index
+            # degrees_sorted_by_degree = sorted(degrees, key=lambda degrees: degrees[1], reverse=True)
+            degrees_sorted_by_index = sorted(degrees, key=lambda degrees: degrees[0])
+            degrees = [i[1] for i in degrees_sorted_by_index]
 
-            degrees_sorted = sorted(degrees, key=lambda degrees: degrees[1], reverse=True)
-            degrees = [i[1] for i in degrees]
-            print(asd)
+            scatter_plot(path_experiment=os.path.join(experiment_directory, f'individual/{n}'),
+                         data_x=degrees,
+                         data_y=best_strategy,
+                         plot_title=f'Node degree vs allocated budget\n Experiment {experiment_name}',
+                         x_label='Node degree',
+                         y_label='Budget',
+                         plot_name='Scatter-plot_node_degree_vs_budget.png'
+                         )
 
-            # TODO what is happening here ?
-            plt.clf()
-            plt.scatter(degrees, best_strategy)
-            plt.title(f'Node degree vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}')
-            plt.xlabel('Node degree')
-            plt.ylabel('Budget')
-            plt.savefig(os.path.join(experiment_directory, f'individual/{n}', 'Scatter-plot_node_degree_vs_budget.png'))
+            # get the capacity of each index
+            capacities_sorted_by_index = sorted(capacities, key=lambda capacities: capacities[0])
+            capacities = [i[1] for i in capacities_sorted_by_index]
+
+            # scatterplot of the capacity vs the allocated budget
+            scatter_plot(path_experiment=os.path.join(experiment_directory, f'individual/{n}'),
+                         data_x=capacities,
+                         data_y=best_strategy,
+                         plot_title=f'Node capacity vs allocated budget\n Experiment {experiment_name}',
+                         x_label='Node capacity',
+                         y_label='Budget',
+                         plot_name='Scatter-plot_node_capacity_vs_budget.png'
+                         )
 
             all_degrees.extend(degrees)
             all_capacities.extend(capacities)
             all_budgets.extend(best_strategy)
 
-        plt.clf()
-        plt.scatter(all_degrees, all_budgets)
-        plt.title(f'Node degree vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}')
-        plt.xlabel('Node degree')
-        plt.ylabel('Budget')
-        plt.savefig(os.path.join(experiment_directory, 'Scatter-plot_node_degree_vs_budget.png'))
+        scatter_plot(path_experiment=experiment_directory,
+                     data_x=all_degrees,
+                     data_y=all_budgets,
+                     plot_name='combined_scatter-plot_node_degree_vs_budget.png',
+                     plot_title=f'Node degree vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}',
+                     x_label='Node degree',
+                     y_label='Budget')
 
-        # elif optimizer == 'cma' and n_nodes == 120:
-        #
-        #     for n in range(n_runs):
-        #         # get best strategy
-        #         path_best_strategy = os.path.join(experiment_directory, f'individual/{n}', 'best_parameter.npy')
-        #         best_strategy = np.load(path_best_strategy)
-        #
-        #         # get the network and its attribute
-        #         transmissions, capacities, degrees = create_graph(n, network_type, n_nodes, path_networks)
-        #
-        #         # get the degrees and capacity of the network, sorted by node indice
-        #         if network_type == 'syn':
-        #             degrees = []
-        #         else:
-        #             # degrees_sorted = sorted(degrees, key=lambda degrees: degrees[1], reverse=True)
-        #             degrees = [i[1] for i in degrees]
-        #
-        #         all_degrees.extend(degrees)
-        #         all_capacities.extend(capacities)
-        #         all_budgets.extend(best_strategy)
-        #
-        # elif optimizer == 'cma' and n_nodes == 1040:
-        #
-        #     for n in range(n_runs):
-        #         # get best strategy
-        #         path_best_strategy = os.path.join(experiment_directory, f'individual/{n}', 'best_parameter.npy')
-        #         xbest = glob.glob(os.path.join(experiment_directory, f'individual/{n}', 'budget/*.npy'))
-        #         for x in xbest:
-        #             b = np.load(x)
-        #             # print(b)
-        #             # print('mean, min, max', b.mean(), b.min(), b.max())
-        #             # print(np.exp(b))
-        #             # print(sum(np.exp(b)))
-        #             b = b - np.max(b)
-        #             b = 1040 * np.exp(b) / sum(np.exp(b))
-        #             print('mean, min, max', b.mean(), b.min(), b.max())
-        #             print('---')
-        #
-        #         best_strategy = np.load(path_best_strategy)
-        #         print(best_strategy)
-        #         print('mean, min, max', best_strategy.mean(), best_strategy.min(), best_strategy.max(), '\n')
-        #
-        #         # get the network and its attribute
-        #         transmissions, capacities, degrees = create_graph(n, network_type, n_nodes, path_networks)
-        #
-        #         # get the degrees and capacity of the network, sorted by node indice
-        #         if network_type == 'syn':
-        #             degrees = []
-        #         else:
-        #             # degrees_sorted = sorted(degrees, key=lambda degrees: degrees[1], reverse=True)
-        #             degrees = [i[1] for i in degrees]
-        #
-        #         all_degrees.extend(degrees)
-        #         all_capacities.extend(capacities)
-        #         all_budgets.extend(best_strategy)
-        #
-        #     all_degrees.extend(degrees)
-        #     all_capacities.extend(capacities)
-        #     all_budgets.extend(best_strategy)
-        #
-        #     plt.clf()
-        #     plt.scatter(all_degrees, all_budgets)
-        #     plt.title(f'Node degree vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}')
-        #     plt.xlabel('Node degree')
-        #     plt.ylabel('Budget')
-        #
-        #     plt.savefig(os.path.join(experiment_directory, 'Scatter-plot_node_degree_vs_budget.png'))
-        #     # plt.show()
+        scatter_plot(path_experiment=experiment_directory,
+                     data_x=all_capacities,
+                     data_y=all_budgets,
+                     plot_name='combined_scatter-plot_node_capacity_vs_budget.png',
+                     plot_title=f'Node capacity vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}',
+                     x_label='Node capacity',
+                     y_label='Budget')
+
 
     # TODO how to the values in the prior look like, compared to the baseline

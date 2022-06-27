@@ -11,7 +11,7 @@ import numpy as np
 from tqdm import tqdm
 from scipy.stats.mstats import mjci
 
-
+# TODO look into maltes file in the repo
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()

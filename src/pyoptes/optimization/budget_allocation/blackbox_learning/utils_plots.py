@@ -147,9 +147,9 @@ def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
     plt.clf()
 
 
-def plot_multiple_optimizer(path_experiment, data_optimizer, data_baseline,):
+def plot_multiple_optimizer(path_experiment, data_optimizer, data_baseline, n_nodes, sentinels):
     """
-
+    Plot any number of optimizers against any number baselines
     @param path_experiment:
     @param data_optimizer:
     @param data_baseline:
@@ -163,6 +163,7 @@ def plot_multiple_optimizer(path_experiment, data_optimizer, data_baseline,):
 
         # plot the trajectory of the optimizer
         stderr_bounds = np.array([[m + s, m - s] for m, s in zip(optimizer_history, stderr_history)])
+        # TODO label has to be changed. If gpgo occurs twice the labels are useless
         plt.plot(range(len(optimizer_history)), optimizer_history, label=optimizer)
         # add standard error of the mean
         plt.plot(range(len(optimizer_history)), stderr_bounds[:, 0],
@@ -184,11 +185,31 @@ def plot_multiple_optimizer(path_experiment, data_optimizer, data_baseline,):
         plt.plot(range(len(optimizer_history)), b - baseline_stderr,
                  linestyle='dotted', color='black')
 
-    plt.title(f'Optimizer performance against baseline')
+    plt.title(f'Optimizer performance against baseline, {n_nodes} nodes, {sentinels} sentinels ')
     plt.xlabel('Iteration')
     plt.ylabel('Number of infected animals')
     plt.legend()
 
-    plot_path = os.path.join(path_experiment, 'combined_optimizer.png')
+    plot_path = os.path.join(path_experiment, f'combined_optimizer_{n_nodes}_n_nodes.png')
     plt.savefig(plot_path)
+    plt.clf()
+
+
+def scatter_plot(path_experiment, data_x, data_y, plot_name, plot_title, x_label, y_label):
+    """
+
+    @param path_experiment:
+    @param data_x:
+    @param data_y:
+    @param plot_name:
+    @param plot_title:
+    @param x_label:
+    @param y_label:
+    """
+    plt.clf()
+    plt.scatter(data_x, data_y)
+    plt.title(plot_title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.savefig(os.path.join(path_experiment, plot_name))
     plt.clf()
