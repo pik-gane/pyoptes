@@ -137,7 +137,7 @@ def choose_sentinels(node_attributes, sentinels, mode):
         return indices_highest_degree_nodes[:sentinels]
     elif mode == 'capacity':
         node_capacities = node_attributes[1]
-
+        node_capacities = [(i, c) for i, c in enumerate(node_capacities)]
         # sort list of nodes by capacity and get only their indices
         node_capacities_sorted = sorted(node_capacities, key=lambda node_capacities: node_capacities[1], reverse=True)
         indices_highest_capacity_nodes = [i[0] for i in node_capacities_sorted]
@@ -356,7 +356,7 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
         capacities_path = os.path.join(network_path, f'WX{n}', 'capacity.txt')
         capacities_waxman = np.int_(pd.read_csv(capacities_path, header=None).to_numpy().squeeze())
         # node_capacities contains only capacities, add node_index sort nodes by capacities and get their indices
-        capacities_waxman = [(i, c) for i, c in enumerate(capacities_waxman)]
+        # capacities_waxman = [(i, c) for i, c in enumerate(capacities_waxman)]
 
         degrees_path = os.path.join(network_path, f'WX{n}', 'degree.txt')
         degrees_waxman = pd.read_csv(degrees_path, header=None).to_numpy()
@@ -375,7 +375,7 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
         capacities_path = os.path.join(network_path, f'BA{n}', 'capacity.txt')
         capacities_ba = np.int_(pd.read_csv(capacities_path, header=None).to_numpy().squeeze())
         # node_capacities contains only capacities, add node_index sort nodes by capacities and get their indices
-        capacities_ba = [(i, c) for i, c in enumerate(capacities_ba)]
+        # capacities_ba = [(i, c) for i, c in enumerate(capacities_ba)]
 
         degrees_path = os.path.join(network_path, f'BA{n}', 'degree.txt')
         degrees_ba = pd.read_csv(degrees_path, header=None).to_numpy()
@@ -413,7 +413,7 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
         capacities = pd.read_csv(capacities_path, header=None)
         capacities_syn = capacities.iloc[0][:n_nodes].to_numpy()
         # node_capacities contains only capacities, add node_index sort nodes by capacities and get their indices
-        capacities_syn = [(i, c) for i, c in enumerate(capacities_syn)]
+        # capacities_syn = [(i, c) for i, c in enumerate(capacities_syn)]
 
         transmissions = transmissions_syn
         capacities = capacities_syn

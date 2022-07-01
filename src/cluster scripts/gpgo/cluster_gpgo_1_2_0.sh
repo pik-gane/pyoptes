@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
 #SBATCH --job-name=loebkens_gpgo_1_2_0
 

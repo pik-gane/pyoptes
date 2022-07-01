@@ -65,3 +65,5 @@ if __name__ == '__main__':
         plot_prior(path_experiment, n_nodes, prior_mean, prior_stderr, n_runs)
 
         # TODO plot prior for each optimizer
+
+        # TODO add the 'default' plot fro each experiment
