@@ -1,4 +1,4 @@
-from pyoptes import create_graph, scatter_plot
+from pyoptes import create_graph, scatter_plot, get_node_attributes
 
 import argparse
 import numpy as np
@@ -58,10 +58,7 @@ if __name__ == '__main__':
             # get the network and its attribute
             transmissions, capacities, degrees = create_graph(n, network_type, n_nodes, path_networks)
 
-            # sort the degree list descending by degree and ascending by index
-            # degrees_sorted_by_degree = sorted(degrees, key=lambda degrees: degrees[1], reverse=True)
-            degrees_sorted_by_index = sorted(degrees, key=lambda degrees: degrees[0])
-            degrees = [i[1] for i in degrees_sorted_by_index]
+            degrees = get_node_attributes([degrees, None, None], 'degree')
 
             scatter_plot(path_experiment=os.path.join(experiment_directory, f'individual/{n}'),
                          data_x=degrees,
@@ -72,9 +69,7 @@ if __name__ == '__main__':
                          plot_name='Scatter-plot_node_degree_vs_budget.png'
                          )
 
-            # get the capacity of each index
-            capacities_sorted_by_index = sorted(capacities, key=lambda capacities: capacities[0])
-            capacities = [i[1] for i in capacities_sorted_by_index]
+            capacities = get_node_attributes([None, capacities, None], 'capacity')
 
             # scatterplot of the capacity vs the allocated budget
             scatter_plot(path_experiment=os.path.join(experiment_directory, f'individual/{n}'),

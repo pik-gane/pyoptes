@@ -123,10 +123,11 @@ def choose_sentinels(node_attributes, sentinels, mode):
     """
     Chooses the sentinels with the highest attribute for the given mode.
     The first item in the list is always the highest of the chosen attribute
-    @param node_attributes: list of node attributes
+    node_attributes is a list to allow the dynamic use of the function in the main script.
+    @param node_attributes: list of node attributes (degrees, capacity, transmission)
     @param sentinels: int, number of sentinels to choose
     @param mode: string, attribute to choose sentinels for
-    @return: list of indices of the chosen sentinels
+    @return: list of indices of the chosen sentinels sorted by mode
     """
     if mode == 'degree':
         node_degrees = node_attributes[0]
@@ -143,6 +144,36 @@ def choose_sentinels(node_attributes, sentinels, mode):
         indices_highest_capacity_nodes = [i[0] for i in node_capacities_sorted]
 
         return indices_highest_capacity_nodes[:sentinels]
+    elif mode == 'transmission':
+        node_transmissions = node_attributes[2]
+        raise NotImplementedError
+    else:
+        raise ValueError(f'Mode "{mode}" not supported')
+
+
+def get_node_attributes(node_attributes, mode):
+    """
+    Returns the node attributes for the given mode.
+    The node attributes are sorted by their
+    node_attributes is a list to allow the dynamic use of the function in the main script.
+    @param node_attributes: list of node attributes (degrees, capacity, transmission)
+    @param mode: string, attribute to return
+    @return: list of node_attributes sorted by index
+    """
+    if mode == 'degree':
+        node_degrees = node_attributes[0]
+        # sort list of nodes by degree and return their indices
+        nodes_degrees_sorted = sorted(node_degrees, key=lambda node_degrees: node_degrees[0])
+        nodes_degrees_sorted = [i[1] for i in nodes_degrees_sorted]
+        return nodes_degrees_sorted
+    elif mode == 'capacity':
+        node_capacities = node_attributes[1]
+        node_capacities = [(i, c) for i, c in enumerate(node_capacities)]
+        # sort list of nodes by capacity and get only their indices
+        node_capacities_sorted = sorted(node_capacities, key=lambda node_capacities: node_capacities[0])
+        node_capacities_sorted = [i[1] for i in node_capacities_sorted]
+
+        return node_capacities_sorted
     elif mode == 'transmission':
         node_transmissions = node_attributes[2]
         raise NotImplementedError
