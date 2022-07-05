@@ -1,5 +1,6 @@
 {
     "optimizer_hyperparameters": {
+        "cma_initial_population": "uniform",
         "cma_sigma": 30.0,
         "max_iterations": 50,
         "optimizer": "cma",

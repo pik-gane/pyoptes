@@ -94,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--scale_sigma', type=float, default=0.25,
                         help='CMA-ES optimizer parameter. Defines the scaling of the standard deviation. '
                              'Default is a standard deviation of 0.25 of the total budget.')
-    parser.add_argument('--cma_prior', type=int, default=0,
+    parser.add_argument('--cma_initial_population', default='uniform', choices=['uniform', 'degree', 'capacity'],
                         help='CMA-ES optimizer parameter. Sets which test strategy in the prior is used as the initial '
                              'population for cma.')
 
@@ -152,6 +152,10 @@ if __name__ == '__main__':
     if not os.path.exists(path_experiment):
         os.makedirs(path_experiment)
 
+    ###################################################################################################################
+    # prepare hyperparameters
+    ###################################################################################################################
+
     # TODO change hyperparameter of acquisition function
     # TODO test different acquisition functions
     # map acquisition function string to one useable by pyGPGO. This is just to keep command-line args short
@@ -177,6 +181,10 @@ if __name__ == '__main__':
     # for CMA-ES, sigma is set as 0.25 of the total budget
     cma_sigma = args.scale_sigma * total_budget
 
+    # map the descriptor for the intial population of cma to an index of the prior
+    map_cma_initial_population = {'uniform': 0, 'degree': 1, 'capacity': 2}
+    cma_initial_population = map_cma_initial_population[args.cma_initial_population]
+
     # save SI-model and optimizer parameters as .json-file
     experiment_params = {'simulation_hyperparameters': {'total_budget': total_budget,
                                                         'n_nodes': args.n_nodes,
@@ -196,6 +204,7 @@ if __name__ == '__main__':
     if args.optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
         experiment_params['optimizer_hyperparameters']['popsize'] = args.popsize
+        experiment_params['optimizer_hyperparameters']['cma_initial_population'] = args.cma_initial_population
     elif args.optimizer == 'gpgo':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
@@ -205,6 +214,10 @@ if __name__ == '__main__':
         raise ValueError('Optimizer not supported')
 
     save_hyperparameters(experiment_params, path_experiment)
+
+    ####################################################################################################################
+    # start optimization
+    ####################################################################################################################
 
     # lists for result aggregations
     list_prior = []
@@ -315,7 +328,7 @@ if __name__ == '__main__':
 
             # CMA-ES can take only an initial population of one. For this the uniform baseline is used
             # TODO maybe change to/test with highest degree baseline ?
-            optimizer_kwargs['initial_population'] = prior[args.cma_prior]
+            optimizer_kwargs['initial_population'] = prior[cma_initial_population]
             optimizer_kwargs['bounds'] = bounds
             optimizer_kwargs['sigma'] = cma_sigma
             optimizer_kwargs['popsize'] = args.popsize
@@ -436,5 +449,3 @@ if __name__ == '__main__':
                  path_experiment=path_experiment,
                  output=output)
     print(output)
-
-    # TODO scatterplot degree /capacity/ incoming transmissions vs strategy
