@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
         experiment_directory = os.path.split(experiment_params)[0]
         experiment_name = os.path.split(experiment_directory)[1][9:]
-
+        print(experiment_name)
         uniform_baseline = np.array([total_budget / n_nodes for _ in range(n_nodes)])
 
         # iterate over n_runs and load the data
