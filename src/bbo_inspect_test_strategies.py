@@ -1,3 +1,7 @@
+'''
+Creates
+'''
+
 from pyoptes import create_graph, scatter_plot, get_node_attributes
 
 import argparse
