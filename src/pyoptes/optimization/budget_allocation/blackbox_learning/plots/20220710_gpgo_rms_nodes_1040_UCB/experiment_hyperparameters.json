@@ -1,0 +1,22 @@
+{
+    "optimizer_hyperparameters": {
+        "acquisition_function": "UCB",
+        "max_iterations": 50,
+        "optimizer": "gpgo",
+        "prior_mixed_strategies": false,
+        "prior_only_baseline": false,
+        "use_prior": true
+    },
+    "simulation_hyperparameters": {
+        "delta_t_symptoms": 60,
+        "expected_time_of_first_infection": 30,
+        "graph": "syn",
+        "n_nodes": 1040,
+        "n_runs": 100,
+        "n_simulations": 10000,
+        "p_infection_by_transmission": 0.5,
+        "sentinels": 1040,
+        "statistic": "rms",
+        "total_budget": 1040
+    }
+}
