@@ -12,7 +12,7 @@ Output: an estimate of the number of infected animals at the time the simulation
 """
 
 import numpy as np
-from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions
+from ...epidemiological_models.si_model_on_transmissions import SIModelOnTransmissions, schedule_regularly
 from functools import partial
 from multiprocessing import cpu_count, Pool
 
@@ -26,7 +26,8 @@ def prepare(use_real_data=False,
             expected_time_of_first_infection=30, 
             capacity_distribution=np.random.uniform, # any function accepting a 'size=' parameter
             delta_t_symptoms=60,
-            p_infection_by_transmission=0.5
+            p_infection_by_transmission=0.5,
+            schedule_regularly=False
             ):
     """Prepare the target function before being able to evaluate it for the 
     first time.
@@ -42,6 +43,7 @@ def prepare(use_real_data=False,
     @param expected_time_of_first_infection: (optional int, default: 30)
     @param delta_t_symptoms: (optional int, default: 60) After what time the 
     infection should be detected automatically even without a test.
+    @param schedule_regularly: (optional bool) Whether to schedule the tests more regularly
     """
 
     global model, capacities, network
@@ -112,8 +114,10 @@ def prepare(use_real_data=False,
         transmissions_time_covered = transmissions_time_covered, 
         repeat_transmissions = True,
         
-        use_tests_array = False,
+        use_tests_array = schedule_regularly,
         daily_test_probabilities = np.zeros(n_nodes),
+        tests_time_covered = 365,
+        tests = np.array([[-1,-1]]),
         
         p_infection_from_outside = p_infection_from_outside,
         p_infection_by_transmission = p_infection_by_transmission,
@@ -195,9 +199,13 @@ def evaluate(budget_allocation,
     global model, capacities
 
     budget_allocation = np.array(budget_allocation)
-    assert budget_allocation.size == model.daily_test_probabilities.size
+    assert budget_allocation.size == model.n_nodes
     
-    model.daily_test_probabilities = budget_allocation / 365
+    if model.use_tests_array:
+        # schedule_regularly
+        model.tests = schedule_regularly(budget_allocation / 365)
+    else: 
+        model.daily_test_probabilities = budget_allocation / 365
 
     if parallel:
         # check whether the number of cpus are available

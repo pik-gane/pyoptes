@@ -25,7 +25,8 @@ def caps(size): return lognorm.rvs(s=1, scale=np.exp(4), size=size)
 f.prepare(
     n_nodes=120,  # instead of 60000, since this should suffice in the beginning
     capacity_distribution=caps,  # this is more realistic than a uniform distribution
-    delta_t_symptoms=60  # instead of 30, since this gave a clearer picture in Sara's simulations
+    delta_t_symptoms=60,  # instead of 30, since this gave a clearer picture in Sara's simulations
+    schedule_regularly=True
     )
 n_inputs = f.get_n_inputs()
 print("n_inputs (=number of network nodes):", n_inputs)

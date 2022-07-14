@@ -1,5 +1,28 @@
 from ..util import *
 
+
+def schedule_regularly(daily_test_probabilities):
+    """return a list "tests" of regularly scheduled tests generated from an
+    array of daily_test_probabilities"""
+    times_list = []
+    nodes_list = []
+    for node in range(daily_test_probabilities.size):
+        p = daily_test_probabilities[node]
+        n_tests = int(np.ceil(365 * p))
+        interval_length = 1 / p  # in each interval of this length one test occurs
+        # draw random time points at which the tests occur:
+        test_times = np.floor((np.arange(n_tests) + np.random.rand(n_tests)) * interval_length)
+        times_list += list(test_times)
+        nodes_list += list(np.zeros(n_tests) + node)
+    indices = np.argsort(np.array(times_list))
+    tests = np.zeros((len(times_list),2), dtype="int")
+    tests[:,0] = np.array(times_list)[indices]
+    tests[:,1] = np.array(nodes_list)[indices]
+    valid = np.argwhere(tests[:,0] < 365).flatten()
+    tests = tests[valid,:]
+    return tests
+
+
 if False:
     """
     Class attribute declarations, only listed for documentation purposes,
