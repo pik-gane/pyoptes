@@ -163,7 +163,7 @@ spec = [
 
 
 # HERE COMES THE ACTUAL CLASS:
-    
+
 @jitclass(spec) 
 class SIModelOnTransmissions (object):
     """Can run simulations of the SI (susceptible-infectious) model on a 
