@@ -1,7 +1,7 @@
 name: bbo
 channels:
   - conda-forge
-  - acellera  # channel for ax-platform
+  - pytorch
 dependencies:
   - python
   - matplotlib
@@ -11,12 +11,12 @@ dependencies:
   - networkx
   - tqdm
   - cma=3.0.3
-  - pytorch
+  - pytorch-gpu
+  - cudatoolkit=10.1
+  - torchvision
+  - jupyter
+  - ipykernel
   - pip
   - pandas
   - pip:
-#    - git+https://github.com/uber-research/TuRBO
-#    - dragonfly-opt == 0.1.4
-    - smac
-    - ax-platform
     - pyGPGO
