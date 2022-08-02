@@ -64,6 +64,10 @@ class GPGO:
 
         self.time_start = time.time()
         self.time_for_optimization = []
+        self.time_acqui_predict = []
+
+
+
         self.stderr = {}
 
         self.f_kwargs = f_kwargs

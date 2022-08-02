@@ -4,6 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import pandas as pd
 import networkx as nx
+from scipy.stats.mstats import mjci
 
 
 def softmax(x):
@@ -454,3 +455,22 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
         Exception(f'Graph type {graph_type} not supported')
 
     return transmissions, capacities, degrees
+
+def rms_tia(n_infected_animals):
+    values = n_infected_animals**2
+    estimate = np.sqrt(np.mean(values, axis=0))
+    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
+    stderr = stderr/(2*estimate)
+    return estimate, stderr
+
+
+def mean_tia(n_infected_animals):
+    estimate = np.mean(n_infected_animals, axis=0)
+    stderr = np.std(n_infected_animals, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
+    return estimate, stderr
+
+
+def percentile_tia(n_infected_animals):
+    estimate = np.percentile(n_infected_animals, 95, axis=0)
+    stderr = mjci(n_infected_animals, prob=[0.95], axis=0)[0]
+    return estimate, stderr

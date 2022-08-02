@@ -12,7 +12,7 @@ from tqdm import tqdm
 set_seed(2)
 
 n_simulations = 10000
-n_nodes = 120
+n_nodes = 1040
 
 fp.prepare(
     n_nodes=n_nodes,  # instead of 60000, since this should suffice in the beginning
@@ -58,6 +58,9 @@ for s in tqdm(n):
     a = time()
     ylp.append(fp.evaluate(x, n_simulations=s, parallel=True, num_cpu_cores=-1))
     tlp.append(time() - a)
+print(n)
+print(tl)
+print(tlp)
 
 # plt.plot(n, yl, label='y non-parallel')
 # plt.plot(n, ylp, label='y parallel')

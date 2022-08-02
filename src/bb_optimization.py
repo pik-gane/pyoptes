@@ -9,44 +9,18 @@ from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
 from pyoptes import save_hyperparameters, save_results, plot_prior, create_graph, save_raw_data
 from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
 from pyoptes import compute_average_otf_and_stderr, softmax
+from pyoptes import rms_tia, percentile_tia, mean_tia
 
 import argparse
 import numpy as np
 from tqdm import tqdm
-from scipy.stats.mstats import mjci
 from time import time
 import datetime
 
 
-def rms_tia(n_infected_animals):
-    values = n_infected_animals**2
-    estimate = np.sqrt(np.mean(values, axis=0))
-    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
-    stderr = stderr/(2*estimate)
-    return estimate, stderr
-
-
-def mean_tia(n_infected_animals):
-    estimate = np.mean(n_infected_animals, axis=0)
-    stderr = np.std(n_infected_animals, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
-    return estimate, stderr
-
-
-def percentile_tia(n_infected_animals):
-    estimate = np.percentile(n_infected_animals, 95, axis=0)
-    stderr = mjci(n_infected_animals, prob=[0.95], axis=0)[0]
-    return estimate, stderr
-
 # TODO add this
 def share_detected(unused_n_infected_animals):
     return model.detection_was_by_test.true
-
-# TODO run GPGO-experiments without the prior but similar number of function evals
-# prior -> 39 evals for fit + 50 evals for optim
-# no prior -> 3 random samples for fit + 86 evals for optim
-# only baseline as prior -> 1 sample for fit + 89 evals for optim
-# only baseline + highest degree/cap -> 7 for fit (regardless of network size) + 82 evals for optim
-# or just always use 50 evals for optim, for better comparison
 
 
 if __name__ == '__main__':
