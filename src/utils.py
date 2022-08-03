@@ -22,10 +22,10 @@ def context_target_split(x, y, num_context, num_extra_target):
     num_extra_target : int
         Number of additional target points.
     """
-    #print('----')
-    #print('x.shape', np.shape(x))
     # x is expected in shape (batch_size, num_samples, function_dim)
     # (2,100,1) // (2,100,120)
+    # print('x.shape', np.shape(x))
+    # print('x type', type(x))
     num_points = x.shape[1]
     # Sample locations of context and target points
     locations = np.random.choice(num_points,
@@ -35,7 +35,6 @@ def context_target_split(x, y, num_context, num_extra_target):
     y_context = y[:, locations[:num_context], :]
     x_target = x[:, locations, :]
     y_target = y[:, locations, :]
-    print(dsadsf)
     return x_context, y_context, x_target, y_target
 
 

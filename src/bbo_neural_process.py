@@ -11,6 +11,7 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 from scipy.stats.mstats import mjci
+import torch
 
 import torch
 from neural_process import NeuralProcess
@@ -28,10 +29,11 @@ def rms_tia(n_infected_animals):
 
 class testdataset(Dataset):
     def __init__(self, x, y):
-        self.data = [(x[i], y[i]) for i in range(len(x))]
-
-        print('data shape', np.shape(self.data))
-        print(np.shape(self.data[0]))
+        self.data = [((x[i]), y[i])
+                     for i in range(len(x))]
+        # print('test data type', type(self.data))
+        # print('data shape', np.shape(self.data))
+        # print(np.shape(self.data[0]))
 
     def __getitem__(self, index):
         # (1,100,1)
@@ -97,9 +99,12 @@ if __name__ == '__main__':
 
     print('shape prior x and y, ', np.shape(prior), np.shape(list_prior_tf))
 
-    x = [list_prior_tf for _ in range(100)]
-    y = [list_prior_tf for _ in range(100)]
-    print('x', np.shape(x))
+    # the neural process trainer expects data to be torch tensors and of type float
+    # the data is expected in shape (batch_size, num_samples, function_dim)
+    # (num_samples, function_dim) define how many different budgets are used
+    x = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(2000)]
+    y = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(2000)]
+    print('x', x[0].size())
 
     dataset = testdataset(x, y)
 
@@ -138,11 +143,10 @@ if __name__ == '__main__':
 
 
     batch_size = 2
-    num_context = 4
-    num_target = 4
+    num_context = 3
+    num_target = 3
 
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     optimizer = torch.optim.Adam(neuralprocess.parameters(), lr=3e-4)
@@ -153,3 +157,6 @@ if __name__ == '__main__':
 
     neuralprocess.training = True
     np_trainer.train(data_loader, 30)
+
+
+    #
