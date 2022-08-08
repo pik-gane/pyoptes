@@ -106,6 +106,8 @@ if __name__ == '__main__':
     y = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(2000)]
     print('x', x[0].size())
 
+    # the dataset should consist of a list of (budget,y) pairs for each network
+    # this means the neural process can be trained once, and used repeatedly in different experiments
     dataset = testdataset(x, y)
 
     from datasets import SineData
@@ -124,24 +126,6 @@ if __name__ == '__main__':
 
     neuralprocess = NeuralProcess(x_dim, y_dim, r_dim, z_dim, h_dim)
 
-    # # Create a set of 100 target points, with shape
-    # # (batch_size, num_points, x_dim), which in this case is
-    # # (1, 100, 1)
-    # x_target = torch.Tensor(np.ones((100, 12)))
-    # # x_target = [x_target, x_target]
-    # print('x_target_shape', np.shape(x_target))
-    # x_target = x_target.unsqueeze(0)
-    # print(np.shape(x_target))
-    # for i in range(64):
-    #     z_sample = torch.randn((1, z_dim))  # Shape (batch_size, z_dim)
-    #     # Map x_target and z to p_y_target (which is parameterized by a
-    #     # normal with mean mu and std dev sigma)
-    #     mu, _ = neuralprocess.xz_to_y(x_target, z_sample)
-    #     # Plot predicted mean at each target point (note we could also
-    #     # sample from distribution but plot mean for simplicity)
-    # #     print(np.shape(mu))
-
-
     batch_size = 2
     num_context = 3
     num_target = 3
@@ -158,5 +142,5 @@ if __name__ == '__main__':
     neuralprocess.training = True
     np_trainer.train(data_loader, 30)
 
-
+    #
     #
