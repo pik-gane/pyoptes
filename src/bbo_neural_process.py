@@ -4,28 +4,17 @@ Use neural processes to approximate the SI-simulation
 
 
 from pyoptes.optimization.budget_allocation import target_function as f
-from pyoptes import create_graph, compute_average_otf_and_stderr
+from pyoptes import create_graph, rms_tia
 from pyoptes import create_test_strategy_prior, map_low_dim_x_to_high_dim
 
-import argparse
 import numpy as np
 from tqdm import tqdm
-from scipy.stats.mstats import mjci
-import torch
 
 import torch
 from neural_process import NeuralProcess
 from torch.utils.data import DataLoader, Dataset
 from training import NeuralProcessTrainer
-
-
-def rms_tia(n_infected_animals):
-    values = n_infected_animals**2
-    estimate = np.sqrt(np.mean(values, axis=0))
-    stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
-    stderr = stderr/(2*estimate)
-    return estimate, stderr
-
+from utils import context_target_split
 
 class testdataset(Dataset):
     def __init__(self, x, y):
@@ -57,6 +46,8 @@ if __name__ == '__main__':
     statistic = rms_tia
     n = 0
     total_budget = scale_total_budget * n_nodes
+
+    ###############################################################################
 
     transmissions, capacities, degrees = create_graph(n, graph_type, n_nodes, path_networks)
 
@@ -99,24 +90,19 @@ if __name__ == '__main__':
 
     print('shape prior x and y, ', np.shape(prior), np.shape(list_prior_tf))
 
+    ###############################################################################
+    # training
+    ###############################################################################
     # the neural process trainer expects data to be torch tensors and of type float
     # the data is expected in shape (batch_size, num_samples, function_dim)
     # (num_samples, function_dim) define how many different budgets are used
-    x = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(2000)]
+    x = [torch.tensor(prior).float() for _ in range(2000)]
     y = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(2000)]
     print('x', x[0].size())
 
     dataset = testdataset(x, y)
 
-    from datasets import SineData
-    from math import pi
-
-    # contains 2000 sample sine-function, each with 100 points
-    # dataset = SineData(amplitude_range=(-1., 1.),
-    #                    shift_range=(-.5, .5),
-    #                    num_samples=2000)
-
-    x_dim = 1
+    x_dim = 12
     y_dim = 1
     r_dim = 50  # Dimension of representation of context points
     z_dim = 50  # Dimension of sampled latent variable
@@ -124,26 +110,8 @@ if __name__ == '__main__':
 
     neuralprocess = NeuralProcess(x_dim, y_dim, r_dim, z_dim, h_dim)
 
-    # # Create a set of 100 target points, with shape
-    # # (batch_size, num_points, x_dim), which in this case is
-    # # (1, 100, 1)
-    # x_target = torch.Tensor(np.ones((100, 12)))
-    # # x_target = [x_target, x_target]
-    # print('x_target_shape', np.shape(x_target))
-    # x_target = x_target.unsqueeze(0)
-    # print(np.shape(x_target))
-    # for i in range(64):
-    #     z_sample = torch.randn((1, z_dim))  # Shape (batch_size, z_dim)
-    #     # Map x_target and z to p_y_target (which is parameterized by a
-    #     # normal with mean mu and std dev sigma)
-    #     mu, _ = neuralprocess.xz_to_y(x_target, z_sample)
-    #     # Plot predicted mean at each target point (note we could also
-    #     # sample from distribution but plot mean for simplicity)
-    # #     print(np.shape(mu))
-
-
     batch_size = 2
-    num_context = 3
+    num_context = 3 # num_context + num_target has to be lower than num_samples
     num_target = 3
 
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -158,5 +126,35 @@ if __name__ == '__main__':
     neuralprocess.training = True
     np_trainer.train(data_loader, 30)
 
+    #################################################################################
+    # predict SI-simulation output on a test budget
+    #################################################################################
+    target_budget = np.ones(12)
+    target_budget_tensor = torch.tensor(target_budget).unsqueeze(1).unsqueeze(0)
+    print('shape target budget', target_budget_tensor.shape)
 
-    #
+    neuralprocess.training = False
+
+    for batch in data_loader:
+        break
+    x, y = batch
+    x_context, y_context, _, _ = context_target_split(x[0:1], y[0:1],
+                                                      num_context,
+                                                      num_target)
+
+
+    p_y_pred = neuralprocess(x_context, y_context, target_budget_tensor)
+    # Extract mean of distribution
+    mu = p_y_pred.loc.detach()
+    print('mu neural process', mu)
+
+    p = map_low_dim_x_to_high_dim(x=p,
+                                  number_of_nodes=n_nodes,
+                                  node_indices=prior_node_indices[i])
+    m, stderr = f.evaluate(budget_allocation=p,
+                           n_simulations=n_simulations,
+                           parallel=True,
+                           num_cpu_cores=-1,
+                           statistic=statistic)
+
+    print('mean and stderr', m, stderr)
