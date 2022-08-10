@@ -100,6 +100,8 @@ if __name__ == '__main__':
     y = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(2000)]
     print('x', x[0].size())
 
+    # the dataset should consist of a list of (budget,y) pairs for each network
+    # this means the neural process can be trained once, and used repeatedly in different experiments
     dataset = testdataset(x, y)
 
     x_dim = 12
