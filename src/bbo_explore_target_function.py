@@ -1,5 +1,5 @@
 '''
-Compute the target function value
+Compute the target function value for different number of sentinels (either highest degree, transmissions, capacities)
 
 '''
 
@@ -15,11 +15,6 @@ from scipy.stats.mstats import mjci
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("--n_nodes", type=int, default=1040,
-                        help="Si-simulation parameter. "
-                             "Defines the number of nodes used by the SI-model to create a graph. "
-                             "Default value is 120 nodes.")
 
     parser.add_argument('--n_runs', type=int, default=100,
                         help='')
@@ -39,3 +34,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     #
+    nodes = [120, 1040, 57590]

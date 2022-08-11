@@ -1,5 +1,6 @@
 '''
-Creates
+Creates scatter plots showing the relationship between the nodes, their attributes and the allocated budget.
+
 '''
 
 from pyoptes import create_graph, scatter_plot, get_node_attributes

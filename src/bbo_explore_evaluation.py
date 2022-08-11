@@ -1,5 +1,5 @@
 '''
-Compute the target function value
+Compare optimizer outputs of the saved in the evaluation_output txt-file with the output in the plot
 
 '''
 
@@ -25,6 +25,13 @@ if __name__ == '__main__':
 
         with open(evaluation_output, 'r') as f:
             lines = f.readlines()
-        print(lines)
+        for l in lines:
+            print(l)
 
+        ratio = float(lines[1].split(':')[1])
+        baseline_otf, optimizer_stderr = lines[2].split(':')[1].split(', ')
+        optimizer_otf, optimizer_stderr = lines[3].split(':')[1].split(', ')
+        print(ratio)
+        print(baseline)
+        print(optimizer_otf, optimizer_stderr)
         break

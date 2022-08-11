@@ -22,6 +22,10 @@ if __name__ == '__main__':
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
+    parser.add_argument('--optimizer', default='all', choices=['cma', 'gpgo', 'all'],
+                        help="Optimizer parameter. Which optimizer to plot. "
+                                "Default is 'all'")
+
     # TODO not quite sure how to use this yet, maybe take a list as input?
     # parser.add_argument("--name_experiment",
     #                     help="The name of the folder where the results of the optimizer run are saved to.")
@@ -79,15 +83,6 @@ if __name__ == '__main__':
     parser.add_argument('--scale_total_budget', type=int, default=1, choices=[1, 4, 12],
                         help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.")
 
-    parser.add_argument('--delta_t_symptoms', type=int, default=60,
-                        help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
-                             ' automatically. Default is 60 days')
-    parser.add_argument('--p_infection_by_transmission', type=float, default=0.5,
-                        help='Si-simulation parameter. The probability of how likely a trade animal '
-                             'infects other animals. Default is 0.5.')
-    parser.add_argument('--expected_time_of_first_infection', type=int, default=30,
-                        help='Si-simulation parameter. The expected time (in days) after which the first infection occurs. ')
-
     parser.add_argument('--mode_choose_sentinels', choices=['degree', 'capacity', 'transmission'], default='degree',
                         help='Sets the mode of how sentinels are chosen. ')
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
@@ -116,45 +111,56 @@ if __name__ == '__main__':
         arguments_dict = vars(args)
 
         optimizer = hyperparameters['optimizer_hyperparameters']['optimizer']
+        max_iterations = hyperparameters['optimizer_hyperparameters']['max_iterations']
+
         network_type = hyperparameters['simulation_hyperparameters']['graph']
         n_runs = hyperparameters['simulation_hyperparameters']['n_runs']
         n_nodes = hyperparameters['simulation_hyperparameters']['n_nodes']
         sentinels = hyperparameters['simulation_hyperparameters']['sentinels']
-
         statistic = hyperparameters['simulation_hyperparameters']['statistic']
+        total_budget = hyperparameters['simulation_hyperparameters']['total_budget']
 
-    # # save date of the experiment for plotting
-    #     raw_data = load_raw_data(os.path.join(path_data, 'raw_data/'))
+        param_check = statistic == args.statistic and n_nodes == args.n_nodes \
+                      and sentinels == args.sentinels and max_iterations == args.max_iterations \
+                      and total_budget == args.scale_total_budget*args.n_nodes
+
+        if optimizer == args.optimizer and param_check \
+                or args.optimizer == 'all' and param_check:
+            # get the path to the experiment
+            path_experiment = os.path.split(experiment_params)[0]
+            # save date of the experiment for plotting
+            raw_data = load_raw_data(os.path.join(path_experiment, 'raw_data/'))
+
+            # compute the averages of the c_raw_data
+            optimizer_history, stderr_history = compute_average_otf_and_stderr(raw_data['list_best_solution_history'],
+                                                                               raw_data['list_stderr_history'],
+                                                                               n_runs)
+
+            baseline_mean, baseline_stderr = compute_average_otf_and_stderr(raw_data['list_baseline_otf'],
+                                                                            raw_data['list_baseline_otf_stderr'],
+                                                                            n_runs)
+
+            prior_mean, prior_stderr = compute_average_otf_and_stderr(raw_data['list_all_prior_tf'],
+                                                                      raw_data['list_all_prior_stderr'],
+                                                                      n_runs)
+
+            do = {'optimizer_history': optimizer_history,
+                  'stderr_history': stderr_history,
+                  'optimizer': optimizer}
+
+            data_optimizer.append(do)
     #
-    #     # compute the averages of the c_raw_data
-    #     optimizer_history, stderr_history = compute_average_otf_and_stderr(raw_data['list_best_solution_history'],
-    #                                                                        raw_data['list_stderr_history'],
-    #                                                                        n_runs)
-    #
-    #     baseline_mean, baseline_stderr = compute_average_otf_and_stderr(raw_data['list_baseline_otf'],
-    #                                                                     raw_data['list_baseline_otf_stderr'],
-    #                                                                     n_runs)
-    #
-    #     prior_mean, prior_stderr = compute_average_otf_and_stderr(raw_data['list_all_prior_tf'],
-    #                                                               raw_data['list_all_prior_stderr'],
-    #                                                               n_runs)
-    #
-    #     do = {'optimizer_history': optimizer_history,
-    #           'stderr_history': stderr_history,
-    #           'optimizer': optimizer}
-    #
-    #     data_optimizer.append(do)
-    #
-    # # as the baseline are taken from the last experiment in the loop, it is not advised to mix experiments with different
-    # # number of nodes
-    # # TODO add option to plot multiple baselines
-    # data_baseline = [{'baseline_mean': baseline_mean,
-    #                   'baseline_stderr': baseline_stderr,
-    #                   'name': 'uniform'},
-    #                  {'baseline_mean': prior_mean[1],
-    #                   'baseline_stderr': prior_stderr[1],
-    #                   'name': 'highest degree'}]
-    #
-    # plot_multiple_optimizer(args.path_plot, data_optimizer, data_baseline, n_nodes, sentinels)
+    print(np.shape(data_optimizer))
+    # as the baseline are taken from the last experiment in the loop, it is not advised to mix experiments with different
+    # number of nodes
+    # TODO add option to plot multiple baselines
+    data_baseline = [{'baseline_mean': baseline_mean,
+                      'baseline_stderr': baseline_stderr,
+                      'name': 'uniform'},
+                     {'baseline_mean': prior_mean[1],
+                      'baseline_stderr': prior_stderr[1],
+                      'name': 'highest degree'}]
+
+    plot_multiple_optimizer(args.path_plot, data_optimizer, data_baseline, args.n_nodes, args.sentinels)
 
 

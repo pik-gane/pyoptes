@@ -185,7 +185,7 @@ def plot_multiple_optimizer(path_experiment, data_optimizer, data_baseline, n_no
         plt.plot(range(len(optimizer_history)), b - baseline_stderr,
                  linestyle='dotted', color='black')
 
-    plt.title(f'Optimizer performance against baseline, {n_nodes} nodes, {sentinels} sentinels ')
+    plt.title(f'Optimizer performance against baseline, {n_nodes} nodes, {sentinels} sentinels')
     plt.xlabel('Iteration')
     plt.ylabel('Number of infected animals')
     plt.legend()

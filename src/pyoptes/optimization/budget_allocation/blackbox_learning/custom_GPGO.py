@@ -161,6 +161,8 @@ class GPGO:
         # TODO check which part here is the slowest
         # TODO maybe test different acqui-functions
         start_points_arr = np.array([self._sampleParam() for i in range(n_start)])
+
+        # save the test strategies to be able to visualize the trajectory of the optimizer, e.g how well the search space is covered
         if self.save_test_strategies:
             np.save(os.path.join(self.save_test_strategies_path, f'test_strategy_{self.n}'), start_points_arr)
             self.n += 1
@@ -169,6 +171,7 @@ class GPGO:
         f_best = np.empty((n_start,))
         if self.n_jobs == 1:
             for index, start_point in enumerate(start_points_arr):
+                # _acqWrapper is the function that calls the GP, therefore the NP has to be used here
                 res = minimize(self._acqWrapper, x0=start_point, method=method,
                                bounds=self.parameter_range)
                 x_best[index], f_best[index] = res.x, np.atleast_1d(res.fun)[0]

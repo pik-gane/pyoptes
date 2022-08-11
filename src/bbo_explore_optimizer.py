@@ -1,5 +1,5 @@
 '''
-Compute the target function value
+Visualize how the optimizers move through the search space with each iteration.
 
 '''
 
