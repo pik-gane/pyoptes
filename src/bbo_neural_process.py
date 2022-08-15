@@ -132,7 +132,8 @@ if __name__ == '__main__':
     # predict SI-simulation output on a test budget
     #################################################################################
     target_budget = np.ones(12)
-    target_budget_tensor = torch.tensor(target_budget).unsqueeze(1).unsqueeze(0)
+    # tensor needs shape (batch_size, num_samples, function_dim), function_dim is equal to the number of sentinels
+    target_budget_tensor = torch.tensor(target_budget).float().unsqueeze(0).unsqueeze(0)
     print('shape target budget', target_budget_tensor.shape)
 
     neuralprocess.training = False
@@ -144,11 +145,12 @@ if __name__ == '__main__':
                                                       num_context,
                                                       num_target)
 
-
     p_y_pred = neuralprocess(x_context, y_context, target_budget_tensor)
+    print(p_y_pred)
     # Extract mean of distribution
     mu = p_y_pred.loc.detach()
-    print('mu neural process', mu)
+    sigma = p_y_pred.scale.detach()
+    print('mu and sigma neural process', mu, sigma)
 
     p = map_low_dim_x_to_high_dim(x=p,
                                   number_of_nodes=n_nodes,
