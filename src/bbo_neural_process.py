@@ -11,10 +11,9 @@ import numpy as np
 from tqdm import tqdm
 
 import torch
-from neural_process import NeuralProcess
+from pyoptes import NeuralProcess, NeuralProcessTrainer, context_target_split
 from torch.utils.data import DataLoader, Dataset
-from training import NeuralProcessTrainer
-from utils import context_target_split
+
 
 class testdataset(Dataset):
     def __init__(self, x, y):
