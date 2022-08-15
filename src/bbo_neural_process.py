@@ -11,24 +11,8 @@ import numpy as np
 from tqdm import tqdm
 
 import torch
-from pyoptes import NeuralProcess, NeuralProcessTrainer, context_target_split
-from torch.utils.data import DataLoader, Dataset
-
-
-class testdataset(Dataset):
-    def __init__(self, x, y):
-        self.data = [((x[i]), y[i])
-                     for i in range(len(x))]
-        # print('test data type', type(self.data))
-        # print('data shape', np.shape(self.data))
-        # print(np.shape(self.data[0]))
-
-    def __getitem__(self, index):
-        # (1,100,1)
-        return self.data[index]
-
-    def __len__(self):
-        return len(self.data)
+from pyoptes import NeuralProcess, NeuralProcessTrainer, context_target_split, TrainingDataset
+from torch.utils.data import DataLoader
 
 
 if __name__ == '__main__':
@@ -101,7 +85,7 @@ if __name__ == '__main__':
 
     # the dataset should consist of a list of (budget,y) pairs for each network
     # this means the neural process can be trained once, and used repeatedly in different experiments
-    dataset = testdataset(x, y)
+    dataset = TrainingDataset(x, y)
 
     x_dim = 12
     y_dim = 1
