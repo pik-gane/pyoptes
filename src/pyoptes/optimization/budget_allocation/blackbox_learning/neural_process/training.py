@@ -1,10 +1,8 @@
 import torch
 from random import randint
-from neural_process import NeuralProcessImg
 from torch import nn
 from torch.distributions.kl import kl_divergence
-from utils import (context_target_split, batch_context_target_mask,
-                   img_mask_to_np_input)
+from .utils import (context_target_split)
 
 
 class NeuralProcessTrainer():
@@ -40,8 +38,6 @@ class NeuralProcessTrainer():
         self.num_extra_target_range = num_extra_target_range
         self.print_freq = print_freq
 
-        # Check if neural process is for images
-        self.is_img = isinstance(self.neural_process, NeuralProcessImg)
         self.steps = 0
         self.epoch_loss_history = []
 
@@ -66,29 +62,11 @@ class NeuralProcessTrainer():
                 num_extra_target = randint(*self.num_extra_target_range)
 
                 # Create context and target points and apply neural process
-                if self.is_img:
-                    img, _ = data  # data is a tuple (img, label)
-                    batch_size = img.size(0)
-                    context_mask, target_mask = \
-                        batch_context_target_mask(self.neural_process.img_size,
-                                                  num_context, num_extra_target,
-                                                  batch_size)
-
-                    img = img.to(self.device)
-                    context_mask = context_mask.to(self.device)
-                    target_mask = target_mask.to(self.device)
-
-                    p_y_pred, q_target, q_context = \
-                        self.neural_process(img, context_mask, target_mask)
-
-                    # Calculate y_target as this will be required for loss
-                    _, y_target = img_mask_to_np_input(img, target_mask)
-                else:
-                    x, y = data
-                    x_context, y_context, x_target, y_target = \
-                        context_target_split(x, y, num_context, num_extra_target)
-                    p_y_pred, q_target, q_context = \
-                        self.neural_process(x_context, y_context, x_target, y_target)
+                x, y = data
+                x_context, y_context, x_target, y_target = \
+                    context_target_split(x, y, num_context, num_extra_target)
+                p_y_pred, q_target, q_context = \
+                    self.neural_process(x_context, y_context, x_target, y_target)
 
                 loss = self._loss(p_y_pred, y_target, q_target, q_context)
                 loss.backward()

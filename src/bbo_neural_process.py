@@ -11,25 +11,8 @@ import numpy as np
 from tqdm import tqdm
 
 import torch
-from neural_process import NeuralProcess
-from torch.utils.data import DataLoader, Dataset
-from training import NeuralProcessTrainer
-from utils import context_target_split
-
-class testdataset(Dataset):
-    def __init__(self, x, y):
-        self.data = [((x[i]), y[i])
-                     for i in range(len(x))]
-        # print('test data type', type(self.data))
-        # print('data shape', np.shape(self.data))
-        # print(np.shape(self.data[0]))
-
-    def __getitem__(self, index):
-        # (1,100,1)
-        return self.data[index]
-
-    def __len__(self):
-        return len(self.data)
+from pyoptes import NeuralProcess, NeuralProcessTrainer, context_target_split, TrainingDataset
+from torch.utils.data import DataLoader
 
 
 if __name__ == '__main__':
@@ -96,13 +79,13 @@ if __name__ == '__main__':
     # the neural process trainer expects data to be torch tensors and of type float
     # the data is expected in shape (batch_size, num_samples, function_dim)
     # (num_samples, function_dim) define how many different budgets are used
-    x = [torch.tensor(prior).float() for _ in range(2000)]
-    y = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(2000)]
+    x = [torch.tensor(prior).float() for _ in range(1000)]
+    y = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(1000)]
     print('x', x[0].size())
 
     # the dataset should consist of a list of (budget,y) pairs for each network
     # this means the neural process can be trained once, and used repeatedly in different experiments
-    dataset = testdataset(x, y)
+    dataset = TrainingDataset(x, y)
 
     x_dim = 12
     y_dim = 1
@@ -112,7 +95,7 @@ if __name__ == '__main__':
 
     neuralprocess = NeuralProcess(x_dim, y_dim, r_dim, z_dim, h_dim)
 
-    batch_size = 2
+    batch_size = 10
     num_context = 3 # num_context + num_target has to be lower than num_samples
     num_target = 3
 
@@ -132,7 +115,8 @@ if __name__ == '__main__':
     # predict SI-simulation output on a test budget
     #################################################################################
     target_budget = np.ones(12)
-    target_budget_tensor = torch.tensor(target_budget).unsqueeze(1).unsqueeze(0)
+    # tensor needs shape (batch_size, num_samples, function_dim), function_dim is equal to the number of sentinels
+    target_budget_tensor = torch.tensor(target_budget).float().unsqueeze(0).unsqueeze(0)
     print('shape target budget', target_budget_tensor.shape)
 
     neuralprocess.training = False
@@ -144,19 +128,61 @@ if __name__ == '__main__':
                                                       num_context,
                                                       num_target)
 
-
-    p_y_pred = neuralprocess(x_context, y_context, target_budget_tensor)
-    # Extract mean of distribution
-    mu = p_y_pred.loc.detach()
-    print('mu neural process', mu)
-
-    p = map_low_dim_x_to_high_dim(x=p,
+    for _ in range(10):
+        p_y_pred = neuralprocess(x_context, y_context, target_budget_tensor)
+        # Extract mean of distribution
+        mu = p_y_pred.loc.detach()
+        sigma = p_y_pred.scale.detach()
+        print('mu and sigma neural process', mu, sigma)
+    p_mapped = map_low_dim_x_to_high_dim(x=target_budget,
                                   number_of_nodes=n_nodes,
-                                  node_indices=prior_node_indices[i])
-    m, stderr = f.evaluate(budget_allocation=p,
+                                  node_indices=prior_node_indices[0])
+    m, stderr = f.evaluate(budget_allocation=p_mapped,
                            n_simulations=n_simulations,
                            parallel=True,
                            num_cpu_cores=-1,
                            statistic=statistic)
 
-    print('mean and stderr', m, stderr)
+    print('\nmean and stderr', m, stderr)
+
+    # --------------------------------------
+
+    # use new mesasurement to update Neural Process
+    neuralprocess.training = True
+    # maybe create a new dataloader with only one entry
+    x = torch.tensor(target_budget).float().unsqueeze(0)
+    y = torch.tensor(m).float().unsqueeze(0)
+    print(np.shape(x), np.shape(y))
+    print(x)
+    print(y)
+    new_dataset = TrainingDataset(x,y)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    np_trainer.train(data_loader, 30)
+
+    print('------------------')
+
+    neuralprocess.training = False
+
+    for batch in data_loader:
+        break
+    x, y = batch
+    x_context, y_context, _, _ = context_target_split(x[0:1], y[0:1],
+                                                      num_context,
+                                                      num_target)
+
+    for _ in range(10):
+        p_y_pred = neuralprocess(x_context, y_context, target_budget_tensor)
+        # Extract mean of distribution
+        mu = p_y_pred.loc.detach()
+        sigma = p_y_pred.scale.detach()
+        print('mu and sigma neural process', mu, sigma)
+    p_mapped = map_low_dim_x_to_high_dim(x=target_budget,
+                                  number_of_nodes=n_nodes,
+                                  node_indices=prior_node_indices[0])
+    m, stderr = f.evaluate(budget_allocation=p_mapped,
+                           n_simulations=n_simulations,
+                           parallel=True,
+                           num_cpu_cores=-1,
+                           statistic=statistic)
+
+    print('\nmean and stderr', m, stderr)
