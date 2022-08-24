@@ -13,7 +13,7 @@ from tqdm import tqdm
 import torch
 from pyoptes import NeuralProcess, NeuralProcessTrainer, context_target_split, TrainingDataset
 from torch.utils.data import DataLoader
-
+from time import time
 
 if __name__ == '__main__':
 
@@ -79,9 +79,11 @@ if __name__ == '__main__':
     # the neural process trainer expects data to be torch tensors and of type float
     # the data is expected in shape (batch_size, num_samples, function_dim)
     # (num_samples, function_dim) define how many different budgets are used
-    x = [torch.tensor(prior).float() for _ in range(1000)]
-    y = [torch.tensor(list_prior_tf).unsqueeze(1).float() for _ in range(1000)]
-    print('x', x[0].size())
+
+    x = torch.tensor(prior).unsqueeze(0).float()
+    y = torch.tensor(list_prior_tf).unsqueeze(1).unsqueeze(0).float()
+    print(x.size())
+    print(y.size())
 
     # the dataset should consist of a list of (budget,y) pairs for each network
     # this means the neural process can be trained once, and used repeatedly in different experiments
@@ -109,12 +111,13 @@ if __name__ == '__main__':
                                       print_freq=200)
 
     neuralprocess.training = True
-    np_trainer.train(data_loader, 30)
-
+    start = time()
+    np_trainer.train(data_loader, 3000)
+    print('Time for neural process training: ', time() - start)
     #################################################################################
     # predict SI-simulation output on a test budget
     #################################################################################
-    target_budget = np.ones(12)
+    target_budget = np.ones(12)*10
     # tensor needs shape (batch_size, num_samples, function_dim), function_dim is equal to the number of sentinels
     target_budget_tensor = torch.tensor(target_budget).float().unsqueeze(0).unsqueeze(0)
     print('shape target budget', target_budget_tensor.shape)
@@ -134,30 +137,39 @@ if __name__ == '__main__':
         mu = p_y_pred.loc.detach()
         sigma = p_y_pred.scale.detach()
         print('mu and sigma neural process', mu, sigma)
+
+    print('target_budget', target_budget)
     p_mapped = map_low_dim_x_to_high_dim(x=target_budget,
-                                  number_of_nodes=n_nodes,
-                                  node_indices=prior_node_indices[0])
+                                         number_of_nodes=n_nodes,
+                                         node_indices=prior_node_indices[0])
+
     m, stderr = f.evaluate(budget_allocation=p_mapped,
                            n_simulations=n_simulations,
                            parallel=True,
                            num_cpu_cores=-1,
                            statistic=statistic)
 
-    print('\nmean and stderr', m, stderr)
+    print('\nmean and stderr', m, stderr, '\n')
 
     # --------------------------------------
 
-    # use new mesasurement to update Neural Process
+    # use new measurement to update Neural Process
     neuralprocess.training = True
     # maybe create a new dataloader with only one entry
-    x = torch.tensor(target_budget).float().unsqueeze(0)
-    y = torch.tensor(m).float().unsqueeze(0)
-    print(np.shape(x), np.shape(y))
+
+    print(x, x.size())
+    print(target_budget_tensor, target_budget_tensor.size())
+
+    x = torch.cat((x, target_budget_tensor), 1)
+    mt = torch.tensor([m]).unsqueeze(0).unsqueeze(0).float()
+    print('mt size', mt.size())
+    y = torch.cat((y, mt), 1)
+    print('new dataset shape', x.size(), y.size())
     print(x)
     print(y)
     new_dataset = TrainingDataset(x,y)
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    np_trainer.train(data_loader, 30)
+    np_trainer.train(data_loader, 3000)
 
     print('------------------')
 
@@ -177,8 +189,8 @@ if __name__ == '__main__':
         sigma = p_y_pred.scale.detach()
         print('mu and sigma neural process', mu, sigma)
     p_mapped = map_low_dim_x_to_high_dim(x=target_budget,
-                                  number_of_nodes=n_nodes,
-                                  node_indices=prior_node_indices[0])
+                                         number_of_nodes=n_nodes,
+                                         node_indices=prior_node_indices[0])
     m, stderr = f.evaluate(budget_allocation=p_mapped,
                            n_simulations=n_simulations,
                            parallel=True,
