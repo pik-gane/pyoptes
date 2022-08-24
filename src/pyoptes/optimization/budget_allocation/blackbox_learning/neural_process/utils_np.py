@@ -38,13 +38,13 @@ def context_target_split(x, y, num_context, num_extra_target):
     y_target = y[:, locations, :]
     return x_context, y_context, x_target, y_target
 
+
 class TrainingDataset(Dataset):
     def __init__(self, x, y):
         self.data = [((x[i]), y[i])
                      for i in range(len(x))]
 
     def __getitem__(self, index):
-        # (1,100,1)
         return self.data[index]
 
     def __len__(self):

@@ -2,7 +2,7 @@ import torch
 from random import randint
 from torch import nn
 from torch.distributions.kl import kl_divergence
-from .utils import (context_target_split)
+from .utils_np import (context_target_split)
 
 
 class NeuralProcessTrainer():
