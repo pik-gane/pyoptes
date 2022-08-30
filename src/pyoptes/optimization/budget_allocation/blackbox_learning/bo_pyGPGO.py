@@ -9,9 +9,11 @@ from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 from .custom_GPGO import GPGO
 from .custom_Neural_Process import NP
 
+
 def bo_pyGPGO(prior, prior_y, prior_stderr,
               max_iterations, n_simulations, node_indices, n_nodes, eval_function,
-              total_budget, parallel, num_cpu_cores, acquisition_function, statistic, use_prior=True,
+              total_budget, parallel, num_cpu_cores, acquisition_function, statistic,
+              use_neural_process=False, use_prior=True,
               save_test_strategies=False, save_test_strategies_path=None):
     """
     Run GPGO, a Bayesian optimization algorithm with a gaussian process surrogate.
@@ -49,51 +51,48 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
     for i in range(len(node_indices)):
         parameters[f"x{i}"] = ('cont', [0.0, float(total_budget)])
 
-    np = True
-    if np == False:
-        gpgo = GPGO(surrogate=gp,
-                    acquisition=acq,
-                    f=pyGPGO_objective_function,
-                    parameter_dict=parameters,
-                    n_jobs=num_cpu_cores,
-                    save_test_strategies=save_test_strategies,
-                    save_test_strategies_path=save_test_strategies_path,
-                    f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
-                              'n_nodes': n_nodes, 'eval_function': eval_function,
-                              'n_simulations': n_simulations, 'parallel': parallel,
-                              'num_cpu_cores': num_cpu_cores, 'statistic': statistic})
+    if not use_neural_process:
+        optimizer = GPGO(surrogate=gp,
+                         acquisition=acq,
+                         f=pyGPGO_objective_function,
+                         parameter_dict=parameters,
+                         n_jobs=num_cpu_cores,
+                         save_test_strategies=save_test_strategies,
+                         save_test_strategies_path=save_test_strategies_path,
+                         f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
+                                   'n_nodes': n_nodes, 'eval_function': eval_function,
+                                   'n_simulations': n_simulations, 'parallel': parallel,
+                                   'num_cpu_cores': num_cpu_cores, 'statistic': statistic})
 
-        gpgo.run(max_iter=max_iterations,
-                 prior=prior,
-                 prior_y=prior_y,
-                 prior_stderr=prior_stderr,
-                 use_prior=use_prior)
+        optimizer.run(max_iter=max_iterations,
+                      prior=prior,
+                      prior_y=prior_y,
+                      prior_stderr=prior_stderr,
+                      use_prior=use_prior)
     else:
-        neural_process = NP(prior_x=prior,
-                            prior_y=prior_y,
-                            prior_stderr=prior_stderr,
-                            acquisition=acq,
-                            f=pyGPGO_objective_function,
-                            parameter_dict=parameters,
-                            n_jobs=num_cpu_cores,
-                            save_test_strategies=save_test_strategies,
-                            save_test_strategies_path=save_test_strategies_path,
-                            f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
-                                      'n_nodes': n_nodes, 'eval_function': eval_function,
-                                      'n_simulations': n_simulations, 'parallel': parallel,
-                                      'num_cpu_cores': num_cpu_cores, 'statistic': statistic})
-        neural_process.run(max_iter=max_iterations)
+        optimizer = NP(prior_x=prior,
+                       prior_y=prior_y,
+                       prior_stderr=prior_stderr,
+                       acquisition=acq,
+                       f=pyGPGO_objective_function,
+                       parameter_dict=parameters,
+                       n_jobs=num_cpu_cores,
+                       save_test_strategies=save_test_strategies,
+                       save_test_strategies_path=save_test_strategies_path,
+                       f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
+                                 'n_nodes': n_nodes, 'eval_function': eval_function,
+                                 'n_simulations': n_simulations, 'parallel': parallel,
+                                 'num_cpu_cores': num_cpu_cores, 'statistic': statistic})
+        optimizer.run(max_iter=max_iterations)
 
-        pass
-
-    best_test_strategy = gpgo.getResult()[0]
+    best_test_strategy = optimizer.getResult()[0]
     # gpgo.history contains the best y of the gp at each iteration
     # reverse the sign change of optimizer history to get a more readable plot
-    best_solution_history = -np.array(gpgo.history)
+    best_solution_history = -np.array(optimizer.history)
     # get the correct stderr of the solutions at each timestep
-    stderr_history = [gpgo.stderr[y] for y in gpgo.history]
+    stderr_history = [optimizer.stderr[y] for y in optimizer.history]
 
-    return best_test_strategy, best_solution_history, stderr_history, gpgo.time_for_optimization
+    return best_test_strategy, best_solution_history, stderr_history, optimizer.time_for_optimization
 
 
 def pyGPGO_objective_function(x, node_indices, total_budget, n_nodes, eval_function,

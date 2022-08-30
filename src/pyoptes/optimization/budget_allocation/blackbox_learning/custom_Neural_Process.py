@@ -41,7 +41,7 @@ class NP:
         """
         # TODO should come from outside
         x_dim = len(f_kwargs['node_indices'])  # dimension of the objective function, equal to the number of sentinels
-        print('x_dim: ', x_dim)
+        # print('x_dim: ', x_dim)
         y_dim = 1
         r_dim = 50  # Dimension of representation of context points
         z_dim = 50  # Dimension of sampled latent variable
@@ -55,7 +55,7 @@ class NP:
         self.optimizer = torch.optim.Adam(self.NP.parameters(), lr=3e-4)
 
         self.prior_x = prior_x
-        self.prior_y = prior_y
+        self.prior_y = -1*np.array(prior_y) # TODO why is this necessary?
         self.prior_stderr = prior_stderr
 
         self.x = torch.tensor(prior_x).unsqueeze(0).float()
@@ -78,7 +78,11 @@ class NP:
         self.parameter_type = [p[0] for p in self.parameter_value]
         self.parameter_range = [p[1] for p in self.parameter_value]
 
+        # history contains the best function evaluations in every iteration
         self.history = []
+        # contains the function evaluations (for the proposed budget) in every iteration, not necessarily the best value
+        self.surrogate_y = [] # TODO maybe rename ?
+        self.current_best_budget = {}
 
         self.time_start = time.time()
         self.time_for_optimization = []
@@ -88,6 +92,7 @@ class NP:
 
         self.f_kwargs = f_kwargs
 
+        # flags for saving test strategies
         self.n = 0
         self.save_test_strategies = save_test_strategies
         self.save_test_strategies_path = save_test_strategies_path
@@ -113,35 +118,6 @@ class NP:
                 raise ValueError('Unsupported variable type.')
         return d
 
-    def _firstRun(self, n_eval=3):
-        """
-        Performs initial evaluations on random samples of the parameters before fitting GP.
-
-        Parameters
-        ----------
-        n_eval: int
-            Number of initial evaluations to perform. Default is 3.
-
-        """
-        X = np.empty((n_eval, len(self.parameter_key)))
-        Y = np.empty((n_eval,))
-        Y_stderr = np.empty((n_eval,))
-        for i in range(n_eval):
-            s_param = self._sampleParam()
-            X[i] = s_param
-            Y[i], Y_stderr[i] = self.f(s_param, **self.f_kwargs)
-
-        self.GP.fit(X, Y)
-
-        # get the best y and corresponding stderr
-        i = np.argmax(Y)
-        self.tau = Y[i]
-        tau_stderr = Y_stderr[i]
-        self.tau = np.round(self.tau, decimals=8)
-
-        self.history.append(self.tau)
-        self.stderr[self.tau] = tau_stderr
-
     def _acqWrapper(self, xnew):
         """
         Evaluates the acquisition function on a point.
@@ -159,8 +135,8 @@ class NP:
         """
         new_mean, new_std = self.NP_predict(xnew)
 
-        new_mean = new_mean.detach().squeeze().squeeze().numpy()
-        new_std = new_std.detach().squeeze().squeeze().numpy()
+        new_mean = new_mean.detach().reshape(-1).numpy()
+        new_std = new_std.detach().reshape(-1).numpy()
         return -self.A.eval(self.tau, new_mean, new_std)
 
     def _optimizeAcq(self, method='L-BFGS-B', n_start=100):
@@ -197,8 +173,8 @@ class NP:
             f_best = np.array([np.atleast_1d(res.fun)[0] for res in opt])
 
         # the acqui-optimization needs to return the best budget and the corresponding objective value
-        print('\nf_best', f_best)
-        print(np.shape(f_best))
+        # print('\nf_best', f_best)
+        # print(np.shape(f_best))
         self.current_best_measurement = x_best[np.argmin(f_best)]
 
     def updateNP(self):
@@ -212,17 +188,20 @@ class NP:
         # f_new is always the newest measurement for the objective function, not necessarily the best one
         f_new, stderr_f_new = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
 
-        print('np shape f_new: ', np.shape(f_new))
+        # print('np shape f_new: ', np.shape(f_new))
 
-        self.trainNP(1, 10, new_elem_x=self.current_best_measurement, new_elem_y=f_new)
-        self.GP.update(np.atleast_2d(self.current_best_measurement), np.atleast_1d(f_new))
+        self.trainNP(epochs=1, batch_size=10,
+                     new_elem_x=self.current_best_measurement, new_elem_y=f_new)
 
         # add new stderr to the stderr dictionary. This ensures that there is always a stderr for each measurement
         f_new = np.round(f_new, decimals=8)
+        self.surrogate_y.append(f_new)
         self.stderr[f_new] = stderr_f_new
+        self.current_best_budget[self.tau] = param
 
+        # TODO NP class does not keep a list of max Ys,
         # get the current optimum of the GP
-        self.tau = np.max(self.GP.y) # self.GP "saves" the y from the objective f,
+        self.tau = np.max(self.surrogate_y) # self.GP "saves" the y from the objective f,
         self.tau = np.round(self.tau, decimals=8)
         self.history.append(self.tau)
 
@@ -236,46 +215,30 @@ class NP:
             Best function evaluation.
 
         """
-        argtau = np.argmax(self.GP.y)
-        opt_x = self.GP.X[argtau]
-        res_d = []
-        for i, (key, param_type) in enumerate(zip(self.parameter_key, self.parameter_type)):
-            if param_type == 'int':
-                res_d.append(int(opt_x[i]))
-            else:
-                res_d.append(opt_x[i])
-        return res_d, self.tau
+        # print('self.surrogate_y', self.surrogate_y)
+        argtau = np.max(self.surrogate_y)
+        best_budget = self.current_best_budget[argtau]
 
-    def _fitGP(self, prior, prior_y, prior_stderr):
-        """
-
-        @param prior: list of test strategies
-        @param prior_y: list of corresponding function evaluations
-        @param prior_stderr: list of corresponding stderr
-        """
-
-        prior_y = -1 * np.array(prior_y)
-        self.GP.fit(np.array(prior), np.array(prior_y))
-
-        # get the best y and corresponding stderr
-        i = np.argmax(prior_y)
-        self.tau = np.round(prior_y[i], decimals=8)
-        tau_stderr = prior_stderr[i]
-
-        self.history.append(self.tau)
-        self.stderr[self.tau] = tau_stderr
+        return best_budget, self.tau
 
     def trainNP(self, epochs, batch_size, new_elem_x=None, new_elem_y=None,):
 
         self.NP.training = True
 
-        print(self.x.size())
-        print(self.y.size())
+        # print('x size', self.x.size())
+        # print('y size', self.y.size())
 
+        # TODO there possibly needs to be a -1
         # add one new budget and its corresponding function evaluation to the GP
         if new_elem_x is not None:
-            self.x = torch.cat((self.x, new_elem_x), 0)
-            self.y = torch.cat((self.y, new_elem_y), 0)
+            # reshape data to fit the neural process
+            new_elem_x = torch.tensor(new_elem_x).reshape((1, 1, 12)).float()
+            new_elem_y = torch.tensor(new_elem_y).reshape((1, 1, 1)).float()
+            # TODO something is wrong with the shapes and cat here
+            # print('np shape new_elem_x: ', np.shape(new_elem_x), type(new_elem_x), new_elem_x)
+            # print('np shape new_elem_y: ', np.shape(new_elem_y), type(new_elem_y), new_elem_y)
+            self.x = torch.cat((self.x, new_elem_x), 1)
+            self.y = torch.cat((self.y, new_elem_y), 1)
         training_dataset = TrainingDataset(self.x, self.y)
         self.dataloader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
         np_trainer = NeuralProcessTrainer(self.device, self.NP, self.optimizer,
@@ -290,7 +253,7 @@ class NP:
 
         # tensor needs shape (batch_size, num_samples, function_dim), function_dim is equal to the number of sentinels
         target_budget_tensor = torch.tensor(xnew).float().unsqueeze(0).unsqueeze(0)
-        print('shape target budget', target_budget_tensor.shape)
+        # print('shape target budget', target_budget_tensor.shape)
 
         for batch in self.dataloader:
             break
@@ -304,23 +267,21 @@ class NP:
         sigma = p_y_pred.scale.detach()
         return mu, sigma
 
-    def run(self, max_iter=10, init_evals=3):
+    def run(self, max_iter=10):
         """
         Runs the Bayesian Optimization procedure.
-        @param prior_y:
-        @param prior_stderr:
         @param max_iter: maximum number of iterations for GPGO
-        @param init_evals:  number of random samples for fitting the GP
-        @param prior: list of test strategies
-        @param use_prior: boolean to use the prior
         """
 
-        self.trainNP(epochs=30, batch_size=2)
+        self.trainNP(epochs=30, batch_size=10)
 
         # get the best y and corresponding stderr
         i = np.argmax(self.prior_y)
         self.tau = np.round(self.prior_y[i], decimals=8)
         tau_stderr = self.prior_stderr[i]
+
+        self.current_best_budget[self.tau] = self.prior_x[i]
+        self.surrogate_y.append(self.tau)
 
         self.history.append(self.tau)
         self.stderr[self.tau] = tau_stderr
