@@ -18,10 +18,12 @@ from .neural_process.training import NeuralProcessTrainer
 from .neural_process.utils_np import context_target_split, TrainingDataset
 from torch.utils.data import DataLoader
 import torch
+from torch.distributions import Normal
 
 
 class NP:
     def __init__(self, acquisition, f, parameter_dict, prior_x, prior_y, prior_stderr,
+                 epochs, batch_size,
                  n_jobs=15, f_kwargs={},
                  save_test_strategies=False, save_test_strategies_path=None,):
         """
@@ -58,8 +60,11 @@ class NP:
         self.prior_y = -1*np.array(prior_y) # TODO why is this necessary?
         self.prior_stderr = prior_stderr
 
-        self.x = torch.tensor(prior_x).unsqueeze(0).float()
-        self.y = torch.tensor(prior_y).unsqueeze(1).unsqueeze(0).float()
+        self.x = torch.tensor(np.array(prior_x)).unsqueeze(0).float()
+        self.y = torch.tensor(np.array(prior_y)).unsqueeze(1).unsqueeze(0).float()
+
+        self.epochs = epochs
+        self.batch_size = batch_size
 
         # -----------------------------------------------------------------------------------------------------------
 
@@ -177,34 +182,6 @@ class NP:
         # print(np.shape(f_best))
         self.current_best_measurement = x_best[np.argmin(f_best)]
 
-    def updateNP(self):
-        """
-        Updates the internal model with the next acquired point and its evaluation.
-        """
-        kw = {param: self.current_best_measurement[i]
-              for i, param in enumerate(self.parameter_key)}
-        param = np.array(list(kw.values()))
-
-        # f_new is always the newest measurement for the objective function, not necessarily the best one
-        f_new, stderr_f_new = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
-
-        # print('np shape f_new: ', np.shape(f_new))
-
-        self.trainNP(epochs=1, batch_size=10,
-                     new_elem_x=self.current_best_measurement, new_elem_y=f_new)
-
-        # add new stderr to the stderr dictionary. This ensures that there is always a stderr for each measurement
-        f_new = np.round(f_new, decimals=8)
-        self.surrogate_y.append(f_new)
-        self.stderr[f_new] = stderr_f_new
-        self.current_best_budget[self.tau] = param
-
-        # TODO NP class does not keep a list of max Ys,
-        # get the current optimum of the GP
-        self.tau = np.max(self.surrogate_y) # self.GP "saves" the y from the objective f,
-        self.tau = np.round(self.tau, decimals=8)
-        self.history.append(self.tau)
-
     def getResult(self):
         """
         Prints best result in the Bayesian Optimization procedure.
@@ -220,6 +197,34 @@ class NP:
         best_budget = self.current_best_budget[argtau]
 
         return best_budget, self.tau
+
+    def updateNP(self):
+        """
+        Updates the internal model with the next acquired point and its evaluation.
+        """
+        kw = {param: self.current_best_measurement[i]
+              for i, param in enumerate(self.parameter_key)}
+        param = np.array(list(kw.values()))
+
+        # f_new is always the newest measurement for the objective function, not necessarily the best one
+        f_new, stderr_f_new = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
+
+        # print('np shape f_new: ', np.shape(f_new))
+
+        self.trainNP(epochs=self.epochs, batch_size=self.batch_size,
+                     new_elem_x=self.current_best_measurement, new_elem_y=f_new)
+
+        # add new stderr to the stderr dictionary. This ensures that there is always a stderr for each measurement
+        f_new = np.round(f_new, decimals=8)
+        self.surrogate_y.append(f_new)
+        self.stderr[f_new] = stderr_f_new
+        self.current_best_budget[self.tau] = param
+
+        # TODO NP class does not keep a list of max Ys,
+        # get the current optimum of the GP
+        self.tau = np.max(self.surrogate_y) # self.GP "saves" the y from the objective f,
+        self.tau = np.round(self.tau, decimals=8)
+        self.history.append(self.tau)
 
     def trainNP(self, epochs, batch_size, new_elem_x=None, new_elem_y=None,):
 
@@ -247,6 +252,19 @@ class NP:
                                           print_freq=200)
         np_trainer.train(self.dataloader, epochs)
 
+        for batch in self.dataloader:
+            break
+        x, y = batch
+        x_context, y_context, _, _ = context_target_split(x[0:1], y[0:1],
+                                                          self.num_context,
+                                                          self.num_target)
+
+        # At testing time, encode only context
+        mu_context, sigma_context = self.NP.xy_to_mu_sigma(x_context, y_context)
+        # Sample from distribution based on context
+        q_context = Normal(mu_context, sigma_context)
+        self.z_sample = q_context.rsample()
+
     def NP_predict(self, xnew):
 
         self.NP.training = False
@@ -255,14 +273,8 @@ class NP:
         target_budget_tensor = torch.tensor(xnew).float().unsqueeze(0).unsqueeze(0)
         # print('shape target budget', target_budget_tensor.shape)
 
-        for batch in self.dataloader:
-            break
-        x, y = batch
-        x_context, y_context, _, _ = context_target_split(x[0:1], y[0:1],
-                                                          self.num_context,
-                                                          self.num_target)
-
-        p_y_pred = self.NP(x_context, y_context, target_budget_tensor)
+        p_y_pred = self.NP(x_target=target_budget_tensor, z_sample_predict=self.z_sample,
+                           x_context=None, y_context=None)
         mu = p_y_pred.loc.detach()
         sigma = p_y_pred.scale.detach()
         return mu, sigma
@@ -273,7 +285,7 @@ class NP:
         @param max_iter: maximum number of iterations for GPGO
         """
 
-        self.trainNP(epochs=30, batch_size=10)
+        self.trainNP(epochs=self.epochs, batch_size=self.batch_size)
 
         # get the best y and corresponding stderr
         i = np.argmax(self.prior_y)

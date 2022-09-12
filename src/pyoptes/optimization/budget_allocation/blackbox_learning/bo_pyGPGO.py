@@ -13,6 +13,7 @@ from .custom_Neural_Process import NP
 def bo_pyGPGO(prior, prior_y, prior_stderr,
               max_iterations, n_simulations, node_indices, n_nodes, eval_function,
               total_budget, parallel, num_cpu_cores, acquisition_function, statistic,
+              epochs, batch_size,
               use_neural_process=False, use_prior=True,
               save_test_strategies=False, save_test_strategies_path=None):
     """
@@ -79,6 +80,8 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
                        n_jobs=num_cpu_cores,
                        save_test_strategies=save_test_strategies,
                        save_test_strategies_path=save_test_strategies_path,
+                       epochs=epochs,
+                       batch_size=batch_size,
                        f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
                                  'n_nodes': n_nodes, 'eval_function': eval_function,
                                  'n_simulations': n_simulations, 'parallel': parallel,

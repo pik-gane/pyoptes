@@ -76,7 +76,7 @@ class NeuralProcess(nn.Module):
         # Return parameters of distribution
         return self.r_to_mu_sigma(r)
 
-    def forward(self, x_context, y_context, x_target, y_target=None):
+    def forward(self, x_context, y_context, x_target, y_target=None, z_sample_predict=None):
         """
         Given context pairs (x_context, y_context) and target points x_target,
         returns a distribution over target points y_target.
@@ -102,10 +102,6 @@ class NeuralProcess(nn.Module):
         Process Objectives" where context is a subset of target points. This was
         shown to work best empirically.
         """
-        # Infer quantities from tensor dimensions
-        batch_size, num_context, x_dim = x_context.size()
-        _, num_target, _ = x_target.size()
-        _, _, y_dim = y_context.size()
 
         if self.training:
             # Encode target and context (context needs to be encoded to
@@ -122,13 +118,9 @@ class NeuralProcess(nn.Module):
 
             return p_y_pred, q_target, q_context
         else:
-            # At testing time, encode only context
-            mu_context, sigma_context = self.xy_to_mu_sigma(x_context, y_context)
-            # Sample from distribution based on context
-            q_context = Normal(mu_context, sigma_context)
-            z_sample = q_context.rsample()
+
             # Predict target points based on context
-            y_pred_mu, y_pred_sigma = self.xz_to_y(x_target, z_sample)
+            y_pred_mu, y_pred_sigma = self.xz_to_y(x_target, z_sample_predict)
             p_y_pred = Normal(y_pred_mu, y_pred_sigma)
 
             return p_y_pred
