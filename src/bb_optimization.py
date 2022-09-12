@@ -417,11 +417,12 @@ if __name__ == '__main__':
                                                                                            list_stderr_history,
                                                                                            n_runs=args.n_runs)
 
+    optimizer = args.optimizer+'+np' if args.use_neural_process else args.optimizer
     plot_optimizer_history(average_best_solution_history,
                            average_stderr_history, # TODO computation of stderr is wrong, check in spreadsheet
                            average_baseline, average_baseline_stderr,
                            args.n_nodes, args.sentinels,
-                           path_experiment, args.optimizer,
+                           path_experiment, optimizer,
                            name='_average_plot')
 
     output = f'Results averaged over {args.n_runs} optimizer runs' \
