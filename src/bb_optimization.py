@@ -18,16 +18,12 @@ from time import time
 import datetime
 
 
-# TODO add this
-def share_detected(unused_n_infected_animals):
-    return model.detection_was_by_test.true
-
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("optimizer", choices=['cma', 'gpgo'],
-                        help="Choose the optimizer to run on the SI-model. Choose between CMA-ES and GPGO")
+    parser.add_argument("optimizer", choices=['cma', 'gpgo', 'np'],
+                        help="Choose the optimizer to run on the SI-model. Choose between CMA-ES, Gaussian Process (GP),"
+                             " and Neural Process (NP).")
     parser.add_argument("name_experiment",
                         help="The name of the folder where the results of the optimizer run are saved to.")
 
@@ -59,8 +55,6 @@ if __name__ == '__main__':
     parser.add_argument('--prior_only_baseline', type=bool, default=False,
                         help='GPGO optimizer parameter. Sets whether to use only the baseline strategy in the prior.'
                              'If true the prior consists of only one item.')
-    parser.add_argument('--use_neural_process', type=bool, default=False,
-                        help='GPGO optimizer parameter. Sets whether to use neural processes as the surrogate function.')
     parser.add_argument('--epochs', type=int, default=100,
                         help='GPGO optimizer parameter. Sets the number of epochs of the neural process.')
     parser.add_argument('--batch_size', type=int, default=10,
@@ -185,12 +179,11 @@ if __name__ == '__main__':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
         experiment_params['optimizer_hyperparameters']['popsize'] = args.popsize
         experiment_params['optimizer_hyperparameters']['cma_initial_population'] = args.cma_initial_population
-    elif args.optimizer == 'gpgo':
+    elif args.optimizer == 'gpgo' or args.optimizer == 'np':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
         experiment_params['optimizer_hyperparameters']['prior_mixed_strategies'] = args.prior_mixed_strategies
         experiment_params['optimizer_hyperparameters']['prior_only_baseline'] = args.prior_only_baseline
-        experiment_params['optimizer_hyperparameters']['use_neural_process'] = args.use_neural_process
         experiment_params['optimizer_hyperparameters']['epochs'] = args.epochs
         experiment_params['optimizer_hyperparameters']['batch_size'] = args.batch_size
     else:
@@ -319,14 +312,14 @@ if __name__ == '__main__':
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
                 bo_cma(**optimizer_kwargs)
 
-        elif args.optimizer == 'gpgo':
+        elif args.optimizer == 'gpgo' or args.optimizer == 'np':
 
             optimizer_kwargs['prior'] = prior
             optimizer_kwargs['prior_y'] = list_prior_tf
             optimizer_kwargs['prior_stderr'] = list_prior_stderr
             optimizer_kwargs['acquisition_function'] = acquisition_function
             optimizer_kwargs['use_prior'] = args.use_prior
-            optimizer_kwargs['use_neural_process'] = args.use_neural_process
+            optimizer_kwargs['use_neural_process'] = True if args.optimizer == 'np' else False
             optimizer_kwargs['epochs'] = args.epochs
             optimizer_kwargs['batch_size'] = args.batch_size
 
@@ -417,7 +410,6 @@ if __name__ == '__main__':
                                                                                            list_stderr_history,
                                                                                            n_runs=args.n_runs)
 
-    optimizer = args.optimizer+'+np' if args.use_neural_process else args.optimizer
     plot_optimizer_history(average_best_solution_history,
                            average_stderr_history, # TODO computation of stderr is wrong, check in spreadsheet
                            average_baseline, average_baseline_stderr,

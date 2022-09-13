@@ -228,10 +228,8 @@ class NP:
 
     def trainNP(self, epochs, batch_size, new_elem_x=None, new_elem_y=None,):
 
+        # train the neural process on the available data. Either the initial data or the new data
         self.NP.training = True
-
-        # print('x size', self.x.size())
-        # print('y size', self.y.size())
 
         # TODO there possibly needs to be a -1
         # add one new budget and its corresponding function evaluation to the GP
@@ -252,6 +250,7 @@ class NP:
                                           print_freq=200)
         np_trainer.train(self.dataloader, epochs)
 
+        # use the first element in the data as the context for the next prediction
         for batch in self.dataloader:
             break
         x, y = batch
@@ -259,7 +258,7 @@ class NP:
                                                           self.num_context,
                                                           self.num_target)
 
-        # At testing time, encode only context
+        # whenever the neural process is trained (or updated), z is updated as well
         mu_context, sigma_context = self.NP.xy_to_mu_sigma(x_context, y_context)
         # Sample from distribution based on context
         q_context = Normal(mu_context, sigma_context)
@@ -303,5 +302,6 @@ class NP:
 
             self._optimizeAcq()
             self.updateNP()
+
             time_optim = time.time() - self.time_start
             self.time_for_optimization.append(time_optim/60)
