@@ -40,7 +40,7 @@ class NP:
 
         """
         # TODO should come from outside
-        x_dim = len(f_kwargs['node_indices'])  # dimension of the objective function, equal to the number of sentinels
+        self.x_dim = len(f_kwargs['node_indices'])  # dimension of the objective function, equal to the number of sentinels
         # print('x_dim: ', x_dim)
         y_dim = 1
         r_dim = 50  # Dimension of representation of context points
@@ -50,7 +50,7 @@ class NP:
         self.num_context = 3  # num_context + num_target has to be lower than num_samples
         self.num_target = 3
 
-        self.NP = NeuralProcess(x_dim, y_dim, r_dim, z_dim, h_dim)
+        self.NP = NeuralProcess(self.x_dim, y_dim, r_dim, z_dim, h_dim)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.optimizer = torch.optim.Adam(self.NP.parameters(), lr=3e-4)
 
@@ -232,7 +232,7 @@ class NP:
         # add one new budget and its corresponding function evaluation to the GP
         if new_elem_x is not None:
             # reshape data to fit the neural process
-            new_elem_x = torch.tensor(new_elem_x).reshape((1, 1, 12)).float()
+            new_elem_x = torch.tensor(new_elem_x).reshape((1, 1, self.x_dim)).float()
             new_elem_y = torch.tensor(new_elem_y).reshape((1, 1, 1)).float()
             # TODO something is wrong with the shapes and cat here
             # print('np shape new_elem_x: ', np.shape(new_elem_x), type(new_elem_x), new_elem_x)
