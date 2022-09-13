@@ -61,6 +61,10 @@ if __name__ == '__main__':
                              'If true the prior consists of only one item.')
     parser.add_argument('--use_neural_process', type=bool, default=False,
                         help='GPGO optimizer parameter. Sets whether to use neural processes as the surrogate function.')
+    parser.add_argument('--epochs', type=int, default=100,
+                        help='GPGO optimizer parameter. Sets the number of epochs of the neural process.')
+    parser.add_argument('--batch_size', type=int, default=10,
+                        help='GPGO optimizer parameter. Sets the batch size of the neural process.')
 
     parser.add_argument('--popsize', type=int, default=9,
                         help='CMA-ES optimizer parameter. Defines the size of the population each iteration.'
@@ -187,6 +191,8 @@ if __name__ == '__main__':
         experiment_params['optimizer_hyperparameters']['prior_mixed_strategies'] = args.prior_mixed_strategies
         experiment_params['optimizer_hyperparameters']['prior_only_baseline'] = args.prior_only_baseline
         experiment_params['optimizer_hyperparameters']['use_neural_process'] = args.use_neural_process
+        experiment_params['optimizer_hyperparameters']['epochs'] = args.epochs
+        experiment_params['optimizer_hyperparameters']['batch_size'] = args.batch_size
     else:
         raise ValueError('Optimizer not supported')
 
@@ -321,6 +327,8 @@ if __name__ == '__main__':
             optimizer_kwargs['acquisition_function'] = acquisition_function
             optimizer_kwargs['use_prior'] = args.use_prior
             optimizer_kwargs['use_neural_process'] = args.use_neural_process
+            optimizer_kwargs['epochs'] = args.epochs
+            optimizer_kwargs['batch_size'] = args.batch_size
 
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization, = \
                 bo_pyGPGO(**optimizer_kwargs)
