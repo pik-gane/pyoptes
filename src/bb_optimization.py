@@ -85,6 +85,7 @@ if __name__ == '__main__':
                         help='CMA-ES optimizer parameter. Sets which test strategy in the prior is used as the initial '
                              'population for cma.')
 
+    # ------------------ SI-simulation hyperparameters ------------------
     parser.add_argument("--statistic", choices=['mean', 'rms', '95perc'], default='rms',
                         help="Choose the statistic to be used by the target function. "
                              "Choose between mean, rms (root-mean-square) or 95perc (95th-percentile).")
@@ -114,6 +115,7 @@ if __name__ == '__main__':
                              'parallelization. If more cpus are chosen than available, the max available are selected.'
                              '-1 selects all available cpus. Default are 32 cpus.')
 
+    # ------------------ utility hyperparameters ------------------
     parser.add_argument('--mode_choose_sentinels', choices=['degree', 'capacity', 'transmission'], default='degree',
                         help='Sets the mode of how sentinels are chosen. ')
     parser.add_argument('--save_test_strategies', type=bool, default='',
