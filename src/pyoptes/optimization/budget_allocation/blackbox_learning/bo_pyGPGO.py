@@ -14,6 +14,12 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
               max_iterations, n_simulations, node_indices, n_nodes, eval_function,
               total_budget, parallel, num_cpu_cores, acquisition_function, statistic,
               epochs, batch_size,
+              y_dim=1,
+              r_dim=50,  # Dimension of representation of context points
+              z_dim=50,  # Dimension of sampled latent variable
+              h_dim=50,  # Dimension of hidden layers in encoder and decoder
+              num_context=3,  # num_context + num_target has to be lower than num_samples
+              num_target=3,
               use_neural_process=False, use_prior=True,
               save_test_strategies=False, save_test_strategies_path=None):
     """
@@ -82,6 +88,12 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
                        save_test_strategies_path=save_test_strategies_path,
                        epochs=epochs,
                        batch_size=batch_size,
+                       y_dim=y_dim,
+                       r_dim=r_dim,
+                       z_dim=z_dim,
+                       h_dim=h_dim,
+                       num_context=num_context,
+                       num_target=num_target,
                        f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
                                  'n_nodes': n_nodes, 'eval_function': eval_function,
                                  'n_simulations': n_simulations, 'parallel': parallel,

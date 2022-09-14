@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_iterations", type=int, default=50,
                         help="Optimizer parameter. The maximum number of iterations the algorithms run.")
 
+    # ------------------ GPGO hyperparameters ------------------
     parser.add_argument('--acquisition_function', default='EI',
                         choices=['EI', 'PI', 'UCB', 'Entropy', 'tEI'],
                         help='GPGO optimizer parameter. Defines the acquisition function that is used by GPGO.')
@@ -55,11 +56,23 @@ if __name__ == '__main__':
     parser.add_argument('--prior_only_baseline', type=bool, default=False,
                         help='GPGO optimizer parameter. Sets whether to use only the baseline strategy in the prior.'
                              'If true the prior consists of only one item.')
+
+    # ------------------ Neural Process hyperparameters ------------------
+    parser.add_argument('--y_dim', type=int, default=1, help='')
+    parser.add_argument('--r_dim', type=int, default=50, help='')
+    parser.add_argument('--z_dim', type=int, default=50, help='')
+    parser.add_argument('--h_dim', type=int, default=50, help='')
+    parser.add_argument('--num_target', type=int, default=3,
+                        help='The context and target size together must not exceed the number of the budgets in the prior.')
+    parser.add_argument('--num_context', type=int, default=3,
+                        help='The context and target size together must not exceed the number of the budgets in the prior.')
+
     parser.add_argument('--epochs', type=int, default=100,
                         help='GPGO optimizer parameter. Sets the number of epochs of the neural process.')
     parser.add_argument('--batch_size', type=int, default=10,
                         help='GPGO optimizer parameter. Sets the batch size of the neural process.')
 
+    # ------------------ CMA-ES hyperparameters ------------------
     parser.add_argument('--popsize', type=int, default=9,
                         help='CMA-ES optimizer parameter. Defines the size of the population each iteration.'
                              'CMA default is "4+int(3*log(n_nodes))" '
@@ -179,13 +192,24 @@ if __name__ == '__main__':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
         experiment_params['optimizer_hyperparameters']['popsize'] = args.popsize
         experiment_params['optimizer_hyperparameters']['cma_initial_population'] = args.cma_initial_population
-    elif args.optimizer == 'gpgo' or args.optimizer == 'np':
+    elif args.optimizer == 'gpgo':
+        experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
+        experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
+        experiment_params['optimizer_hyperparameters']['prior_mixed_strategies'] = args.prior_mixed_strategies
+        experiment_params['optimizer_hyperparameters']['prior_only_baseline'] = args.prior_only_baseline
+    elif args.optimizer == 'np':
         experiment_params['optimizer_hyperparameters']['use_prior'] = args.use_prior
         experiment_params['optimizer_hyperparameters']['acquisition_function'] = acquisition_function
         experiment_params['optimizer_hyperparameters']['prior_mixed_strategies'] = args.prior_mixed_strategies
         experiment_params['optimizer_hyperparameters']['prior_only_baseline'] = args.prior_only_baseline
         experiment_params['optimizer_hyperparameters']['epochs'] = args.epochs
         experiment_params['optimizer_hyperparameters']['batch_size'] = args.batch_size
+        experiment_params['optimizer_hyperparameters']['y_dim'] = args.y_dim
+        experiment_params['optimizer_hyperparameters']['r_dim'] = args.r_dim
+        experiment_params['optimizer_hyperparameters']['z_dim'] = args.z_dim
+        experiment_params['optimizer_hyperparameters']['h_dim'] = args.h_dim
+        experiment_params['optimizer_hyperparameters']['num_context'] = args.num_context
+        experiment_params['optimizer_hyperparameters']['num_target'] = args.num_target
     else:
         raise ValueError('Optimizer not supported')
 
@@ -312,7 +336,23 @@ if __name__ == '__main__':
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
                 bo_cma(**optimizer_kwargs)
 
-        elif args.optimizer == 'gpgo' or args.optimizer == 'np':
+        elif args.optimizer == 'gpgo':
+
+            optimizer_kwargs['prior'] = prior
+            optimizer_kwargs['prior_y'] = list_prior_tf
+            optimizer_kwargs['prior_stderr'] = list_prior_stderr
+            optimizer_kwargs['acquisition_function'] = acquisition_function
+            optimizer_kwargs['use_prior'] = args.use_prior
+
+            best_test_strategy, best_solution_history, stderr_history, time_for_optimization, = \
+                bo_pyGPGO(**optimizer_kwargs)
+
+        elif args.optimizer == 'np':
+
+            # # check validity of neural process hyperparameters
+            if args.num_context + args.num_target > len(prior):
+                raise ValueError('The context and target size together must not exceed the number of the budgets in the prior.'
+                                 f'Got {args.num_context} + {args.num_target} > {len(prior)}')
 
             optimizer_kwargs['prior'] = prior
             optimizer_kwargs['prior_y'] = list_prior_tf
@@ -322,6 +362,12 @@ if __name__ == '__main__':
             optimizer_kwargs['use_neural_process'] = True if args.optimizer == 'np' else False
             optimizer_kwargs['epochs'] = args.epochs
             optimizer_kwargs['batch_size'] = args.batch_size
+            optimizer_kwargs['y_dim'] = args.y_dim
+            optimizer_kwargs['r_dim'] = args.r_dim
+            optimizer_kwargs['z_dim'] = args.z_dim
+            optimizer_kwargs['h_dim'] = args.h_dim
+            optimizer_kwargs['num_context'] = args.num_context
+            optimizer_kwargs['num_target'] = args.num_target
 
             best_test_strategy, best_solution_history, stderr_history, time_for_optimization, = \
                 bo_pyGPGO(**optimizer_kwargs)

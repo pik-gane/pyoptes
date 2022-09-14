@@ -25,6 +25,12 @@ class NP:
     def __init__(self, acquisition, f, parameter_dict, prior_x, prior_y, prior_stderr,
                  epochs, batch_size,
                  n_jobs=15, f_kwargs={},
+                 y_dim=1,
+                 r_dim=50,  # Dimension of representation of context points
+                 z_dim=50,  # Dimension of sampled latent variable
+                 h_dim=50,  # Dimension of hidden layers in encoder and decoder
+                 num_context=3,  # num_context + num_target has to be lower than num_samples
+                 num_target=3,
                  save_test_strategies=False, save_test_strategies_path=None,):
         """
         Bayesian Optimization class.
@@ -41,20 +47,22 @@ class NP:
             Parallel threads to use during acquisition optimization.
 
         """
-        # TODO should come from outside
-        self.x_dim = len(f_kwargs['node_indices'])  # dimension of the objective function, equal to the number of sentinels
-        # print('x_dim: ', x_dim)
-        y_dim = 1
-        r_dim = 50  # Dimension of representation of context points
-        z_dim = 50  # Dimension of sampled latent variable
-        h_dim = 50  # Dimension of hidden layers in encoder and decoder
 
-        self.num_context = 3  # num_context + num_target has to be lower than num_samples
-        self.num_target = 3
+        # neural process hyper-parameters
+        # dimension of the objective function, equal to the number of sentinels
+        self.x_dim = len(f_kwargs['node_indices'])
+
+        self.num_context = num_context
+        self.num_target = num_target
 
         self.NP = NeuralProcess(self.x_dim, y_dim, r_dim, z_dim, h_dim)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.optimizer = torch.optim.Adam(self.NP.parameters(), lr=3e-4)
+
+        self.epochs = epochs
+        self.batch_size = batch_size
+
+        # ----
 
         self.prior_x = prior_x
         self.prior_y = -1*np.array(prior_y) # TODO why is this necessary?
@@ -62,9 +70,6 @@ class NP:
 
         self.x = torch.tensor(np.array(prior_x)).unsqueeze(0).float()
         self.y = torch.tensor(np.array(prior_y)).unsqueeze(1).unsqueeze(0).float()
-
-        self.epochs = epochs
-        self.batch_size = batch_size
 
         # -----------------------------------------------------------------------------------------------------------
 
@@ -85,6 +90,8 @@ class NP:
 
         # history contains the best function evaluations in every iteration
         self.history = []
+        # dictionary containing the stderr of each objective function call (keys are function values)
+        self.stderr = {}
         # contains the function evaluations (for the proposed budget) in every iteration, not necessarily the best value
         self.surrogate_y = [] # TODO maybe rename ?
         self.current_best_budget = {}
@@ -93,8 +100,7 @@ class NP:
         self.time_for_optimization = []
         self.time_acqui_predict = []
 
-        self.stderr = {}
-
+        # keyword arguments for the objective function
         self.f_kwargs = f_kwargs
 
         # flags for saving test strategies
@@ -208,8 +214,6 @@ class NP:
 
         # f_new is always the newest measurement for the objective function, not necessarily the best one
         f_new, stderr_f_new = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
-
-        # print('np shape f_new: ', np.shape(f_new))
 
         self.trainNP(epochs=self.epochs, batch_size=self.batch_size,
                      new_elem_x=self.current_best_measurement, new_elem_y=f_new)
