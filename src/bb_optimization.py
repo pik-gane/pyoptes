@@ -22,8 +22,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("optimizer", choices=['cma', 'gpgo', 'np'],
-                        help="Choose the optimizer to run on the SI-model. Choose between CMA-ES, Gaussian Process (GP),"
-                             " and Neural Process (NP).")
+                        help="Choose the optimizer to run on the SI-model. Choose between CMA-ES, "
+                             "Gaussian Process (GP) and Neural Process (NP).")
     parser.add_argument("name_experiment",
                         help="The name of the folder where the results of the optimizer run are saved to.")
 
@@ -341,14 +341,10 @@ if __name__ == '__main__':
                                    args.n_nodes, args.sentinels,
                                    path_sub_experiment, args.optimizer)
 
-        best_test_strategy = total_budget * softmax(best_test_strategy)
-        best_test_strategy = map_low_dim_x_to_high_dim(best_test_strategy, args.n_nodes, node_indices)
-
-        eval_best_test_strategy, best_test_strategy_stderr = f.evaluate(best_test_strategy,
-                                                                        n_simulations=args.n_simulations,
-                                                                        parallel=args.parallel,
-                                                                        num_cpu_cores=args.num_cpu_cores,
-                                                                        statistic=statistic)
+        # get the best strategy from the history of the optimizer
+        index = np.argmin(best_solution_history)
+        eval_best_test_strategy = best_solution_history[index]
+        best_test_strategy_stderr = stderr_history[index]
 
         ratio_otf = 100 - (eval_best_test_strategy / baseline_mean)
 
@@ -390,7 +386,7 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
     # postprocessing of all runs
     # ------------------------------------------------------------
-
+    # compute the averages over all optimization runs of the prior, the optimizer, the baseline and their standard error
     average_prior_tf, average_prior_stderr = compute_average_otf_and_stderr(list_all_prior_tf,
                                                                             list_all_prior_stderr,
                                                                             n_runs=args.n_runs)
@@ -414,7 +410,7 @@ if __name__ == '__main__':
                            average_stderr_history, # TODO computation of stderr is wrong, check in spreadsheet
                            average_baseline, average_baseline_stderr,
                            args.n_nodes, args.sentinels,
-                           path_experiment, optimizer,
+                           path_experiment, args.optimizer,
                            name='_average_plot')
 
     output = f'Results averaged over {args.n_runs} optimizer runs' \
