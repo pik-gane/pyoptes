@@ -40,4 +40,4 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 2
   --num_target 3 \
   --num_context 3 \
   --batch_size 10 \
-  --num_epochs 100
+  -epochs 100
