@@ -25,7 +25,6 @@ class NP:
     def __init__(self, acquisition, f, parameter_dict, prior_x, prior_y, prior_stderr,
                  epochs, batch_size,
                  n_jobs=15, f_kwargs={},
-                 y_dim=1,
                  r_dim=50,  # Dimension of representation of context points
                  z_dim=50,  # Dimension of sampled latent variable
                  h_dim=50,  # Dimension of hidden layers in encoder and decoder
@@ -55,7 +54,7 @@ class NP:
         self.num_context = num_context
         self.num_target = num_target
 
-        self.NP = NeuralProcess(self.x_dim, y_dim, r_dim, z_dim, h_dim)
+        self.NP = NeuralProcess(self.x_dim, r_dim=r_dim, z_dim=z_dim, h_dim=h_dim, y_dim=1)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.optimizer = torch.optim.Adam(self.NP.parameters(), lr=3e-4)
 
@@ -96,9 +95,9 @@ class NP:
         self.surrogate_y = [] # TODO maybe rename ?
         self.current_best_budget = {}
 
-        self.time_start = time.time()
         self.time_for_optimization = []
-        self.time_acqui_predict = []
+        self.time_acquisition_optimization = []
+        self.time_update_surrogate = []
 
         # keyword arguments for the objective function
         self.f_kwargs = f_kwargs
@@ -162,6 +161,8 @@ class NP:
             Number of starting points for the optimization procedure. Default is 100.
 
         """
+        time_acqui = time.time()
+
         start_points_arr = np.array([self._sampleParam() for i in range(n_start)])
         if self.save_test_strategies:
             np.save(os.path.join(self.save_test_strategies_path, f'test_strategy_{self.n}'), start_points_arr)
@@ -188,6 +189,10 @@ class NP:
         # print(np.shape(f_best))
         self.current_best_measurement = x_best[np.argmin(f_best)]
 
+        # save time for acquisition function optimization
+        time_acqui = time.time() - time_acqui
+        self.time_acquisition_optimization.append(time_acqui/60)
+
     def getResult(self):
         """
         Prints best result in the Bayesian Optimization procedure.
@@ -208,6 +213,8 @@ class NP:
         """
         Updates the internal model with the next acquired point and its evaluation.
         """
+        time_surrogate = time.time()
+
         kw = {param: self.current_best_measurement[i]
               for i, param in enumerate(self.parameter_key)}
         param = np.array(list(kw.values()))
@@ -229,6 +236,10 @@ class NP:
         self.tau = np.max(self.surrogate_y) # self.GP "saves" the y from the objective f,
         self.tau = np.round(self.tau, decimals=8)
         self.history.append(self.tau)
+
+        # save time for surrogate model update
+        time_surrogate = time.time() - time_surrogate
+        self.time_update_surrogate.append(time_surrogate/60)
 
     def trainNP(self, epochs, batch_size, new_elem_x=None, new_elem_y=None,):
 
@@ -301,11 +312,12 @@ class NP:
         self.history.append(self.tau)
         self.stderr[self.tau] = tau_stderr
 
+        time_start = time.time()
         # print(f'Running GPGO for {max_iter} iterations.')
         for _ in tqdm(range(max_iter), leave=False):
 
             self._optimizeAcq()
             self.updateNP()
 
-            time_optim = time.time() - self.time_start
+            time_optim = time.time() - time_start
             self.time_for_optimization.append(time_optim/60)

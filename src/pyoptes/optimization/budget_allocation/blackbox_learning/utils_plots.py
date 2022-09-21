@@ -1,12 +1,15 @@
 import os
 import numpy as np
 import pylab as plt
-from time import time
 
 
-def plot_time_for_optimization(time_for_optimization, n_nodes, sentinels, path_experiment, optimizer):
+def plot_time_for_optimization(time_for_optimization, n_nodes, sentinels, path_experiment, optimizer,
+                               file_name='time_for_optimization.png',
+                               title='Time for objective function evaluation'):
     """
 
+    @param title:
+    @param file_name:
     @param time_for_optimization:
     @param n_nodes:
     @param sentinels:
@@ -15,11 +18,11 @@ def plot_time_for_optimization(time_for_optimization, n_nodes, sentinels, path_e
     """
     plt.clf()
     plt.plot(range(len(time_for_optimization)), time_for_optimization)
-    plt.title(f'Time for objective function evaluation with {optimizer}, {n_nodes} nodes, {sentinels} sentinels')
-    plt.xlabel('Iteration')
+    plt.title(title)
+    plt.xlabel('Optimizer iteration')
     plt.ylabel('Time in minutes')
 
-    plt.savefig(os.path.join(path_experiment, 'time_for_optimization.png'))
+    plt.savefig(os.path.join(path_experiment, file_name))
     plt.clf()
 
 

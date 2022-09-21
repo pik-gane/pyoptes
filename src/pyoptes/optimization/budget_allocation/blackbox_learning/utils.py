@@ -67,9 +67,14 @@ def save_hyperparameters(hyperparameters, base_path):
 def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
                   list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
                   list_all_prior_tf, list_all_prior_stderr,
-                  path_experiment):
+                  list_time_acquisition_optimization=None, list_time_update_surrogate=None,
+                  path_experiment=''):
     """
     Saves the raw data of the optimization process.
+    @param list_time_update_surrogate:
+    @param list_time_acquisition_optimization:
+    @param list_all_prior_stderr:
+    @param list_all_prior_tf:
     @param list_best_otf:
     @param list_best_otf_stderr:
     @param list_baseline_otf:
@@ -94,6 +99,8 @@ def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_b
     np.save(os.path.join(path_experiment, 'list_time_for_optimization'), np.array(list_time_for_optimization))
     np.save(os.path.join(path_experiment, 'list_all_prior_tf'), list_all_prior_tf)
     np.save(os.path.join(path_experiment, 'list_all_prior_stderr'), list_all_prior_stderr)
+    np.save(os.path.join(path_experiment, 'list_time_acquisition_optimization'), list_time_acquisition_optimization)
+    np.save(os.path.join(path_experiment, 'list_time_update_surrogate'), list_time_update_surrogate)
 
 
 def load_raw_data(path_experiment):

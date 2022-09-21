@@ -2,7 +2,7 @@ import os.path
 
 from pyoptes.optimization.budget_allocation import target_function as f
 
-from pyoptes import bo_cma, bo_pyGPGO
+from pyoptes import bo_cma, bo_pyGPGO, bo_neural_process
 
 from pyoptes import choose_sentinels, baseline
 from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
@@ -58,7 +58,6 @@ if __name__ == '__main__':
                              'If true the prior consists of only one item.')
 
     # ------------------ Neural Process hyperparameters ------------------
-    parser.add_argument('--y_dim', type=int, default=1, help='')
     parser.add_argument('--r_dim', type=int, default=50, help='')
     parser.add_argument('--z_dim', type=int, default=50, help='')
     parser.add_argument('--h_dim', type=int, default=50, help='')
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_context', type=int, default=3,
                         help='The context and target size together must not exceed the number of the budgets in the prior.')
 
-    parser.add_argument('--epochs', type=int, default=100,
+    parser.add_argument('--epochs', type=int, default=30,
                         help='GPGO optimizer parameter. Sets the number of epochs of the neural process.')
     parser.add_argument('--batch_size', type=int, default=10,
                         help='GPGO optimizer parameter. Sets the batch size of the neural process.')
@@ -89,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument("--statistic", choices=['mean', 'rms', '95perc'], default='rms',
                         help="Choose the statistic to be used by the target function. "
                              "Choose between mean, rms (root-mean-square) or 95perc (95th-percentile).")
-    parser.add_argument("--n_simulations", type=int, default=10000,
+    parser.add_argument("--n_simulations", type=int, default=1000,
                         help="Si-simulation parameter. Sets the number of runs the for the SI-model. "
                              "Higher values of n_simulations lower the variance of the output of the simulation. "
                              "Default value is 1000.")
@@ -98,6 +97,13 @@ if __name__ == '__main__':
                              ' Either Waxman,Synthetic or Barabasi-Albert (ba) can be used. Default is Synthetic.')
     parser.add_argument('--scale_total_budget', type=int, default=1, choices=[1, 4, 12],
                         help="SI-simulation parameter. Scales the total budget for SI-model. Default is 1.")
+    parser.add_argument('--parallel', type=bool, default=True,
+                        help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
+                             'or sequentially. Default is set to parallel computation.')
+    parser.add_argument("--num_cpu_cores", type=int, default=32,
+                        help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
+                             'parallelization. If more cpus are chosen than available, the max available are selected.'
+                             '-1 selects all available cpus. Default are 32 cpus.')
 
     parser.add_argument('--delta_t_symptoms', type=int, default=60,
                         help='Si-simulation parameter.. Sets the time (in days) after which an infection is detected'
@@ -107,13 +113,6 @@ if __name__ == '__main__':
                              'infects other animals. Default is 0.5.')
     parser.add_argument('--expected_time_of_first_infection', type=int, default=30,
                         help='Si-simulation parameter. The expected time (in days) after which the first infection occurs. ')
-    parser.add_argument('--parallel', type=bool, default=True,
-                        help='Si-simulation parameter. Sets whether multiple simulations run are to be done in parallel'
-                             'or sequentially. Default is set to parallel computation.')
-    parser.add_argument("--num_cpu_cores", type=int, default=32,
-                        help='Si-simulation parameter. Defines the number of cpus to be used for the simulation '
-                             'parallelization. If more cpus are chosen than available, the max available are selected.'
-                             '-1 selects all available cpus. Default are 32 cpus.')
 
     # ------------------ utility hyperparameters ------------------
     parser.add_argument('--mode_choose_sentinels', choices=['degree', 'capacity', 'transmission'], default='degree',
@@ -206,7 +205,6 @@ if __name__ == '__main__':
         experiment_params['optimizer_hyperparameters']['prior_only_baseline'] = args.prior_only_baseline
         experiment_params['optimizer_hyperparameters']['epochs'] = args.epochs
         experiment_params['optimizer_hyperparameters']['batch_size'] = args.batch_size
-        experiment_params['optimizer_hyperparameters']['y_dim'] = args.y_dim
         experiment_params['optimizer_hyperparameters']['r_dim'] = args.r_dim
         experiment_params['optimizer_hyperparameters']['z_dim'] = args.z_dim
         experiment_params['optimizer_hyperparameters']['h_dim'] = args.h_dim
@@ -237,8 +235,10 @@ if __name__ == '__main__':
     list_all_prior_stderr = []
 
     list_time_for_optimization = []
+    list_time_acquisition_optimization = []
+    list_time_update_surrogate = []
 
-    time_start = time()
+    time_start = time() # start reference for all n optimizer runs
     for n in range(args.n_runs):
         print(f'Run {n + 1} of {args.n_runs},'
               f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
@@ -325,7 +325,7 @@ if __name__ == '__main__':
                             'num_cpu_cores': args.num_cpu_cores, 'save_test_strategies': args.save_test_strategies,
                             'save_test_strategies_path': save_test_strategies_path}
 
-        t0 = time()
+        t0 = time() # time for an individual optimization run
         if args.optimizer == 'cma':
 
             # CMA-ES can take only an initial population of one. For this the uniform baseline is used
@@ -335,7 +335,10 @@ if __name__ == '__main__':
             optimizer_kwargs['sigma'] = cma_sigma
             optimizer_kwargs['popsize'] = args.popsize
 
-            best_test_strategy, best_solution_history, stderr_history, time_for_optimization = \
+            # optimizers return the best test strategy, a history of the best solutions during a run (with stderror) and
+            # the time it took to run the optimizer
+            best_test_strategy, best_solution_history, stderr_history, \
+            time_for_optimization = \
                 bo_cma(**optimizer_kwargs)
 
         elif args.optimizer == 'gpgo':
@@ -346,7 +349,10 @@ if __name__ == '__main__':
             optimizer_kwargs['acquisition_function'] = acquisition_function
             optimizer_kwargs['use_prior'] = args.use_prior
 
-            best_test_strategy, best_solution_history, stderr_history, time_for_optimization, = \
+            # optimizers return the best test strategy, a history of the best solutions during a run (with stderror) and
+            # the time it took to run the optimizer
+            best_test_strategy, best_solution_history, stderr_history, \
+            time_for_optimization, time_acquisition_optimization, time_update_surrogate = \
                 bo_pyGPGO(**optimizer_kwargs)
 
         elif args.optimizer == 'np':
@@ -360,19 +366,19 @@ if __name__ == '__main__':
             optimizer_kwargs['prior_y'] = list_prior_tf
             optimizer_kwargs['prior_stderr'] = list_prior_stderr
             optimizer_kwargs['acquisition_function'] = acquisition_function
-            optimizer_kwargs['use_prior'] = args.use_prior
-            optimizer_kwargs['use_neural_process'] = True if args.optimizer == 'np' else False
             optimizer_kwargs['epochs'] = args.epochs
             optimizer_kwargs['batch_size'] = args.batch_size
-            optimizer_kwargs['y_dim'] = args.y_dim
             optimizer_kwargs['r_dim'] = args.r_dim
             optimizer_kwargs['z_dim'] = args.z_dim
             optimizer_kwargs['h_dim'] = args.h_dim
             optimizer_kwargs['num_context'] = args.num_context
             optimizer_kwargs['num_target'] = args.num_target
 
-            best_test_strategy, best_solution_history, stderr_history, time_for_optimization, = \
-                bo_pyGPGO(**optimizer_kwargs)
+            # optimizers return the best test strategy, a history of the best solutions during a run (with stderror) and
+            # the time it took to run the optimizer
+            best_test_strategy, best_solution_history, stderr_history,\
+            time_for_optimization, time_acquisition_optimization, time_update_surrogate = \
+                bo_neural_process(**optimizer_kwargs)
 
         else:
             raise ValueError('Optimizer not supported')
@@ -389,11 +395,24 @@ if __name__ == '__main__':
                                    args.n_nodes, args.sentinels,
                                    path_sub_experiment, args.optimizer)
 
+        if args.optimizer == 'gpgo' or args.optimizer == 'np':
+            plot_time_for_optimization(time_acquisition_optimization,
+                                       args.n_nodes, args.sentinels,
+                                       path_sub_experiment, args.optimizer,
+                                       file_name='time_for_acquisition_optimization.png',
+                                       title='Time for acquisition optimization')
+            plot_time_for_optimization(time_update_surrogate,
+                                       args.n_nodes, args.sentinels,
+                                       path_sub_experiment, args.optimizer,
+                                       file_name='time_for_surrogate_update.png',
+                                       title='Time for surrogate function update')
+
         # get the best strategy from the history of the optimizer
         index = np.argmin(best_solution_history)
         eval_best_test_strategy = best_solution_history[index]
         best_test_strategy_stderr = stderr_history[index]
 
+        # a ratio of less than 100% means that the optimizer did not find a strategy that is better than the baseline
         ratio_otf = 100 - (eval_best_test_strategy / baseline_mean)
 
         output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
@@ -422,14 +441,31 @@ if __name__ == '__main__':
         list_stderr_history.append(stderr_history)
 
         list_time_for_optimization.append(time_for_optimization)
+        # times for acquisition and surrogate update are only available for gpgo and np
+        if args.optimizer == 'gpgo' or args.optimizer == 'np':
+            list_time_acquisition_optimization.append(time_acquisition_optimization)
+            list_time_update_surrogate.append(time_update_surrogate)
 
     # TODO move the whole postprocessing step and saving of results into separate step to save memory
 
     # save the raw data of the optimization runs
-    save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
-                  list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
-                  list_all_prior_tf, list_all_prior_stderr,
-                  path_experiment=path_experiment)
+    kwargs_save_raw_data = {'list_best_otf': list_best_otf,
+                            'list_best_otf_stderr': list_best_otf_stderr,
+                            'list_baseline_otf': list_baseline_otf,
+                            'list_baseline_otf_stderr': list_baseline_otf_stderr,
+                            'list_ratio_otf': list_ratio_otf,
+                            'list_best_solution_history': list_best_solution_history,
+                            'list_stderr_history': list_stderr_history,
+                            'list_time_for_optimization': list_time_for_optimization,
+                            'list_all_prior_tf': list_all_prior_tf,
+                            'list_all_prior_stderr': list_all_prior_stderr,
+                            'path_experiment': path_experiment}
+    # times for acquisition and surrogate update are only available for gpgo and np
+    if args.optimizer == 'gpgo' or args.optimizer == 'np':
+        kwargs_save_raw_data['list_time_acquisition_optimization'] = list_time_acquisition_optimization
+        kwargs_save_raw_data['list_time_update_surrogate'] = list_time_update_surrogate
+    save_raw_data(**kwargs_save_raw_data)
+
     print(f'Optimization end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
     # ------------------------------------------------------------
     # postprocessing of all runs
@@ -472,3 +508,21 @@ if __name__ == '__main__':
                  path_experiment=path_experiment,
                  output=output)
     print(output)
+
+    # ---- misc ----
+    # plot the average time the optimization of the acquisition function takes
+    # as well as the update of the surrogate function
+    time_acquisition_optimization = np.mean(list_time_acquisition_optimization, axis=0)
+    time_update_surrogate = np.mean(list_time_update_surrogate, axis=0)
+
+    if args.optimizer == 'gpgo' or args.optimizer == 'np':
+        plot_time_for_optimization(time_acquisition_optimization,
+                                   args.n_nodes, args.sentinels,
+                                   path_experiment, args.optimizer,
+                                   file_name='time_for_acquisition_optimization.png',
+                                   title='Average time for acquisition optimization')
+        plot_time_for_optimization(time_update_surrogate,
+                                   args.n_nodes, args.sentinels,
+                                   path_experiment, args.optimizer,
+                                   file_name='time_for_surrogate_update.png',
+                                   title='Average time for surrogate function update')

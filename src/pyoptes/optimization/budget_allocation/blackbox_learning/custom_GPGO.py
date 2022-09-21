@@ -62,11 +62,9 @@ class GPGO:
 
         self.history = []
 
-        self.time_start = time.time()
         self.time_for_optimization = []
-        self.time_acqui_predict = []
-
-
+        self.time_acquisition_optimization = []
+        self.time_update_surrogate = []
 
         self.stderr = {}
 
@@ -158,6 +156,8 @@ class GPGO:
             Number of starting points for the optimization procedure. Default is 100.
 
         """
+        t_acqui = time.time()
+
         # TODO check which part here is the slowest
         # TODO maybe test different acqui-functions
         start_points_arr = np.array([self._sampleParam() for i in range(n_start)])
@@ -186,10 +186,16 @@ class GPGO:
 
         self.current_best_measurement = x_best[np.argmin(f_best)]
 
+        # save time for acquisition function optimization
+        t_acqui = time.time() - t_acqui
+        self.time_acquisition_optimization.append(t_acqui / 60)
+
     def updateGP(self):
         """
         Updates the internal model with the next acquired point and its evaluation.
         """
+        time_surrogate = time.time()
+
         kw = {param: self.current_best_measurement[i]
               for i, param in enumerate(self.parameter_key)}
         param = np.array(list(kw.values()))
@@ -206,6 +212,10 @@ class GPGO:
         self.tau = np.max(self.GP.y) # self.GP "saves" the y from the objective f,
         self.tau = np.round(self.tau, decimals=8)
         self.history.append(self.tau)
+
+        # save time for surrogate model update
+        time_surrogate = time.time() - time_surrogate
+        self.time_update_surrogate.append(time_surrogate / 60)
 
     def getResult(self):
         """
@@ -269,10 +279,12 @@ class GPGO:
                         prior_stderr=prior_stderr)
             print('GP fitted.')
 
+        time_start = time.time()
         # print(f'Running GPGO for {max_iter} iterations.')
         for _ in tqdm(range(max_iter), leave=False):
 
             self._optimizeAcq()
             self.updateGP()
-            time_optim = time.time() - self.time_start
+
+            time_optim = time.time() - time_start
             self.time_for_optimization.append(time_optim/60)
