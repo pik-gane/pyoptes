@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=short
+#SBATCH --qos=medium
 
 #SBATCH --job-name=loebkens_np_0_1_0
 
@@ -40,4 +40,4 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 2
   --num_context 3 \
   --batch_size 10 \
   --epochs 30 \
-  --max_iterations 400
+  --max_iterations 30
