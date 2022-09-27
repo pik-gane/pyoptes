@@ -4,13 +4,13 @@
 
 #SBATCH --qos=medium
 
-#SBATCH --job-name=loebkens_np_0_1_0_750_iterations
+#SBATCH --job-name=loebkens_np_2_1_0_750_iterations
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_np_0_1_0_750_iterations.out
+#SBATCH --output=logs/outputs_np_2_1_0_750_iterations.out
 
-#SBATCH --error=logs/errors_np_0_1_0_750_iterations.err
+#SBATCH --error=logs/errors_np_2_1_0_750_iterations.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -24,7 +24,7 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 20220921_np_mean_nodes_120_750_iterations \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 20220927_np_mean_nodes_120_750_iterations \
   --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ \
   --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
   --graph syn \
@@ -41,4 +41,4 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 2
   --batch_size 10 \
   --epochs 30 \
   --max_iterations 750 \
-  --n_runs 1
+  --n_runs 100
