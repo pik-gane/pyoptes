@@ -207,6 +207,27 @@ def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
     plt.clf()
 
 
+def plot_effect_of_different_sentinels(number_of_sentinels, m, stderr, n_nodes, path_experiment, title=''):
+    """
+
+    @param number_of_sentinels:
+    @param m:
+    @param stderr:
+    @param n_nodes:
+    @param path_experiment:
+    @param title:
+    """
+    plt.clf()
+    plt.bar(number_of_sentinels, m, label='prior')
+    plt.errorbar(number_of_sentinels, m, yerr=stderr, fmt='o', color="r")
+    plt.title(title)
+    plt.xlabel('Number of sentinels')
+    plt.ylabel('Infected animals')
+
+    plt.savefig(os.path.join(path_experiment, f'Sentinel_budgets_{n_nodes}_nodes.png'))
+    plt.clf()
+
+
 def plot_multiple_optimizer(path_experiment, data_optimizer, data_baseline, n_nodes, sentinels):
     """
     Plot any number of optimizers against any number baselines
