@@ -119,7 +119,23 @@ def load_raw_data(path_experiment):
     list_time_for_optimization = np.load(os.path.join(path_experiment, 'list_time_for_optimization.npy'))
     list_all_prior_tf = np.load(os.path.join(path_experiment, 'list_all_prior_tf.npy'))
     list_all_prior_stderr = np.load(os.path.join(path_experiment, 'list_all_prior_stderr.npy'), )
-    return {'list_best_otf': list_best_otf, 'list_best_otf_stderr': list_best_otf_stderr,
+
+    # TODO this is a temporary fix, because old experiments do not have these files
+    if os.path.isfile(os.path.join(path_experiment, 'list_time_acquisition_optimization.npy')) \
+            and os.path.isfile(os.path.join(path_experiment, 'list_time_update_surrogate.npy')):
+        list_time_acquisition_optimization = np.load(os.path.join(path_experiment, 'list_time_acquisition_optimization.npy'))
+        list_time_update_surrogate = np.load(os.path.join(path_experiment, 'list_time_update_surrogate.npy'))
+        return {'list_best_otf': list_best_otf, 'list_best_otf_stderr': list_best_otf_stderr,
+                'list_baseline_otf': list_baseline_otf, 'list_baseline_otf_stderr': list_baseline_otf_stderr,
+                'list_ratio_otf': list_ratio_otf,
+                'list_best_solution_history': list_best_solution_history, 'list_stderr_history': list_stderr_history,
+                'list_time_for_optimization': list_time_for_optimization,
+                'list_all_prior_tf': list_all_prior_tf, 'list_all_prior_stderr': list_all_prior_stderr,
+                'list_time_acquisition_optimization': list_time_acquisition_optimization,
+                'list_time_update_surrogate': list_time_update_surrogate}
+    else:
+
+        return {'list_best_otf': list_best_otf, 'list_best_otf_stderr': list_best_otf_stderr,
             'list_baseline_otf': list_baseline_otf, 'list_baseline_otf_stderr': list_baseline_otf_stderr,
             'list_ratio_otf': list_ratio_otf,
             'list_best_solution_history': list_best_solution_history, 'list_stderr_history': list_stderr_history,

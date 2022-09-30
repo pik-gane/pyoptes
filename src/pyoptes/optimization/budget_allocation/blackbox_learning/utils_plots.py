@@ -3,22 +3,25 @@ import numpy as np
 import pylab as plt
 
 
-def plot_time_for_optimization(time_for_optimization, n_nodes, sentinels, path_experiment, optimizer,
+def plot_time_for_optimization(time_for_optimization, path_experiment, optimizer,
                                file_name='time_for_optimization.png',
-                               title='Time for objective function evaluation'):
+                               title='Time for objective function evaluation of',
+                               sum_up_time=False):
     """
 
     @param title:
     @param file_name:
     @param time_for_optimization:
-    @param n_nodes:
-    @param sentinels:
     @param path_experiment:
     @param optimizer:
     """
+    print('shape before cumsum ', time_for_optimization.shape)
+    if sum_up_time:
+        time_for_optimization = np.cumsum(time_for_optimization, axis=0)
+    print('shape after cumsum ', time_for_optimization.shape)
     plt.clf()
     plt.plot(range(len(time_for_optimization)), time_for_optimization)
-    plt.title(title)
+    plt.title(title+f' {optimizer}')
     plt.xlabel('Optimizer iteration')
     plt.ylabel('Time in minutes')
 
@@ -105,12 +108,66 @@ def plot_optimizer_history_with_two_baselines(optimizer_history, stderr_history,
              linestyle='dotted', color='black')
 
     # plot the highest degree baseline
+    b = np.ones(len(optimizer_history)) * prior_mean[0]
+    plt.plot(range(len(optimizer_history)), b, label='uniform sentinels baseline')
+    # add standard error of the highest degree baseline
+    plt.plot(range(len(optimizer_history)), b + prior_stderr[0],
+             linestyle='dotted', color='black')
+    plt.plot(range(len(optimizer_history)), b - prior_stderr[0],
+             linestyle='dotted', color='black')
+
+    # plot the highest degree baseline
     b = np.ones(len(optimizer_history)) * prior_mean[1]
-    plt.plot(range(len(optimizer_history)), b, label='highest degree baseline')
+    plt.plot(range(len(optimizer_history)), b, label='highest degree baseline s/6')
     # add standard error of the highest degree baseline
     plt.plot(range(len(optimizer_history)), b + prior_stderr[1],
              linestyle='dotted', color='black')
     plt.plot(range(len(optimizer_history)), b - prior_stderr[1],
+             linestyle='dotted', color='black')
+
+    # plot the highest capacity baseline
+    b = np.ones(len(optimizer_history)) * prior_mean[2]
+    plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/6')
+    # add standard error of the highest degree baseline
+    plt.plot(range(len(optimizer_history)), b + prior_stderr[2],
+             linestyle='dotted', color='black')
+    plt.plot(range(len(optimizer_history)), b - prior_stderr[2],
+             linestyle='dotted', color='black')
+
+    # plot the highest degree baseline
+    b = np.ones(len(optimizer_history)) * prior_mean[3]
+    plt.plot(range(len(optimizer_history)), b, label='highest degree baseline s/12')
+    # add standard error of the highest degree baseline
+    plt.plot(range(len(optimizer_history)), b + prior_stderr[3],
+             linestyle='dotted', color='black')
+    plt.plot(range(len(optimizer_history)), b - prior_stderr[3],
+             linestyle='dotted', color='black')
+
+    # plot the highest capacity baseline
+    b = np.ones(len(optimizer_history)) * prior_mean[4]
+    plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/12')
+    # add standard error of the highest degree baseline
+    plt.plot(range(len(optimizer_history)), b + prior_stderr[4],
+             linestyle='dotted', color='black')
+    plt.plot(range(len(optimizer_history)), b - prior_stderr[4],
+             linestyle='dotted', color='black')
+
+    # plot the highest degree baseline
+    b = np.ones(len(optimizer_history)) * prior_mean[5]
+    plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/24')
+    # add standard error of the highest degree baseline
+    plt.plot(range(len(optimizer_history)), b + prior_stderr[5],
+             linestyle='dotted', color='black')
+    plt.plot(range(len(optimizer_history)), b - prior_stderr[5],
+             linestyle='dotted', color='black')
+
+    # plot the highest capacity baseline
+    b = np.ones(len(optimizer_history)) * prior_mean[6]
+    plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/24')
+    # add standard error of the highest degree baseline
+    plt.plot(range(len(optimizer_history)), b + prior_stderr[5],
+             linestyle='dotted', color='black')
+    plt.plot(range(len(optimizer_history)), b - prior_stderr[5],
              linestyle='dotted', color='black')
 
     plt.title(f'{optimizer}, {n_nodes} nodes, {sentinels} sentinels')

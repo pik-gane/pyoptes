@@ -516,12 +516,12 @@ if __name__ == '__main__':
 
     if args.optimizer == 'gpgo' or args.optimizer == 'np':
         plot_time_for_optimization(time_acquisition_optimization,
-                                   args.n_nodes, args.sentinels,
                                    path_experiment, args.optimizer,
                                    file_name='time_for_acquisition_optimization.png',
-                                   title='Average time for acquisition optimization')
+                                   title='Average time for acquisition optimization',
+                                   sum_up_time=True)
         plot_time_for_optimization(time_update_surrogate,
-                                   args.n_nodes, args.sentinels,
                                    path_experiment, args.optimizer,
                                    file_name='time_for_surrogate_update.png',
-                                   title='Average time for surrogate function update')
+                                   title='Average time for surrogate function update',
+                                   sum_up_time=True)
