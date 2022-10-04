@@ -24,5 +24,5 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bbo_explore_target_function \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bbo_explore_target_function.py \
   --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/

@@ -3,7 +3,7 @@ import numpy as np
 import pylab as plt
 
 
-def plot_time_for_optimization(time_for_optimization, path_experiment, optimizer,
+def plot_time_for_optimization(time_for_optimization: list, path_experiment: str, optimizer: str,
                                file_name='time_for_optimization.png',
                                title='Time for objective function evaluation of',
                                sum_up_time=False):
@@ -15,10 +15,8 @@ def plot_time_for_optimization(time_for_optimization, path_experiment, optimizer
     @param path_experiment:
     @param optimizer:
     """
-    print('shape before cumsum ', time_for_optimization.shape)
     if sum_up_time:
         time_for_optimization = np.cumsum(time_for_optimization, axis=0)
-    print('shape after cumsum ', time_for_optimization.shape)
     plt.clf()
     plt.plot(range(len(time_for_optimization)), time_for_optimization)
     plt.title(title+f' {optimizer}')
