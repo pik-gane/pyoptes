@@ -27,8 +27,13 @@ def plot_time_for_optimization(time_for_optimization: list, path_experiment: str
     plt.clf()
 
 
-def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, baseline_stderr,
-                           n_nodes, sentinels, path_experiment, optimizer, name='_plot'):
+def plot_optimizer_history(optimizer_history: list, stderr_history: list,
+                           baseline_mean: float, baseline_stderr: float,
+                           n_nodes: int,
+                           sentinels: int,
+                           path_experiment: str,
+                           optimizer: str,
+                           name='_plot') -> None:
     """
 
     @param name:
@@ -69,9 +74,14 @@ def plot_optimizer_history(optimizer_history, stderr_history, baseline_mean, bas
     plt.clf()
 
 
-def plot_optimizer_history_with_two_baselines(optimizer_history, stderr_history, baseline_mean, baseline_stderr,
-                                              prior_mean, prior_stderr, n_nodes, sentinels,
-                                              path_experiment, optimizer, name='_plot'):
+def plot_optimizer_history_with_two_baselines(optimizer_history: list, stderr_history: list,
+                                              baseline_mean: list, baseline_stderr: list,
+                                              prior_mean: list, prior_stderr: list,
+                                              n_nodes: int,
+                                              sentinels: int,
+                                              path_experiment: str,
+                                              optimizer: str,
+                                              name: str = '_plot') -> None:
     """
 
     @param optimizer_history:
@@ -178,9 +188,13 @@ def plot_optimizer_history_with_two_baselines(optimizer_history, stderr_history,
     plt.clf()
 
 
-def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
+def plot_prior(path_experiment: str,
+               n_nodes: int,
+               y_prior_mean: np.array, y_prior_stderr: np.array,
+               n_runs: int) -> None:
     """
 
+    @param n_runs:
     @param y_prior_stderr:
     @param n_nodes:
     @param y_prior_mean:
@@ -205,7 +219,11 @@ def plot_prior(path_experiment, n_nodes, y_prior_mean, y_prior_stderr, n_runs):
     plt.clf()
 
 
-def plot_effect_of_different_sentinels(number_of_sentinels, m, stderr, n_nodes, path_experiment, title=''):
+def plot_effect_of_different_sentinels(number_of_sentinels: list,
+                                       m: list, stderr: list,
+                                       n_nodes: int,
+                                       path_experiment: str,
+                                       title: str = '') -> None:
     """
 
     @param number_of_sentinels:
@@ -226,9 +244,15 @@ def plot_effect_of_different_sentinels(number_of_sentinels, m, stderr, n_nodes, 
     plt.clf()
 
 
-def plot_multiple_optimizer(path_experiment, data_optimizer, data_baseline, n_nodes, sentinels):
+def plot_multiple_optimizer(path_experiment: str,
+                            data_optimizer: list,
+                            data_baseline: list,
+                            n_nodes: int,
+                            sentinels: int) -> None:
     """
     Plot any number of optimizers against any number baselines
+    @param sentinels:
+    @param n_nodes:
     @param path_experiment:
     @param data_optimizer:
     @param data_baseline:
@@ -274,7 +298,12 @@ def plot_multiple_optimizer(path_experiment, data_optimizer, data_baseline, n_no
     plt.clf()
 
 
-def scatter_plot(path_experiment, data_x, data_y, plot_name, plot_title, x_label, y_label):
+def scatter_plot(path_experiment: str,
+                 data_x: list, data_y: list,
+                 plot_name: str,
+                 plot_title: str,
+                 x_label: str,
+                 y_label: str):
     """
 
     @param path_experiment:
