@@ -12,7 +12,6 @@ from pyoptes import plot_effect_of_different_sentinels
 import argparse
 import numpy as np
 from tqdm import tqdm
-from scipy.stats.mstats import mjci
 
 # TODO look into maltes file in the repo
 if __name__ == '__main__':
@@ -65,7 +64,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     #
-    nodes = [120, 1040, 57590]
+    nodes = [57590]#[120, 1040, 57590]
 
     # define function to average the results of the simulation
     if args.statistic == 'mean':
