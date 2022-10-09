@@ -6,7 +6,7 @@ import glob
 import json
 from tqdm import tqdm
 from pyoptes import load_raw_data, compute_average_otf_and_stderr
-from pyoptes import plot_optimizer_history_with_two_baselines, plot_prior, plot_multiple_optimizer
+from pyoptes import plot_optimizer_history_with_two_baselines, plot_prior, plot_multiple_optimizer, plot_time_for_optimization
 
 if __name__ == '__main__':
 
@@ -77,6 +77,32 @@ if __name__ == '__main__':
 
             # create a bar plot of all strategies in the prior
             plot_prior(path_experiment, n_nodes, prior_mean, prior_stderr, n_runs)
+
+            try:
+                print('shape raw data list time acquisition optimization', np.shape(raw_data['list_time_acquisition_optimization']))
+                print('shape raw data list time update surrogate', np.shape(raw_data['list_time_update_surrogate']))
+                plot_time_for_optimization(raw_data['list_time_acquisition_optimization'][0],
+                                           path_experiment,
+                                           optimizer,
+                                           file_name='time_for_acquisition_optimization.png',
+                                           sum_up_time=True)
+
+                plot_time_for_optimization(raw_data['list_time_update_surrogate'][0],
+                                           path_experiment,
+                                           optimizer,
+                                           file_name='time_for_surrogate_update.png',
+                                           sum_up_time=True)
+            except:
+                print('no time data available')
+
+            # # ---------------------------------------------------------------------------------------------------------
+            # # plot multiple optimizers
+            # path_plot = os.path.join(path_experiment, 'plots/')
+            # if not os.path.exists(path_plot):
+            #     os.makedirs(path_plot)
+            #
+            # # create a plot with all the optimizers
+            # plot_multiple_optimizer(path_plot, n_nodes, n_runs, optimizer, network_type, statistic, sentinels)
 
             # TODO plot prior for each optimizer
 

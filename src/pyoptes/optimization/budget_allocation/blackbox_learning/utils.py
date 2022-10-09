@@ -5,9 +5,9 @@ from tqdm import tqdm
 import pandas as pd
 import networkx as nx
 from scipy.stats.mstats import mjci
+# from typing import
 
-
-def softmax(x):
+def softmax(x: np.array) -> np.array:
     """
     Softmax function.
     @param x: budget vector, numpy array
@@ -18,7 +18,9 @@ def softmax(x):
     return x
 
 
-def compute_average_otf_and_stderr(list_otf, list_stderr, n_runs):
+def compute_average_otf_and_stderr(list_otf: list,
+                                   list_stderr: list,
+                                   n_runs: int) -> (float, float):
     average_best_otf = np.mean(list_otf, axis=0)
     s = np.mean(list_stderr, axis=0)
     v = np.var(list_otf, axis=0)
@@ -27,7 +29,9 @@ def compute_average_otf_and_stderr(list_otf, list_stderr, n_runs):
     return average_best_otf, average_best_otf_stderr
 
 
-def save_results(best_test_strategy, path_experiment, output, save_test_strategy=True):
+def save_results(best_test_strategy: np.array,
+                 path_experiment: str,
+                 output: str, save_test_strategy: bool = True) -> None:
     """
     Saves the evaluation of the output and the corresponding best parameter.
     @param save_test_strategy:
@@ -45,7 +49,8 @@ def save_results(best_test_strategy, path_experiment, output, save_test_strategy
         np.save(os.path.join(path_experiment, 'best_parameter'), best_test_strategy)
 
 
-def save_hyperparameters(hyperparameters, base_path):
+def save_hyperparameters(hyperparameters: dict,
+                         base_path: str,) -> None:
     """
     Saves the parameters for a training run of a model,
     Parameters are saved as a json file.
@@ -64,11 +69,15 @@ def save_hyperparameters(hyperparameters, base_path):
 
 
 # TODO add function to load raw data from file
-def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_baseline_otf_stderr,
-                  list_ratio_otf, list_best_solution_history, list_stderr_history, list_time_for_optimization,
-                  list_all_prior_tf, list_all_prior_stderr,
-                  list_time_acquisition_optimization=None, list_time_update_surrogate=None,
-                  path_experiment=''):
+def save_raw_data(list_best_otf: list, list_best_otf_stderr: list,
+                  list_baseline_otf: list, list_baseline_otf_stderr: list,
+                  list_ratio_otf: list,
+                  list_best_solution_history: list, list_stderr_history: list,
+                  list_time_for_optimization: list,
+                  list_all_prior_tf: list, list_all_prior_stderr: list,
+                  list_time_acquisition_optimization: list = None,
+                  list_time_update_surrogate: list = None,
+                  path_experiment: str = '') -> None:
     """
     Saves the raw data of the optimization process.
     @param list_time_update_surrogate:
@@ -103,7 +112,7 @@ def save_raw_data(list_best_otf, list_best_otf_stderr, list_baseline_otf, list_b
     np.save(os.path.join(path_experiment, 'list_time_update_surrogate'), list_time_update_surrogate)
 
 
-def load_raw_data(path_experiment):
+def load_raw_data(path_experiment: str) -> dict:
     """
 
     @param path_experiment:
@@ -136,14 +145,16 @@ def load_raw_data(path_experiment):
     else:
 
         return {'list_best_otf': list_best_otf, 'list_best_otf_stderr': list_best_otf_stderr,
-            'list_baseline_otf': list_baseline_otf, 'list_baseline_otf_stderr': list_baseline_otf_stderr,
-            'list_ratio_otf': list_ratio_otf,
-            'list_best_solution_history': list_best_solution_history, 'list_stderr_history': list_stderr_history,
-            'list_time_for_optimization': list_time_for_optimization,
-            'list_all_prior_tf': list_all_prior_tf, 'list_all_prior_stderr': list_all_prior_stderr}
+                'list_baseline_otf': list_baseline_otf, 'list_baseline_otf_stderr': list_baseline_otf_stderr,
+                'list_ratio_otf': list_ratio_otf,
+                'list_best_solution_history': list_best_solution_history, 'list_stderr_history': list_stderr_history,
+                'list_time_for_optimization': list_time_for_optimization,
+                'list_all_prior_tf': list_all_prior_tf, 'list_all_prior_stderr': list_all_prior_stderr}
 
 
-def choose_sentinels(node_attributes, sentinels, mode):
+def choose_sentinels(node_attributes: list,
+                     sentinels: int,
+                     mode: str) -> list:
     """
     Chooses the sentinels with the highest attribute for the given mode.
     The first item in the list is always the highest of the chosen attribute
@@ -175,12 +186,13 @@ def choose_sentinels(node_attributes, sentinels, mode):
         raise ValueError(f'Mode "{mode}" not supported')
 
 
-def get_node_attributes(node_attributes, mode):
+def get_node_attributes(node_attributes: list,
+                        mode: str) -> list:
     """
     Returns the node attributes for the given mode.
     The node attributes are sorted by their
     node_attributes is a list to allow the dynamic use of the function in the main script.
-    @param node_attributes: list of node attributes (degrees, capacity, transmission)
+    @param node_attributes: list of all node attributes (degrees, capacity, transmission)
     @param mode: string, attribute to return
     @return: list of node_attributes sorted by index
     """
@@ -205,7 +217,9 @@ def get_node_attributes(node_attributes, mode):
         raise ValueError(f'Mode "{mode}" not supported')
 
 
-def map_low_dim_x_to_high_dim(x, number_of_nodes, node_indices):
+def map_low_dim_x_to_high_dim(x: np.array,
+                              number_of_nodes: int,
+                              node_indices: list) -> np.array:
     """
     Map the values in an array x to an empty array of size n_nodes. The location of each xi is based on node_indices.
     @param x: numpy array, output array to be extended to size n_nodes
@@ -220,8 +234,13 @@ def map_low_dim_x_to_high_dim(x, number_of_nodes, node_indices):
     return x_true
 
 
-def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_budget,
-                               sentinels, mixed_strategies=True, only_baseline=False):
+def create_test_strategy_prior(n_nodes: int,
+                               node_degrees: list,
+                               node_capacities: list,
+                               total_budget: float,
+                               sentinels: int,
+                               mixed_strategies: bool = True,
+                               only_baseline: bool = False) -> tuple:
     """
     Creates a list of test strategies to be used as a prior.
     First element in the list is a strategy where the budget is uniformly distributed over all sentinel nodes
@@ -333,7 +352,12 @@ def create_test_strategy_prior(n_nodes, node_degrees, node_capacities, total_bud
     return prior_test_strategies, prior_node_indices, test_strategy_parameter
 
 
-def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, statistic):
+def baseline(total_budget: float,
+             eval_function: callable,
+             n_nodes: int,
+             parallel: bool,
+             num_cpu_cores: int,
+             statistic: callable) -> tuple:
     """
     Creates a test strategy where the total budget is uniformly allocated to all nodes.
     Evaluates the test strategy with the given evaluation function for 10000 simulation runs.
@@ -358,7 +382,7 @@ def baseline(total_budget, eval_function, n_nodes, parallel, num_cpu_cores, stat
     return m, stderr, x_baseline
 
 
-def test_function(x, *args, **kwargs):
+def test_function(x: np.array, *args, **kwargs) -> float:
     """
     Quadratic function just for test purposes
     @param x: numpy array, input vector
@@ -367,7 +391,12 @@ def test_function(x, *args, **kwargs):
     return x[0]**2
 
 
-def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores, statistic):
+def evaluate_prior(prior: list,
+                   n_simulations: int,
+                   eval_function: callable,
+                   parallel: bool,
+                   num_cpu_cores: int,
+                   statistic: callable) -> np.array:
     """
     Evaluate the strategies in the prior and return the mean and standard error
     @param statistic:
@@ -391,7 +420,10 @@ def evaluate_prior(prior, n_simulations, eval_function, parallel, num_cpu_cores,
     return np.array(y_prior)
 
 
-def create_graph(n, graph_type, n_nodes, base_path='../data/'):
+def create_graph(n: int,
+                 graph_type: str,
+                 n_nodes: int,
+                 base_path: str = '../data/') -> tuple:
     """
     Loads n_runs graphs from disk and returns them as a list
     @param n_nodes:
@@ -479,7 +511,8 @@ def create_graph(n, graph_type, n_nodes, base_path='../data/'):
 
     return transmissions, capacities, degrees
 
-def rms_tia(n_infected_animals):
+
+def rms_tia(n_infected_animals: np.array) -> tuple:
     values = n_infected_animals**2
     estimate = np.sqrt(np.mean(values, axis=0))
     stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
@@ -487,13 +520,13 @@ def rms_tia(n_infected_animals):
     return estimate, stderr
 
 
-def mean_tia(n_infected_animals):
+def mean_tia(n_infected_animals: np.array) -> tuple:
     estimate = np.mean(n_infected_animals, axis=0)
     stderr = np.std(n_infected_animals, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
     return estimate, stderr
 
 
-def percentile_tia(n_infected_animals):
+def percentile_tia(n_infected_animals: np.array) -> tuple:
     estimate = np.percentile(n_infected_animals, 95, axis=0)
     stderr = mjci(n_infected_animals, prob=[0.95], axis=0)[0]
     return estimate, stderr
