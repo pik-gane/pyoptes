@@ -237,7 +237,7 @@ if __name__ == '__main__':
     list_time_acquisition_optimization = []
     list_time_update_surrogate = []
 
-    time_start = time() # start reference for all n optimizer runs
+    time_start = time()  # start reference for all n optimizer runs
     for n in range(args.n_runs):
         print(f'Run {n + 1} of {args.n_runs},'
               f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
@@ -325,7 +325,7 @@ if __name__ == '__main__':
                             'num_cpu_cores': args.num_cpu_cores, 'save_test_strategies': args.save_test_strategies,
                             'save_test_strategies_path': save_test_strategies_path}
 
-        t0 = time() # time for an individual optimization run
+        t0 = time()  # time for an individual optimization run
         if args.optimizer == 'cma':
 
             # CMA-ES can take only an initial population of one. For this the uniform baseline is used
@@ -413,7 +413,7 @@ if __name__ == '__main__':
         best_test_strategy_stderr = stderr_history[index]
 
         # a ratio of less than 100% means that the optimizer did not find a strategy that is better than the baseline
-        ratio_otf = 100 - (eval_best_test_strategy / baseline_mean)
+        ratio_otf = 100 - 100*(eval_best_test_strategy / baseline_mean)
 
         output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
                  f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \

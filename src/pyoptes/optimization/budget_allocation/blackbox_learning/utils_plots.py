@@ -133,14 +133,14 @@ def plot_optimizer_history_with_two_baselines(optimizer_history: list, stderr_hi
     plt.plot(range(len(optimizer_history)), b - prior_stderr[1],
              linestyle='dotted', color='black')
 
-    # plot the highest capacity baseline
-    b = np.ones(len(optimizer_history)) * prior_mean[2]
-    plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/6')
-    # add standard error of the highest degree baseline
-    plt.plot(range(len(optimizer_history)), b + prior_stderr[2],
-             linestyle='dotted', color='black')
-    plt.plot(range(len(optimizer_history)), b - prior_stderr[2],
-             linestyle='dotted', color='black')
+    # # plot the highest capacity baseline
+    # b = np.ones(len(optimizer_history)) * prior_mean[2]
+    # plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/6')
+    # # add standard error of the highest degree baseline
+    # plt.plot(range(len(optimizer_history)), b + prior_stderr[2],
+    #          linestyle='dotted', color='black')
+    # plt.plot(range(len(optimizer_history)), b - prior_stderr[2],
+    #          linestyle='dotted', color='black')
 
     # plot the highest degree baseline
     b = np.ones(len(optimizer_history)) * prior_mean[3]
@@ -151,32 +151,32 @@ def plot_optimizer_history_with_two_baselines(optimizer_history: list, stderr_hi
     plt.plot(range(len(optimizer_history)), b - prior_stderr[3],
              linestyle='dotted', color='black')
 
-    # plot the highest capacity baseline
-    b = np.ones(len(optimizer_history)) * prior_mean[4]
-    plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/12')
-    # add standard error of the highest degree baseline
-    plt.plot(range(len(optimizer_history)), b + prior_stderr[4],
-             linestyle='dotted', color='black')
-    plt.plot(range(len(optimizer_history)), b - prior_stderr[4],
-             linestyle='dotted', color='black')
-
+    # # plot the highest capacity baseline
+    # b = np.ones(len(optimizer_history)) * prior_mean[4]
+    # plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/12')
+    # # add standard error of the highest degree baseline
+    # plt.plot(range(len(optimizer_history)), b + prior_stderr[4],
+    #          linestyle='dotted', color='black')
+    # plt.plot(range(len(optimizer_history)), b - prior_stderr[4],
+    #          linestyle='dotted', color='black')
+    #
     # plot the highest degree baseline
     b = np.ones(len(optimizer_history)) * prior_mean[5]
-    plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/24')
+    plt.plot(range(len(optimizer_history)), b, label='highest degree baseline s/24')
     # add standard error of the highest degree baseline
     plt.plot(range(len(optimizer_history)), b + prior_stderr[5],
              linestyle='dotted', color='black')
     plt.plot(range(len(optimizer_history)), b - prior_stderr[5],
              linestyle='dotted', color='black')
-
-    # plot the highest capacity baseline
-    b = np.ones(len(optimizer_history)) * prior_mean[6]
-    plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/24')
-    # add standard error of the highest degree baseline
-    plt.plot(range(len(optimizer_history)), b + prior_stderr[5],
-             linestyle='dotted', color='black')
-    plt.plot(range(len(optimizer_history)), b - prior_stderr[5],
-             linestyle='dotted', color='black')
+    #
+    # # plot the highest capacity baseline
+    # b = np.ones(len(optimizer_history)) * prior_mean[6]
+    # plt.plot(range(len(optimizer_history)), b, label='highest capacity baseline s/24')
+    # # add standard error of the highest degree baseline
+    # plt.plot(range(len(optimizer_history)), b + prior_stderr[5],
+    #          linestyle='dotted', color='black')
+    # plt.plot(range(len(optimizer_history)), b - prior_stderr[5],
+    #          linestyle='dotted', color='black')
 
     plt.title(f'{optimizer}, {n_nodes} nodes, {sentinels} sentinels')
     plt.xlabel('Iteration')
