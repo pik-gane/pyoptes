@@ -130,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
                         help="Optimizer parameter. Only effects SMAC and GPGO. Sets how often log messages appear. "
                              "Lower values mean more messages.")
-    parser.add_argument('--path_plot', default='pyoptes/optimization/budget_allocation/blackbox_learning/plots/',
+    parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "
                              "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
