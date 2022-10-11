@@ -62,9 +62,14 @@ if __name__ == '__main__':
     parser.add_argument('--z_dim', type=int, default=50, help='')
     parser.add_argument('--h_dim', type=int, default=50, help='')
     parser.add_argument('--num_target', type=int, default=3,
-                        help='The context and target size together must not exceed the number of the budgets in the prior.')
+                        help='The context and target size together must not exceed the number '
+                             'of the budgets in the prior.')
     parser.add_argument('--num_context', type=int, default=3,
-                        help='The context and target size together must not exceed the number of the budgets in the prior.')
+                        help='The context and target size together must not exceed the number '
+                             'of the budgets in the prior.')
+    parser.add_argument('--z_sample_size', type=int, default=10,
+                        help='Sets how many samples are drawn from the posterior distribution '
+                             'of the latent variables before averaging.')
 
     parser.add_argument('--epochs', type=int, default=30,
                         help='GPGO optimizer parameter. Sets the number of epochs of the neural process.')
@@ -112,7 +117,8 @@ if __name__ == '__main__':
                         help='Si-simulation parameter. The probability of how likely a trade animal '
                              'infects other animals. Default is 0.5.')
     parser.add_argument('--expected_time_of_first_infection', type=int, default=30,
-                        help='Si-simulation parameter. The expected time (in days) after which the first infection occurs. ')
+                        help='Si-simulation parameter. '
+                             'The expected time (in days) after which the first infection occurs. ')
 
     # ------------------ utility hyperparameters ------------------
     parser.add_argument('--mode_choose_sentinels', choices=['degree', 'capacity', 'transmission'], default='degree',
@@ -209,6 +215,7 @@ if __name__ == '__main__':
         experiment_params['optimizer_hyperparameters']['h_dim'] = args.h_dim
         experiment_params['optimizer_hyperparameters']['num_context'] = args.num_context
         experiment_params['optimizer_hyperparameters']['num_target'] = args.num_target
+        experiment_params['optimizer_hyperparameters']['z_sample_size'] = args.z_sample_size
     else:
         raise ValueError('Optimizer not supported')
 
@@ -373,6 +380,7 @@ if __name__ == '__main__':
             optimizer_kwargs['h_dim'] = args.h_dim
             optimizer_kwargs['num_context'] = args.num_context
             optimizer_kwargs['num_target'] = args.num_target
+            optimizer_kwargs['z_sample_size'] = args.z_sample_size
 
             # optimizers return the best test strategy, a history of the best solutions during a run (with stderror) and
             # the time it took to run the optimizer

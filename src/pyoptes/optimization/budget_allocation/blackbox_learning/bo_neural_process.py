@@ -3,8 +3,6 @@ import numpy as np
 from .utils import map_low_dim_x_to_high_dim, softmax
 
 from pyGPGO.acquisition import Acquisition
-from pyGPGO.covfunc import squaredExponential
-from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 
 from .custom_Neural_Process import NP
 
@@ -13,15 +11,24 @@ def bo_neural_process(prior, prior_y, prior_stderr,
                       max_iterations, n_simulations, node_indices, n_nodes, eval_function,
                       total_budget, parallel, num_cpu_cores, acquisition_function, statistic,
                       epochs, batch_size,
-                      r_dim=50,  # Dimension of representation of context points
-                      z_dim=50,  # Dimension of sampled latent variable
-                      h_dim=50,  # Dimension of hidden layers in encoder and decoder
-                      num_context=3,  # num_context + num_target has to be lower than num_samples
-                      num_target=3,
+                      r_dim: int = 50,  # Dimension of representation of context points
+                      z_dim: int = 50,  # Dimension of sampled latent variable
+                      h_dim: int = 50,  # Dimension of hidden layers in encoder and decoder
+                      num_context: int = 3,  # num_context + num_target has to be lower than num_samples
+                      num_target: int = 3,
+                      z_sample_size: int = 10,
                       save_test_strategies=False, save_test_strategies_path=None):
     """
     Run GPGO, a Bayesian optimization algorithm with a gaussian process surrogate.
 
+    @param batch_size:
+    @param epochs:
+    @param r_dim:
+    @param z_dim:
+    @param h_dim:
+    @param num_context:
+    @param num_target:
+    @param z_sample_size:
     @param statistic:
     @param save_test_strategies_path:
     @param save_test_strategies:
@@ -45,8 +52,6 @@ def bo_neural_process(prior, prior_y, prior_stderr,
 
     """
 
-    sexp = squaredExponential()
-    gp = GaussianProcess(sexp)
     acq = Acquisition(mode=acquisition_function)
 
     # create a list of the parameters to be optimized with their bounds
@@ -70,6 +75,7 @@ def bo_neural_process(prior, prior_y, prior_stderr,
                    h_dim=h_dim,
                    num_context=num_context,
                    num_target=num_target,
+                   z_sample_size=z_sample_size,
                    f_kwargs={'node_indices': node_indices, 'total_budget': total_budget,
                              'n_nodes': n_nodes, 'eval_function': eval_function,
                              'n_simulations': n_simulations, 'parallel': parallel,
