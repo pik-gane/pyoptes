@@ -6,7 +6,6 @@ from pyGPGO.acquisition import Acquisition
 from pyGPGO.covfunc import squaredExponential
 from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 
-from .custom_GPGO import GPGO
 from .custom_Neural_Process import NP
 
 

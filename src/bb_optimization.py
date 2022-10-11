@@ -400,7 +400,7 @@ if __name__ == '__main__':
                                        path_experiment=path_sub_experiment,
                                        optimizer=args.optimizer,
                                        file_name='time_for_acquisition_optimization.png',
-                                       title='Time for acquisition optimization')
+                                       title='Time for acquisition function optimization')
             plot_time_for_optimization(time_for_optimization=time_update_surrogate,
                                        path_experiment=path_sub_experiment,
                                        optimizer=args.optimizer,
@@ -519,7 +519,7 @@ if __name__ == '__main__':
         plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
                                    path_experiment=path_experiment, optimizer=args.optimizer,
                                    file_name='time_for_acquisition_optimization.png',
-                                   title='Average time for acquisition optimization',
+                                   title='Average time for acquisition function optimization',
                                    sum_up_time=True)
         plot_time_for_optimization(time_for_optimization=time_update_surrogate,
                                    path_experiment=path_experiment, optimizer=args.optimizer,

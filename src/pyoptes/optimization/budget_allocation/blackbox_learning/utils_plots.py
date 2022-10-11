@@ -9,6 +9,7 @@ def plot_time_for_optimization(time_for_optimization: list, path_experiment: str
                                sum_up_time=False):
     """
 
+    @param sum_up_time:
     @param title:
     @param file_name:
     @param time_for_optimization:
@@ -21,7 +22,7 @@ def plot_time_for_optimization(time_for_optimization: list, path_experiment: str
     plt.plot(range(len(time_for_optimization)), time_for_optimization)
     plt.title(title+f' {optimizer}')
     plt.xlabel('Optimizer iteration')
-    plt.ylabel('Time in minutes')
+    plt.ylabel('Cumulative time in minutes')
 
     plt.savefig(os.path.join(path_experiment, file_name))
     plt.clf()
