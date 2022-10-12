@@ -8,7 +8,7 @@ __pycache__/
 /*/outcmaes
 .idea
 /src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/test*/
-/data/blackbox_learning/plots/test*/
+/data/blackbox_learning/results/test*/
 
 # C extensions
 *.so
