@@ -518,12 +518,12 @@ if __name__ == '__main__':
     print(output)
 
     # ---- misc ----
-    # plot the average time the optimization of the acquisition function takes
-    # as well as the update of the surrogate function
-    time_acquisition_optimization = np.mean(list_time_acquisition_optimization, axis=0)
-    time_update_surrogate = np.mean(list_time_update_surrogate, axis=0)
-
     if args.optimizer == 'gpgo' or args.optimizer == 'np':
+        # plot the average time the optimization of the acquisition function takes
+        # as well as the update of the surrogate function
+        time_acquisition_optimization = np.mean(list_time_acquisition_optimization, axis=0)
+        time_update_surrogate = np.mean(list_time_update_surrogate, axis=0)
+
         plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
                                    path_experiment=path_experiment, optimizer=args.optimizer,
                                    file_name='time_for_acquisition_optimization.png',
