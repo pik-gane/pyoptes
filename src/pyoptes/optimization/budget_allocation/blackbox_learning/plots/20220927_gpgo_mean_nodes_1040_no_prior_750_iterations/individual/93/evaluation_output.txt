@@ -1,0 +1,9 @@
+
+Time for optimization (in minutes): 61.749279681841536
+
+Baseline for uniform budget distribution:  5215.896
+ Baseline standard-error:  77.66204823047056, ratio stderr/mean: 0.01488949323960266
+Best solutions:
+Objective value:   5785.442
+Standard error:  258.0848995893251, ratio stderr/mean: 0.0446093659895519
+Ratio OTF: -10.919427841352672
