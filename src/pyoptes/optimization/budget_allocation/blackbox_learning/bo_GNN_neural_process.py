@@ -19,7 +19,7 @@ def bo_neural_process(prior, prior_y, prior_stderr,
                       z_sample_size: int = 10,
                       save_test_strategies=False, save_test_strategies_path=None):
     """
-    Run GPGO, a Bayesian optimization algorithm with a gaussian process surrogate.
+    Run NP, a Bayesian optimization algorithm with a neural process surrogate function.
 
     @param batch_size:
     @param epochs:

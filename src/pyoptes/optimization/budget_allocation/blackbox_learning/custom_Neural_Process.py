@@ -23,13 +23,14 @@ from torch.distributions import Normal
 
 class NP:
     def __init__(self, acquisition, f, parameter_dict, prior_x, prior_y, prior_stderr,
-                 epochs, batch_size,
-                 n_jobs=15, f_kwargs={},
-                 r_dim=50,  # Dimension of representation of context points
-                 z_dim=50,  # Dimension of sampled latent variable
-                 h_dim=50,  # Dimension of hidden layers in encoder and decoder
-                 num_context=3,  # num_context + num_target has to be lower than num_samples
-                 num_target=3,
+                 epochs: int, batch_size: int,
+                 n_jobs: int = 15, f_kwargs={},
+                 r_dim: int = 50,  # Dimension of representation of context points
+                 z_dim: int = 50,  # Dimension of sampled latent variable
+                 h_dim: int = 50,  # Dimension of hidden layers in encoder and decoder
+                 num_context: int = 3,  # num_context + num_target has to be lower than num_samples
+                 num_target: int = 3,
+                 z_sample_size: int = 10,
                  save_test_strategies=False, save_test_strategies_path=None,):
         """
         Bayesian Optimization class.
@@ -60,6 +61,8 @@ class NP:
 
         self.epochs = epochs
         self.batch_size = batch_size
+
+        self.z_sample_size = z_sample_size
 
         # ----
 
@@ -277,7 +280,8 @@ class NP:
         mu_context, sigma_context = self.NP.xy_to_mu_sigma(x_context, y_context)
         # Sample from distribution based on context
         q_context = Normal(mu_context, sigma_context)
-        self.z_sample = q_context.rsample()
+        # sample from the distribution ten times and take the mean
+        self.z_sample = q_context.rsample((self.z_sample_size,)).mean(0)
 
     def NP_predict(self, xnew):
 
