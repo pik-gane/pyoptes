@@ -108,8 +108,10 @@ def save_raw_data(list_best_otf: list, list_best_otf_stderr: list,
     np.save(os.path.join(path_experiment, 'list_time_for_optimization'), np.array(list_time_for_optimization))
     np.save(os.path.join(path_experiment, 'list_all_prior_tf'), list_all_prior_tf)
     np.save(os.path.join(path_experiment, 'list_all_prior_stderr'), list_all_prior_stderr)
-    np.save(os.path.join(path_experiment, 'list_time_acquisition_optimization'), list_time_acquisition_optimization)
-    np.save(os.path.join(path_experiment, 'list_time_update_surrogate'), list_time_update_surrogate)
+    if list_time_acquisition_optimization is not None:
+        np.save(os.path.join(path_experiment, 'list_time_acquisition_optimization'), list_time_acquisition_optimization)
+    if list_time_update_surrogate is not None:
+        np.save(os.path.join(path_experiment, 'list_time_update_surrogate'), list_time_update_surrogate)
 
 
 def load_raw_data(path_experiment: str) -> dict:
