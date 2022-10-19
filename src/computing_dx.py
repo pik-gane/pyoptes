@@ -1,39 +1,36 @@
+<<<<<<< Updated upstream
 from email.mime import base
 import os
 from tkinter import W
 from xml.dom import HierarchyRequestErr
+=======
+
+>>>>>>> Stashed changes
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
-from torchvision import datasets
-from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
-from sklearn.metrics import explained_variance_score, mean_squared_error
 import numpy as np
 import torchvision
 from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
-import random
-from tqdm import tqdm
-from operator import xor
-from scipy.stats import gaussian_kde as kde
 import pylab as plt
 from pyoptes import set_seed
 from pyoptes.optimization.budget_allocation import target_function as f
-import csv
-import warnings
 import networkx as nx
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import Loader as Loader
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import processing as process
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import model_selection as model_selection
-from pyoptes.optimization.budget_allocation.supervised_learning.utils import device as get_device
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import training_process as train_nn
+<<<<<<< Updated upstream
 from pyoptes.optimization.budget_allocation.supervised_learning.utils import distribution as dcaps
 import torch
 from pyoptes.optimization.budget_allocation import target_function as f
 from scipy.stats import lognorm
+=======
+
+>>>>>>> Stashed changes
 from pyoptes import set_seed
 
 def caps(size): 
@@ -77,10 +74,18 @@ evaluation_parms = {
 
 """define NN model parameters, load pre-trained model state"""
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+<<<<<<< Updated upstream
 output_dim = 120
 layer_dimensions = (128, 64, 32, 16, output_dim)
 pick = "FCN"
 model = model_selection.set_model(pick, dim = n_nodes, layer_dimensions = layer_dimensions)
+=======
+hidden_dims = (128, 64, 32, 16)
+nodes = 120
+pick = "RNN"
+
+model = model_selection.set_model(pick, dim = nodes, hidden_dims = hidden_dims)
+>>>>>>> Stashed changes
 model.to(device)
 model.requires_grad_(False) #freeze weights
 #model.load_state_dict(torch.load(f"/Users/admin/pyoptes/src/pyoptes/optimization/budget_allocation/supervised_learning/trained_nn_states/wx_120_{pick}_per_node.pth"))
