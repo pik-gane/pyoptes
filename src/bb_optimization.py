@@ -245,7 +245,11 @@ if __name__ == '__main__':
     list_time_update_surrogate = []
 
     time_start = time()  # start reference for all n optimizer runs
+
+    # TODO write a check for the existence of .done files, possibly before even starting the loop
+    # TODO if a .done file is missing restart the optimization from the last missing .done file
     for n in range(args.n_runs):
+
         print(f'Run {n + 1} of {args.n_runs},'
               f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
@@ -258,6 +262,7 @@ if __name__ == '__main__':
         transmissions, capacities, degrees = create_graph(n=n, graph_type=args.graph_type,
                                                           n_nodes=args.n_nodes, base_path=args.path_networks)
 
+        # initialize the si-simulation
         f.prepare(n_nodes=args.n_nodes,
                   capacity_distribution=capacities,
                   pre_transmissions=transmissions,
@@ -421,9 +426,10 @@ if __name__ == '__main__':
         best_test_strategy_stderr = stderr_history[index]
 
         # a ratio of less than 100% means that the optimizer did not find a strategy that is better than the baseline
+        # negative value are undesirable and indicate that the optimizer did not find a strategy that is better
         ratio_otf = 100 - 100*(eval_best_test_strategy / baseline_mean)
 
-        output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
+        output = f'\nTime for optimization (in hours): {(time() - t0) / 60}' \
                  f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
                  f'\n Baseline standard-error:  {baseline_stderr}, ' \
                  f'ratio stderr/mean: {baseline_stderr/baseline_mean}' \
@@ -454,27 +460,33 @@ if __name__ == '__main__':
             list_time_acquisition_optimization.append(time_acquisition_optimization)
             list_time_update_surrogate.append(time_update_surrogate)
 
-    # TODO move the whole postprocessing step and saving of results into separate step to save memory
+        # TODO move the whole postprocessing step and saving of results into separate step to save memory
+        # save the raw data of the optimization runs
+        kwargs_save_raw_data = {'list_best_otf': list_best_otf,
+                                'list_best_otf_stderr': list_best_otf_stderr,
+                                'list_baseline_otf': list_baseline_otf,
+                                'list_baseline_otf_stderr': list_baseline_otf_stderr,
+                                'list_ratio_otf': list_ratio_otf,
+                                'list_best_solution_history': list_best_solution_history,
+                                'list_stderr_history': list_stderr_history,
+                                'list_time_for_optimization': list_time_for_optimization,
+                                'list_all_prior_tf': list_all_prior_tf,
+                                'list_all_prior_stderr': list_all_prior_stderr,
+                                'path_experiment': path_experiment}
+        # times for acquisition and surrogate update are only available for gpgo and np
+        if args.optimizer == 'gpgo' or args.optimizer == 'np':
+            kwargs_save_raw_data['list_time_acquisition_optimization'] = list_time_acquisition_optimization
+            kwargs_save_raw_data['list_time_update_surrogate'] = list_time_update_surrogate
+        save_raw_data(**kwargs_save_raw_data)
 
-    # save the raw data of the optimization runs
-    kwargs_save_raw_data = {'list_best_otf': list_best_otf,
-                            'list_best_otf_stderr': list_best_otf_stderr,
-                            'list_baseline_otf': list_baseline_otf,
-                            'list_baseline_otf_stderr': list_baseline_otf_stderr,
-                            'list_ratio_otf': list_ratio_otf,
-                            'list_best_solution_history': list_best_solution_history,
-                            'list_stderr_history': list_stderr_history,
-                            'list_time_for_optimization': list_time_for_optimization,
-                            'list_all_prior_tf': list_all_prior_tf,
-                            'list_all_prior_stderr': list_all_prior_stderr,
-                            'path_experiment': path_experiment}
-    # times for acquisition and surrogate update are only available for gpgo and np
-    if args.optimizer == 'gpgo' or args.optimizer == 'np':
-        kwargs_save_raw_data['list_time_acquisition_optimization'] = list_time_acquisition_optimization
-        kwargs_save_raw_data['list_time_update_surrogate'] = list_time_update_surrogate
-    save_raw_data(**kwargs_save_raw_data)
+        # create a .done file in the sub path to indicate the run is finished
+        with open(os.path.join(path_sub_experiment, '.done'), 'w') as done_file:
+            done_file.write(f'Individual run {n} finished')
 
     print(f'Optimization end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
+
+    # TODO by moving the postprocessing step into a separate step, several instances of the main script can be run in parallel
+    # TODO keep in mind to create a option to let the optimization start from different n
     # ------------------------------------------------------------
     # postprocessing of all runs
     # ------------------------------------------------------------
