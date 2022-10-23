@@ -2,21 +2,25 @@ name: bbo
 channels:
   - conda-forge
   - pytorch
+  - pyg
 dependencies:
   - python
   - matplotlib
-  - numpy=1.19  # fixed for pyoptes
+  - numpy=1.21  # fixed for pyoptes
   - scipy
-  - numba=0.48  # fixed for pyoptes
+  - numba=0.55  # fixed for pyoptes
   - networkx
   - tqdm
   - cma=3.0.3
   - pytorch-gpu
-  - cudatoolkit=10.1
+  - pytorch # needed for pytorch-geometric and -scatter to work properly
+  - cudatoolkit
   - torchvision
   - jupyter
   - ipykernel
   - pip
   - pandas
+  - pyg
+  - torch-scatter
   - pip:
     - pyGPGO

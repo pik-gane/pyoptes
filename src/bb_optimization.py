@@ -37,6 +37,8 @@ if __name__ == '__main__':
     parser.add_argument('--n_runs', type=int, default=100,
                         help='The number of times the optimizer is run. Results are then averaged over all runs.'
                              'Default is 100 runs.')
+    parser.add_argument('--n_runs_start', type=int, default=0,
+                        help='')
 
     parser.add_argument("--max_iterations", type=int, default=50,
                         help="Optimizer parameter. The maximum number of iterations the algorithms run.")
@@ -190,6 +192,7 @@ if __name__ == '__main__':
                                                         'expected_time_of_first_infection': args.expected_time_of_first_infection,
                                                         'n_runs': args.n_runs,
                                                         'statistic': args.statistic,
+                                                        'n_runs_start': args.n_runs_start,
                                                         },
                          'optimizer_hyperparameters': {'optimizer': args.optimizer,
                                                        'max_iterations': args.max_iterations,
@@ -240,24 +243,27 @@ if __name__ == '__main__':
     list_all_prior_tf = []
     list_all_prior_stderr = []
 
+    # time for the optimization in each iteration on each network (in minutes, not cumulative)
     list_time_for_optimization = []
     list_time_acquisition_optimization = []
     list_time_update_surrogate = []
 
     time_start = time()  # start reference for all n optimizer runs
-    for n in range(args.n_runs):
-        print(f'Run {n + 1} of {args.n_runs},'
-              f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
+    for n in range(args.n_runs_start-1, args.n_runs_start + args.n_runs-1):
         # create a folder to save the results of the individual optimization run
         path_sub_experiment = os.path.join(path_experiment, 'individual', f'{n}')
         if not os.path.exists(path_sub_experiment):
             os.makedirs(path_sub_experiment)
 
+        print(f'Run {n + 1} of {args.n_runs+args.n_runs_start-1},'
+              f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+
         #
         transmissions, capacities, degrees = create_graph(n=n, graph_type=args.graph_type,
                                                           n_nodes=args.n_nodes, base_path=args.path_networks)
 
+        # initialize the si-simulation
         f.prepare(n_nodes=args.n_nodes,
                   capacity_distribution=capacities,
                   pre_transmissions=transmissions,
@@ -421,9 +427,10 @@ if __name__ == '__main__':
         best_test_strategy_stderr = stderr_history[index]
 
         # a ratio of less than 100% means that the optimizer did not find a strategy that is better than the baseline
+        # negative value are undesirable and indicate that the optimizer did not find a strategy that is better
         ratio_otf = 100 - 100*(eval_best_test_strategy / baseline_mean)
 
-        output = f'\nTime for optimization (in minutes): {(time() - t0) / 60}' \
+        output = f'\nTime for optimization (in hours): {(time() - t0) / 60}' \
                  f'\n\nBaseline for uniform budget distribution:  {baseline_mean}' \
                  f'\n Baseline standard-error:  {baseline_stderr}, ' \
                  f'ratio stderr/mean: {baseline_stderr/baseline_mean}' \
@@ -454,7 +461,8 @@ if __name__ == '__main__':
             list_time_acquisition_optimization.append(time_acquisition_optimization)
             list_time_update_surrogate.append(time_update_surrogate)
 
-    # TODO move the whole postprocessing step and saving of results into separate step to save memory
+    # save the results of the experiment
+    raw_data_path = os.path.join(path_experiment, 'raw_data', str(args.n_runs_start))
 
     # save the raw data of the optimization runs
     kwargs_save_raw_data = {'list_best_otf': list_best_otf,
@@ -467,21 +475,24 @@ if __name__ == '__main__':
                             'list_time_for_optimization': list_time_for_optimization,
                             'list_all_prior_tf': list_all_prior_tf,
                             'list_all_prior_stderr': list_all_prior_stderr,
-                            'path_experiment': path_experiment}
+                            'path_experiment': raw_data_path}
     # times for acquisition and surrogate update are only available for gpgo and np
     if args.optimizer == 'gpgo' or args.optimizer == 'np':
         kwargs_save_raw_data['list_time_acquisition_optimization'] = list_time_acquisition_optimization
         kwargs_save_raw_data['list_time_update_surrogate'] = list_time_update_surrogate
     save_raw_data(**kwargs_save_raw_data)
 
+    # create a .done file in the sub path to indicate the run is finished
+    with open(os.path.join(raw_data_path, '.done'), 'w') as done_file:
+        done_file.write(f'Individual run {n} finished')
+
     print(f'Optimization end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
+
     # ------------------------------------------------------------
     # postprocessing of all runs
     # ------------------------------------------------------------
     # compute the averages over all optimization runs of the prior, the optimizer, the baseline and their standard error
-    average_prior_tf, average_prior_stderr = compute_average_otf_and_stderr(list_otf=list_all_prior_tf,
-                                                                            list_stderr=list_all_prior_stderr,
-                                                                            n_runs=args.n_runs)
+
     # compute the average OTFs, baseline and their standard errors
     average_best_otf, average_best_otf_stderr = compute_average_otf_and_stderr(list_otf=list_best_otf,
                                                                                list_stderr=list_best_otf_stderr,
@@ -493,44 +504,14 @@ if __name__ == '__main__':
 
     average_ratio_otf = np.mean(list_ratio_otf)
 
-    # create an average otf plot
-    average_best_solution_history, average_stderr_history = compute_average_otf_and_stderr(list_otf=list_best_solution_history,
-                                                                                           list_stderr=list_stderr_history,
-                                                                                           n_runs=args.n_runs)
-
-    plot_optimizer_history(optimizer_history=average_best_solution_history,
-                           stderr_history=average_stderr_history,
-                           baseline_mean=average_baseline, baseline_stderr=average_baseline_stderr,
-                           n_nodes=args.n_nodes, sentinels=args.sentinels,
-                           path_experiment=path_experiment, optimizer=args.optimizer,
-                           name='_average_plot')
-
     output = f'Results averaged over {args.n_runs} optimizer runs' \
              f'\naverage ratio otf to baseline: {average_ratio_otf}' \
              f'\naverage baseline and stderr: {average_baseline}, {average_baseline_stderr}' \
              f'\naverage best strategy OTF and stderr: {average_best_otf}, {average_best_otf_stderr}' \
-             f'\nTime for optimization (in hours): {(time()-time_start) / 3600}'
+             f'\nTime for optimization (in hours): {(time() - time_start) / 3600}'
 
     save_results(best_test_strategy=None,
                  save_test_strategy=False,
-                 path_experiment=path_experiment,
+                 path_experiment=os.path.join(path_experiment, 'raw_data', str(args.n_runs_start)),
                  output=output)
     print(output)
-
-    # ---- misc ----
-    # plot the average time the optimization of the acquisition function takes
-    # as well as the update of the surrogate function
-    time_acquisition_optimization = np.mean(list_time_acquisition_optimization, axis=0)
-    time_update_surrogate = np.mean(list_time_update_surrogate, axis=0)
-
-    if args.optimizer == 'gpgo' or args.optimizer == 'np':
-        plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
-                                   path_experiment=path_experiment, optimizer=args.optimizer,
-                                   file_name='time_for_acquisition_optimization.png',
-                                   title='Average time for acquisition function optimization',
-                                   sum_up_time=True)
-        plot_time_for_optimization(time_for_optimization=time_update_surrogate,
-                                   path_experiment=path_experiment, optimizer=args.optimizer,
-                                   file_name='time_for_surrogate_update.png',
-                                   title='Average time for surrogate function update',
-                                   sum_up_time=True)
