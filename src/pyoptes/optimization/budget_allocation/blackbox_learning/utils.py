@@ -5,7 +5,7 @@ from tqdm import tqdm
 import pandas as pd
 import networkx as nx
 from scipy.stats.mstats import mjci
-# from typing import
+
 
 def softmax(x: np.array) -> np.array:
     """
@@ -42,8 +42,8 @@ def save_results(best_test_strategy: np.array,
     if not os.path.isdir(path_experiment):
         os.makedirs(path_experiment)
 
-    with open(os.path.join(path_experiment, 'evaluation_output.txt'), 'w') as f:
-        f.write(output)
+    with open(os.path.join(path_experiment, 'evaluation_output.txt'), 'w') as text_file:
+        text_file.write(output)
 
     if save_test_strategy:
         np.save(os.path.join(path_experiment, 'best_parameter'), best_test_strategy)
@@ -94,7 +94,7 @@ def save_raw_data(list_best_otf: list, list_best_otf_stderr: list,
     @param list_time_for_optimization:
     @param path_experiment:
     """
-    path_experiment = os.path.join(path_experiment, 'raw_data')
+
     if not os.path.isdir(path_experiment):
         os.makedirs(path_experiment)
     # turn lists into numpy arrays and save them in path_experiment
