@@ -250,13 +250,13 @@ if __name__ == '__main__':
 
     time_start = time()  # start reference for all n optimizer runs
 
-    for n in range(args.n_runs_start-1, args.n_runs_start + args.n_runs-1):
+    for n in range(args.n_runs_start, args.n_runs_start + args.n_runs):
         # create a folder to save the results of the individual optimization run
         path_sub_experiment = os.path.join(path_experiment, 'individual', f'{n}')
         if not os.path.exists(path_sub_experiment):
             os.makedirs(path_sub_experiment)
 
-        print(f'Run {n + 1} of {args.n_runs+args.n_runs_start-1},'
+        print(f'Run {n+1} of {args.n_runs+args.n_runs_start},'
               f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
         #
