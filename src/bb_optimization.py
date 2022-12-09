@@ -129,6 +129,7 @@ if __name__ == '__main__':
                         help='Sets whether to save the test strategies that are evaluate in the optimization.')
     parser.add_argument('--plot_prior', type=bool, default='',
                         help='')
+    # TODO log-level can be removed
     parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
                         help="Optimizer parameter. Only effects SMAC and GPGO. Sets how often log messages appear. "
                              "Lower values mean more messages.")
@@ -353,6 +354,7 @@ if __name__ == '__main__':
             best_test_strategy, best_solution_history, stderr_history, \
             time_for_optimization = \
                 bo_cma(**optimizer_kwargs)
+            # TODO best_test_strategy needs to run through the softmax function, otherwise its wrong
 
         elif args.optimizer == 'gpgo':
 
