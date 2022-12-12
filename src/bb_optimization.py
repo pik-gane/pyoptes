@@ -129,10 +129,6 @@ if __name__ == '__main__':
                         help='Sets whether to save the test strategies that are evaluate in the optimization.')
     parser.add_argument('--plot_prior', type=bool, default='',
                         help='')
-    # TODO log-level can be removed
-    parser.add_argument("--log_level", type=int, default=3, choices=range(1, 11), metavar="[1-10]",
-                        help="Optimizer parameter. Only effects SMAC and GPGO. Sets how often log messages appear. "
-                             "Lower values mean more messages.")
     parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
                         help="Optimizer parameter. Location where all the individual results"
                              " of the optimizers are saved to. "

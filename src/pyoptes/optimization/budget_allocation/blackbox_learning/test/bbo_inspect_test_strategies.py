@@ -14,21 +14,21 @@ import glob
 import json
 
 
-if __name__ == '__main__':
+def inspect_test_strategies(path_plot):
 
-    parser = argparse.ArgumentParser()
+    # parser = argparse.ArgumentParser()
+    #
+    # # parser.add_argument("name_experiment",
+    # #                     help="The name of the folder where the results of the optimizer run are saved to.")
+    #
+    # parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
+    #                     help="Optimizer parameter. Location where all the individual results"
+    #                          " of the optimizers are saved to. "
+    #                          "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
+    #
+    # args = parser.parse_args()
 
-    # parser.add_argument("name_experiment",
-    #                     help="The name of the folder where the results of the optimizer run are saved to.")
-
-    parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
-                        help="Optimizer parameter. Location where all the individual results"
-                             " of the optimizers are saved to. "
-                             "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
-
-    args = parser.parse_args()
-
-    paths_experiment_params = glob.glob(os.path.join(args.path_plot, '**/experiment_hyperparameters.json'))
+    paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'))
     for experiment_params in tqdm(paths_experiment_params):
 
         # get experiment specific hyperparameters
@@ -45,9 +45,9 @@ if __name__ == '__main__':
         experiment_name = os.path.split(experiment_directory)[1][9:]
 
         if network_type == 'ba' or network_type == 'waxman':
-            path_networks = '../data'
+            path_networks = '../../../../../data'
         elif network_type == 'syn':
-            path_networks = '../../networks/data'
+            path_networks = '../../../../../../networks/data'
         else:
             raise Exception('Network type not supported')
 
