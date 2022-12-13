@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     param_set = set()
 
-    with open('experiments.csv', 'w', newline='') as csvfile:
+    with open('../data/blackbox_learning/experiments.csv', 'w', newline='') as csvfile:
         cswriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
         # get all unique hyperparameter for all experiments

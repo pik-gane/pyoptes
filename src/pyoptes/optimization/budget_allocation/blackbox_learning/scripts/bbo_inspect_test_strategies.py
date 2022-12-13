@@ -45,9 +45,9 @@ def inspect_test_strategies(path_plot):
         experiment_name = os.path.split(experiment_directory)[1][9:]
 
         if network_type == 'ba' or network_type == 'waxman':
-            path_networks = '../../../../../data'
+            path_networks = '../../../../../../data'
         elif network_type == 'syn':
-            path_networks = '../../../../../../networks/data'
+            path_networks = '../../../../../../../networks/data'
         else:
             raise Exception('Network type not supported')
 
