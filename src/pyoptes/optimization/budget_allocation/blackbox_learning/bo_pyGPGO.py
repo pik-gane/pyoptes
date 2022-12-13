@@ -7,7 +7,6 @@ from pyGPGO.covfunc import squaredExponential
 from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 
 from .custom_GPGO import GPGO
-from pyGPGO import GPGO
 
 
 def bo_pyGPGO(prior, prior_y, prior_stderr,

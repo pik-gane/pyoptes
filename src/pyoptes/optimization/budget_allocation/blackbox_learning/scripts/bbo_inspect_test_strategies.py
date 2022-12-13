@@ -5,7 +5,6 @@ Creates scatter plots showing the relationship between the nodes, their attribut
 
 from pyoptes import create_graph, scatter_plot, get_node_attributes
 
-import argparse
 import numpy as np
 import pylab as plt
 from tqdm import tqdm
@@ -15,18 +14,6 @@ import json
 
 
 def inspect_test_strategies(path_plot):
-
-    # parser = argparse.ArgumentParser()
-    #
-    # # parser.add_argument("name_experiment",
-    # #                     help="The name of the folder where the results of the optimizer run are saved to.")
-    #
-    # parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
-    #                     help="Optimizer parameter. Location where all the individual results"
-    #                          " of the optimizers are saved to. "
-    #                          "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
-    #
-    # args = parser.parse_args()
 
     paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'))
     for experiment_params in tqdm(paths_experiment_params):
