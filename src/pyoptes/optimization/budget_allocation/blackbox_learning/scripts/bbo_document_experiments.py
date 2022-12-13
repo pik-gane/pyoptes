@@ -8,17 +8,12 @@ import glob
 import json
 import csv
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
-                        help="Optimizer parameter. Location where all the individual results"
-                             " of the optimizers are saved to. "
-                             "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
-    args = parser.parse_args()
+
+def bbo_document_experiments(path_plot):
 
     # grabs also experiments in test folders. They should be deleted before running this
     # also grabs incomplete experiments
-    path_to_experiments = glob.glob(os.path.join(args.path_plot, '**/experiment_hyperparameters.json'), recursive=True)
+    path_to_experiments = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'), recursive=True)
 
     param_set = set()
 

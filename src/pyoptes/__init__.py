@@ -10,4 +10,7 @@ from .optimization.budget_allocation.blackbox_learning.neural_process.training i
 from .optimization.budget_allocation.blackbox_learning.neural_process.utils_np import context_target_split, TrainingDataset
 
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_inspect_test_strategies import inspect_test_strategies
-from .optimization.budget_allocation.blackbox_learning.scripts.bb_optimization import bbo_optimization
+from .optimization.budget_allocation.blackbox_learning.scripts.bbo_optimization import bbo_optimization
+from .optimization.budget_allocation.blackbox_learning.scripts.bbo_create_combined_plots import bbo_combined_plots
+from .optimization.budget_allocation.blackbox_learning.scripts.bbo_create_individual_plots import bbo_create_individual_plots
+from .optimization.budget_allocation.blackbox_learning.scripts.bbo_document_experiments import bbo_document_experiments

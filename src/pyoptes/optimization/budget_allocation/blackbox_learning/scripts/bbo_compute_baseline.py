@@ -18,8 +18,6 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 from scipy.stats.mstats import mjci
-from time import time
-import datetime
 
 
 def rms_tia(n_infected_animals):

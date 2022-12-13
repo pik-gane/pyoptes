@@ -1,25 +1,16 @@
 import numpy as np
 import os
 import pylab as plt
-import argparse
 import glob
 import json
 from tqdm import tqdm
 from pyoptes import load_raw_data, compute_average_otf_and_stderr
 from pyoptes import plot_optimizer_history_with_two_baselines, plot_prior, plot_multiple_optimizer, plot_time_for_optimization
 
-if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
+def bbo_create_individual_plots(path_plot):
 
-    parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
-                        help="Optimizer parameter. Location where all the individual results"
-                             " of the optimizers are saved to. "
-                             "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
-
-    args = parser.parse_args()
-
-    paths_experiment_params = glob.glob(os.path.join(args.path_plot, '**/experiment_hyperparameters.json'))
+    paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'))
     for experiment_params in tqdm(paths_experiment_params):
         # get experiment specific hyperparameters
         with open(experiment_params, 'r') as f:

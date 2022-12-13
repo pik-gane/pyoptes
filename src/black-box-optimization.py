@@ -4,13 +4,16 @@ Collects and runs all different scripts used for the black-box optimization, gen
 
 import argparse
 from pyoptes import inspect_test_strategies
-from pyoptes import bbo_optimization
+from pyoptes import bbo_optimization, bbo_document_experiments
+from pyoptes import bbo_combined_plots, bbo_create_individual_plots
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("mode", choices=['optimization', 'inspect'], default='optimization',
+    parser.add_argument("mode", choices=['optimization', 'inspect_test_strategies,',
+                                         'combined_plots', 'individual_plots',
+                                         'document_experiments'], default='optimization',
                         help="The mode of operation. Either 'inspect' or 'optimization'.")
 
     parser.add_argument("--sentinels", type=int, default=1040,
@@ -175,3 +178,31 @@ if __name__ == '__main__':
     elif args.mode == 'inspect':
         # TODO fix faulty paths
         inspect_test_strategies(path_plot=args.path_plot)
+
+    # TODO compute_baseline
+
+    # TODO postprocessing
+
+    elif args.mode == 'create_combined_plots':
+        bbo_combined_plots(args.path_plot,
+                           args.optimizer,
+                           args.n_nodes,
+                           args.sentinels,
+                           args.max_iterations,
+                           args.acquisition_function,
+                           args.use_prior,
+                           args.prior_only_baseline,
+                           args.prior_mixed_strategies,
+                           args.popsize,
+                           args.scale_sigma,
+                           args.statistic,
+                           args.n_simulations,
+                           args.graph_type,
+                           args.scale_total_budget,
+                           args.mode_choose_sentinels)
+
+    elif args.mode == 'individual_plots':
+        bbo_create_individual_plots(path_plot=args.path_plot)
+
+    elif args.mode == 'document_experiments':
+        bbo_document_experiments(path_plot=args.path_plot)
