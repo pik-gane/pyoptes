@@ -1,22 +1,13 @@
 import numpy as np
 import glob
 import pylab as plt
-import argparse
 import os
 from pyoptes import compute_average_otf_and_stderr
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+def bbo_inspect_prior(path_plot):
 
-    parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
-                        help="Optimizer parameter. Location where all the individual results"
-                             " of the optimizers are saved to. "
-                             "Default location is 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/'")
-
-    args = parser.parse_args()
-
-    path_to_numpy_files = glob.glob(os.path.join(args.path_plot, '**/list_all_prior_tf.npy'), recursive=True)
+    path_to_numpy_files = glob.glob(os.path.join(path_plot, '**/list_all_prior_tf.npy'), recursive=True)
 
     print(path_to_numpy_files)
 

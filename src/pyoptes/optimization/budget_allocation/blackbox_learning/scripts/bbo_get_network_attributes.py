@@ -55,7 +55,7 @@ def create_graph(n, n_nodes, network_base_path, budget_path='plots'):
     print(G)
 
 
-base_path = '../../networks/data/'
+base_path = '../../../../../../../networks/data/'
 
 create_graph(0, 1040, network_base_path=base_path)
 

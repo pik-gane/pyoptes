@@ -3,17 +3,22 @@ Collects and runs all different scripts used for the black-box optimization, gen
 '''
 
 import argparse
-from pyoptes import inspect_test_strategies
 from pyoptes import bbo_optimization, bbo_document_experiments
 from pyoptes import bbo_combined_plots, bbo_create_individual_plots
-
+from pyoptes import inspect_test_strategies, bbo_inspect_prior, bbo_sanity_check
+from pyoptes import bbo_create_samples, bbo_explore_evaluation
+from pyoptes import bbo_explore_target_function
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("mode", choices=['optimization', 'inspect_test_strategies,',
-                                         'combined_plots', 'individual_plots',
-                                         'document_experiments'], default='optimization',
+    parser.add_argument("mode",
+                        choices=['optimization', 'document_experiments',
+                                 'combined_plots', 'individual_plots',
+                                 'inspect_test_strategies,', 'inspect_prior', 'sanity_check',
+                                 'create_samples', 'explore_evaluation',
+                                 'explore_target_function'],
+                        default='optimization',
                         help="The mode of operation. Either 'inspect' or 'optimization'.")
 
     parser.add_argument("--sentinels", type=int, default=1040,
@@ -134,7 +139,8 @@ if __name__ == '__main__':
                         help='Location where the networks are saved to. '
                              'Path on cluster. /p/projects/ou/labs/gane/optes/mcmc_100nets/data'
                              '/p/projects/ou/labs/gane/optes/mcmc_100nets/data/')
-
+    parser.add_argument('--path_data', default='../../data_pyoptes',
+                        help="Specifies where the samples created by 'bbo_create_samples.py' are saved to. ")
     args = parser.parse_args()
 
     if args.mode == 'optimization':
@@ -184,25 +190,73 @@ if __name__ == '__main__':
     # TODO postprocessing
 
     elif args.mode == 'create_combined_plots':
-        bbo_combined_plots(args.path_plot,
-                           args.optimizer,
-                           args.n_nodes,
-                           args.sentinels,
-                           args.max_iterations,
-                           args.acquisition_function,
-                           args.use_prior,
-                           args.prior_only_baseline,
-                           args.prior_mixed_strategies,
-                           args.popsize,
-                           args.scale_sigma,
-                           args.statistic,
-                           args.n_simulations,
-                           args.graph_type,
-                           args.scale_total_budget,
-                           args.mode_choose_sentinels)
+
+        bbo_combined_plots(path_plot=args.path_plot,
+                           optimizer=args.optimizer,
+                            n_nodes=args.n_nodes,
+                            sentinels=args.sentinels,
+                            max_iterations=args.max_iterations,
+                            acquisition_function=args.acquisition_function,
+                            use_prior=args.use_prior,
+                            prior_only_baseline=args.prior_only_baseline,
+                            prior_mixed_strategies=args.prior_mixed_strategies,
+                            popsize=args.popsize,
+                            scale_sigma=args.scale_sigma,
+                            statistic=args.statistic,
+                            n_simulations=args.n_simulations,
+                            graph_type=args.graph_type,
+                            scale_total_budget=args.scale_total_budget,
+                            mode_choose_sentinels=args.mode_choose_sentinels)
 
     elif args.mode == 'individual_plots':
         bbo_create_individual_plots(path_plot=args.path_plot)
 
     elif args.mode == 'document_experiments':
         bbo_document_experiments(path_plot=args.path_plot)
+
+    elif args.mode == 'create_samples':
+        bbo_create_samples(path_data=args.path_data,
+                           n_nodes=args.n_nodes,
+                           n_runs=args.n_runs,
+                           n_simulations=args.n_simulations,
+                           graph_type=args.graph_type,
+                           scale_total_budget=args.scale_total_budget,
+                           parallel=args.parallel,
+                           num_cpu_cores=args.num_cpu_cores,
+                           delta_t_symptoms=args.delta_t_symptoms,
+                           p_infection_by_transmission=args.p_infection_by_transmission,
+                           expected_time_of_first_infection=args.expected_time_of_first_infection,
+                           sentinels=args.sentinels,
+                           statistic_str=args.statistic,
+                           path_networks=args.path_networks,)
+
+    elif args.mode == 'explore_evaluation':
+        bbo_explore_evaluation()
+
+    elif args.mode == 'explore_evaluation':
+        # call bbo_explore_target_function with the arguments from the command line
+        bbo_explore_target_function(n_runs=args.n_runs,
+                                    statistic_str=args.statistic,
+                                    n_simulations=args.n_simulations,
+                                    graph_type=args.graph_type,
+                                    scale_total_budget=args.scale_total_budget,
+                                    parallel=args.parallel,
+                                    num_cpu_cores=args.num_cpu_cores,
+                                    delta_t_symptoms=args.delta_t_symptoms,
+                                    p_infection_by_transmission=args.p_infection_by_transmission,
+                                    expected_time_of_first_infection=args.expected_time_of_first_infection,
+                                    mode_choose_sentinels=args.mode_choose_sentinels,
+                                    path_networks=args.path_networks)
+
+    elif args.mode == 'inspect_prior':
+        bbo_inspect_prior(path_plot=args.path_plot,)
+
+    elif args.mode == 'sanity_check':
+
+        # call bbo_sanity_check with the arguments from the command line
+        bbo_sanity_check(n_nodes=args.n_nodes,
+                         n_runs=args.n_runs,
+                         graph_type=args.graph_type,
+                         scale_total_budget=args.scale_total_budget,
+                         path_networks=args.path_networks)
+

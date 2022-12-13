@@ -8,13 +8,13 @@ from pyoptes import create_graph, compute_average_otf_and_stderr
 import glob
 import json
 import os
-import argparse
 import numpy as np
 from tqdm import tqdm
 from scipy.spatial.distance import euclidean
 import pylab as plt
 
-if __name__ == '__main__':
+
+def bbo_explore_optimizer(path_plot):
 
     path_to_optimizer = '../../pyoptes_plots/*/experiment_hyperparameters.json'
 

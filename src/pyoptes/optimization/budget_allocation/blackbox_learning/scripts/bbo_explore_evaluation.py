@@ -14,8 +14,10 @@ from tqdm import tqdm
 from scipy.spatial.distance import euclidean
 import pylab as plt
 
-if __name__ == '__main__':
 
+def bbo_explore_evaluation():
+
+    # TODO path is wrong
     path_to_optimizer = 'pyoptes/optimization/budget_allocation/blackbox_learning/plots/**/evaluation_output.txt'
 
     #

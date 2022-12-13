@@ -4,13 +4,15 @@ from pyoptes import load_raw_data, compute_average_otf_and_stderr, save_results
 from pyoptes import plot_optimizer_history, plot_time_for_optimization
 import json
 
+# TODO refactore to work with top-level script
+
 if __name__ == '__main__':
 
     # TODO temp substitute for all dirs in results
     for i in range(2):
         print('\n', i)
 
-        path_experiment = '../data/blackbox_learning/results/test/'
+        path_experiment = '../../../../../../data/blackbox_learning/results/test/'
 
         raw_data_path = os.path.join(path_experiment, 'raw_data/')
 
