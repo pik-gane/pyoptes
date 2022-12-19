@@ -87,6 +87,10 @@ def bbo_combined_plots(path_plot,
                   'optimizer': optimizer}
 
             data_optimizer.append(do)
+        else:
+            # TODO missing errorhandling
+
+            print('s')
     #
     print(np.shape(data_optimizer))
     # as the baseline are taken from the last experiment in the loop, it is not advised to mix experiments with different
