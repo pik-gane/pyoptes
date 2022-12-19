@@ -24,4 +24,21 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo test --path_plot /home/loebkens/pyoptes/src/pyoptes/optimization/budget_allocation/blackbox_learning/plots/ --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ --graph syn --prior_mixed_strategies '' --n_nodes 1040 --sentinels 1040 --statistic rms --scale_total_budget 1
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization/gnn_test \
+  --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
+  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --graph syn \
+  --prior_mixed_strategies '' \
+  --n_nodes 120 \
+  --sentinels 120 \
+  --statistic mean \
+  --scale_total_budget 1 \
+  --r_dim 50 \
+  --z_dim 50 \
+  --h_dim 50 \
+  --num_target 3 \
+  --num_context 3 \
+  --batch_size 10 \
+  --epochs 30 \
+  --max_iterations 2000 \
+  --n_runs 100
