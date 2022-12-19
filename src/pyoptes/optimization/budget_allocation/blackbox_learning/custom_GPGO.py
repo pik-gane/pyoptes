@@ -1,4 +1,3 @@
-# TODO rewrite this to make the changes more clear
 '''
 Adaption of the GPGO-class. Extended to support fitting the surrogate function with a prior.
 The class also returns the stderr of objective function calls, as well as the time spent for the optimization.
@@ -158,19 +157,20 @@ class GPGO:
         """
         t_acqui = time.time()
 
-        # TODO check which part here is the slowest
-        # TODO maybe test different acqui-functions
-        start_points_arr = np.array([self._sampleParam() for i in range(n_start)])
+        # sample starting points and append the current best budget
+        start_points_list = [self._sampleParam() for _ in range(n_start)]
+        start_points_list.append(self.current_best_budget[self.tau])
+        start_points_array = np.array(start_points_list)
 
         # save the test strategies to be able to visualize the trajectory of the optimizer, e.g how well the search space is covered
         if self.save_test_strategies:
-            np.save(os.path.join(self.save_test_strategies_path, f'test_strategy_{self.n}'), start_points_arr)
+            np.save(os.path.join(self.save_test_strategies_path, f'test_strategy_{self.n}'), start_points_array)
             self.n += 1
 
         x_best = np.empty((n_start, len(self.parameter_key)))
         f_best = np.empty((n_start,))
         if self.n_jobs == 1:
-            for index, start_point in enumerate(start_points_arr):
+            for index, start_point in enumerate(start_points_array):
                 # _acqWrapper is the function that calls the GP, therefore the NP has to be used here
                 res = minimize(self._acqWrapper, x0=start_point, method=method,
                                bounds=self.parameter_range)
@@ -180,7 +180,7 @@ class GPGO:
                                                                  x0=start_point,
                                                                  method=method,
                                                                  bounds=self.parameter_range) for start_point in
-                                               start_points_arr)
+                                               start_points_array)
             x_best = np.array([res.x for res in opt])
             f_best = np.array([np.atleast_1d(res.fun)[0] for res in opt])
 
