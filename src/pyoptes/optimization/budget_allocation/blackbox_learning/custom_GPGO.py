@@ -141,6 +141,7 @@ class GPGO:
         new_mean, new_var = self.GP.predict(xnew, return_std=True)
         new_std = np.sqrt(new_var + 1e-6)
 
+        # The minus sign is because we want to maximize the acquisition function
         return -self.A.eval(self.tau, new_mean, new_std)
 
     def _optimizeAcq(self, method='L-BFGS-B', n_start=100):
@@ -184,6 +185,8 @@ class GPGO:
             x_best = np.array([res.x for res in opt])
             f_best = np.array([np.atleast_1d(res.fun)[0] for res in opt])
 
+        # acqui function is maximized, argmin is used because acq_wrapper is negated !!!
+        # current_best_measurement is the budget with the best/most information gain according to the acquisition function
         self.current_best_measurement = x_best[np.argmin(f_best)]
 
         # save time for acquisition function optimization
@@ -202,6 +205,7 @@ class GPGO:
 
         # f_new is always the newest measurement for the objective function, not necessarily the best one
         f_new, stderr_f_new = self.f(param, **self.f_kwargs)    # returns the y corresponding to a test strategy
+
         self.GP.update(np.atleast_2d(self.current_best_measurement), np.atleast_1d(f_new))
 
         # add new stderr to the stderr dictionary. This ensures that there is always a stderr for each measurement
