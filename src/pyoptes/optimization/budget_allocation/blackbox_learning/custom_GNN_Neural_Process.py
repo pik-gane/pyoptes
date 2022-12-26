@@ -1,6 +1,6 @@
+# TODO rewrite this to make the changes more clear
 '''
-Adaption of the GPGO-class from pyGPGO.
-Extended use a neural process as the surrogate function.
+Adaption of the GPGO-class. Extended to support fitting the surrogate function with a prior.
 The class also returns the stderr of objective function calls, as well as the time spent for the optimization.
 '''
 
@@ -96,8 +96,7 @@ class NP:
         self.stderr = {}
         # contains the function evaluations (for the proposed budget) in every iteration, not necessarily the best value
         self.surrogate_y = [] # TODO maybe rename ?
-
-        self.current_best_budget = {} # TODO needs better name
+        self.current_best_budget = {}
 
         self.time_for_optimization = []
         self.time_acquisition_optimization = []
@@ -153,7 +152,7 @@ class NP:
         new_std = new_std.detach().reshape(-1).numpy()
         return -self.A.eval(self.tau, new_mean, new_std)
 
-    def _optimizeAcq(self, method='L-BFGS-B', n_start=100, ):
+    def _optimizeAcq(self, method='L-BFGS-B', n_start=100):
         """
         Optimizes the acquisition function using a multistart approach.
 
@@ -167,21 +166,15 @@ class NP:
         """
         time_acqui = time.time()
 
-        # sample starting points and append the current best budget
-        start_points_list = [self._sampleParam() for _ in range(n_start)]
-        start_points_list.append(self.current_best_budget[self.tau])
-        start_points_array = np.array(start_points_list)
-
-        # save the starting points for visualization
+        start_points_arr = np.array([self._sampleParam() for i in range(n_start)])
         if self.save_test_strategies:
-            np.save(os.path.join(self.save_test_strategies_path, f'test_strategy_{self.n}'), start_points_array)
+            np.save(os.path.join(self.save_test_strategies_path, f'test_strategy_{self.n}'), start_points_arr)
             self.n += 1
 
-        # evaluate the surrogate model at the starting points. Either sequentially or in parallel
         x_best = np.empty((n_start, len(self.parameter_key)))
         f_best = np.empty((n_start,))
         if self.n_jobs == 1:
-            for index, start_point in enumerate(start_points_array):
+            for index, start_point in enumerate(start_points_arr):
                 res = minimize(self._acqWrapper, x0=start_point, method=method,
                                bounds=self.parameter_range)
                 x_best[index], f_best[index] = res.x, np.atleast_1d(res.fun)[0]
@@ -190,11 +183,13 @@ class NP:
                                                                  x0=start_point,
                                                                  method=method,
                                                                  bounds=self.parameter_range) for start_point in
-                                               start_points_array)
+                                               start_points_arr)
             x_best = np.array([res.x for res in opt])
             f_best = np.array([np.atleast_1d(res.fun)[0] for res in opt])
 
         # the acqui-optimization needs to return the best budget and the corresponding objective value
+        # print('\nf_best', f_best)
+        # print(np.shape(f_best))
         self.current_best_measurement = x_best[np.argmin(f_best)]
 
         # save time for acquisition function optimization
@@ -211,6 +206,7 @@ class NP:
             Best function evaluation.
 
         """
+        # print('self.surrogate_y', self.surrogate_y)
         argtau = np.max(self.surrogate_y)
         best_budget = self.current_best_budget[argtau]
 
@@ -236,7 +232,7 @@ class NP:
         f_new = np.round(f_new, decimals=8)
         self.surrogate_y.append(f_new)
         self.stderr[f_new] = stderr_f_new
-        self.current_best_budget[f_new] = param
+        self.current_best_budget[self.tau] = param
 
         # TODO NP class does not keep a list of max Ys,
         # get the current optimum of the GP
@@ -309,21 +305,19 @@ class NP:
 
         self.trainNP(epochs=self.epochs, batch_size=self.batch_size)
 
-        # get the best y and corresponding stderr and save it as self.tau
+        # get the best y and corresponding stderr
         i = np.argmax(self.prior_y)
         self.tau = np.round(self.prior_y[i], decimals=8)
         tau_stderr = self.prior_stderr[i]
 
-        # current best budget is a dictionary with the y/tau as key and the corresponding budget as value
         self.current_best_budget[self.tau] = self.prior_x[i]
-        # surrogate_y is a list of all the best y values that have been evaluated so far
         self.surrogate_y.append(self.tau)
 
         self.history.append(self.tau)
-        # self.stderr contains the stderr for each tau and gets continuously updated
         self.stderr[self.tau] = tau_stderr
 
         time_start = time.time()
+        # print(f'Running GPGO for {max_iter} iterations.')
         for _ in tqdm(range(max_iter), leave=False):
 
             self._optimizeAcq()
