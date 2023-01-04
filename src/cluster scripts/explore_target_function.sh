@@ -24,5 +24,5 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bbo_explore_target_function.py \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py explore_target_function \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
