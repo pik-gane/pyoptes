@@ -1,4 +1,3 @@
-# TODO might have to prepend all functions with a "bo" to prevent conflicts with other modules
 from .util import *
 from .optimization.budget_allocation.blackbox_learning.bo_cma import bo_cma
 from .optimization.budget_allocation.blackbox_learning.bo_pyGPGO import bo_pyGPGO
