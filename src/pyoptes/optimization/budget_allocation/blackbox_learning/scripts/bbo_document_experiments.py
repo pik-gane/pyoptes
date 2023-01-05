@@ -2,7 +2,6 @@
 Searches for all experiments and documents them in a csv file.
 '''
 
-import argparse
 import os
 import glob
 import json
@@ -49,6 +48,10 @@ def bbo_document_experiments(path_plot):
 
         # write entries for each experiment
         for experiment_params in path_to_experiments:
+
+
+            # path_to_eval_output = os.path.join(os.path.dirname(experiment_params), 'evaluation_output.txt')
+
             # TODO add check for 'evaluation_output.txt' file, if not present, skip experiment
             with open(experiment_params, 'r') as f:
                 hyperparameters = json.load(f)
