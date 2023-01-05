@@ -4,10 +4,10 @@ import glob
 
 if __name__ == '__main__':
 
-    path_to_experiments = glob.glob(os.path.join('../data/blackbox_learning/results/',
+    path_to_experiments = glob.glob(os.path.join('../../../../../../data/blackbox_learning/results/',
                                                  '**/evaluation_output.txt'))
 
-    path_to_experiments_old = glob.glob(os.path.join('../data/blackbox_learning/results/old/',
+    path_to_experiments_old = glob.glob(os.path.join('../../../../../../data/blackbox_learning/results/old/',
                                                      '**/evaluation_output.txt'))
     path_to_experiments.extend(path_to_experiments_old)
     print(f'Number of experiments: {len(path_to_experiments)}')

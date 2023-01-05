@@ -130,6 +130,8 @@ if __name__ == '__main__':
                         help='Sets whether to save the test strategies that are evaluate in the optimization.')
     parser.add_argument('--plot_prior', type=bool, default='',
                         help='')
+    parser.add_argument('--force_postprocessing', type=bool, default=False,
+                        help='Sets whether to force the postprocessing of the optimization results.')
 
     parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
                         help="Optimizer parameter. Location where all the individual results"
@@ -188,7 +190,8 @@ if __name__ == '__main__':
     # TODO compute_baseline
 
     elif args.mode == 'postprocessing':
-        bbo_postprocessing(path_plot=args.path_plot,)
+        bbo_postprocessing(path_plot=args.path_plot,
+                           force_postprocessing=args.force_postprocessing,)
 
     elif args.mode == 'create_combined_plots':
 

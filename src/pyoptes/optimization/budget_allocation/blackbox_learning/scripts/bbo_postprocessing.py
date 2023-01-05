@@ -1,3 +1,9 @@
+'''
+The postprocessing script for the blackbox optimization. Has to run after the optimization has finished.
+Creates plots and saves them to the experiment directory.
+
+'''
+
 import numpy as np
 import os
 from pyoptes import bo_load_raw_data, bo_compute_average_otf_and_stderr, bo_save_results
@@ -6,8 +12,7 @@ import json
 import glob
 
 
-# TODO add force_redo parameter
-def bbo_postprocessing(path_plot):
+def bbo_postprocessing(path_plot, force_postprocessing=False):
 
     # get all experiments in the folder with a json file
     path_to_experiments = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'), recursive=True)
@@ -17,7 +22,7 @@ def bbo_postprocessing(path_plot):
 
         # check whether the experiment has been processed already by checking for the existence of the evaluation_output.txt file
         path_evaluation_output = os.path.join(os.path.dirname(experiment_params), 'evaluation_output.txt')
-        if os.path.exists(path_evaluation_output):
+        if os.path.exists(path_evaluation_output) or not force_postprocessing:
             print('Experiment already processed')
         # checking for incomplete experiments shouldn't be needed, as those are not pushed to the repository
         # elif f:
