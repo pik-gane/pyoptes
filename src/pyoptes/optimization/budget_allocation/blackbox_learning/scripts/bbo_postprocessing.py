@@ -1,7 +1,7 @@
 import numpy as np
 import os
-from pyoptes import load_raw_data, compute_average_otf_and_stderr, save_results
-from pyoptes import plot_optimizer_history, plot_time_for_optimization
+from pyoptes import bo_load_raw_data, bo_compute_average_otf_and_stderr, bo_save_results
+from pyoptes import bo_plot_optimizer_history, bo_plot_time_for_optimization
 import json
 import glob
 
@@ -69,7 +69,7 @@ def bbo_postprocessing(path_plot):
             for r in individual_runs:
 
                 p = os.path.join(raw_data_path, r)
-                raw_data = load_raw_data(p)
+                raw_data = bo_load_raw_data(p)
 
                 # extend the list in raw_data to the appropriate list in the outer loop
                 list_best_otf.extend(raw_data['list_best_otf'])
@@ -98,36 +98,36 @@ def bbo_postprocessing(path_plot):
             #                                                                         list_stderr=list_all_prior_stderr,
             #                                                                         n_runs=n_runs)
             # compute the average OTFs, baseline and their standard errors
-            average_best_otf, average_best_otf_stderr = compute_average_otf_and_stderr(list_otf=list_best_otf,
-                                                                                       list_stderr=list_best_otf_stderr,
-                                                                                       n_runs=n_runs)
+            average_best_otf, average_best_otf_stderr = bo_compute_average_otf_and_stderr(list_otf=list_best_otf,
+                                                                                          list_stderr=list_best_otf_stderr,
+                                                                                          n_runs=n_runs)
 
-            average_baseline, average_baseline_stderr = compute_average_otf_and_stderr(list_otf=list_baseline_otf,
-                                                                                       list_stderr=list_baseline_otf_stderr,
-                                                                                       n_runs=n_runs)
+            average_baseline, average_baseline_stderr = bo_compute_average_otf_and_stderr(list_otf=list_baseline_otf,
+                                                                                          list_stderr=list_baseline_otf_stderr,
+                                                                                          n_runs=n_runs)
 
             average_ratio_otf = np.mean(list_ratio_otf)
 
             # create an average otf plot
-            average_best_solution_history, average_stderr_history = compute_average_otf_and_stderr(
+            average_best_solution_history, average_stderr_history = bo_compute_average_otf_and_stderr(
                 list_otf=list_best_solution_history,
                 list_stderr=list_stderr_history,
                 n_runs=n_runs)
 
-            plot_optimizer_history(optimizer_history=average_best_solution_history,
-                                   stderr_history=average_stderr_history,
-                                   baseline_mean=average_baseline, baseline_stderr=average_baseline_stderr,
-                                   n_nodes=n_nodes, sentinels=sentinels,
-                                   path_experiment=path_experiment, optimizer=optimizer,
-                                   name='_average_plot')
+            bo_plot_optimizer_history(optimizer_history=average_best_solution_history,
+                                      stderr_history=average_stderr_history,
+                                      baseline_mean=average_baseline, baseline_stderr=average_baseline_stderr,
+                                      n_nodes=n_nodes, sentinels=sentinels,
+                                      path_experiment=path_experiment, optimizer=optimizer,
+                                      name='_average_plot')
 
             time_for_optimization = np.mean(list_time_for_optimization, axis=0)
             time_for_optimization = np.cumsum(time_for_optimization, axis=0)
-            plot_time_for_optimization(time_for_optimization=time_for_optimization,
-                                       path_experiment=path_experiment, optimizer=optimizer,
-                                       file_name='time_for_optimization.png',
-                                       title='Time for optimization',
-                                       sum_up_time=False)
+            bo_plot_time_for_optimization(time_for_optimization=time_for_optimization,
+                                          path_experiment=path_experiment, optimizer=optimizer,
+                                          file_name='time_for_optimization.png',
+                                          title='Time for optimization',
+                                          sum_up_time=False)
 
             output = f'Results averaged over {n_runs} optimizer runs' \
                      f'\naverage ratio otf to baseline: {average_ratio_otf}' \
@@ -135,10 +135,10 @@ def bbo_postprocessing(path_plot):
                      f'\naverage best strategy OTF and stderr: {average_best_otf}, {average_best_otf_stderr}' \
                      f'\nTime for optimization (in hours): {time_for_optimization[-1] / 60}'
 
-            save_results(best_test_strategy=None,
-                         save_test_strategy=False,
-                         path_experiment=path_experiment,
-                         output=output)
+            bo_save_results(best_test_strategy=None,
+                            save_test_strategy=False,
+                            path_experiment=path_experiment,
+                            output=output)
             print('--> finished postprocessing')
             print(output, '\n')
 
@@ -149,13 +149,13 @@ def bbo_postprocessing(path_plot):
                 time_acquisition_optimization = np.mean(list_time_acquisition_optimization, axis=0)
                 time_update_surrogate = np.mean(list_time_update_surrogate, axis=0)
 
-                plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
-                                           path_experiment=path_experiment, optimizer=optimizer,
-                                           file_name='time_for_acquisition_optimization.png',
-                                           title='Average time for acquisition function optimization',
-                                           sum_up_time=True)
-                plot_time_for_optimization(time_for_optimization=time_update_surrogate,
-                                           path_experiment=path_experiment, optimizer=optimizer,
-                                           file_name='time_for_surrogate_update.png',
-                                           title='Average time for surrogate function update',
-                                           sum_up_time=True)
+                bo_plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
+                                              path_experiment=path_experiment, optimizer=optimizer,
+                                              file_name='time_for_acquisition_optimization.png',
+                                              title='Average time for acquisition function optimization',
+                                              sum_up_time=True)
+                bo_plot_time_for_optimization(time_for_optimization=time_update_surrogate,
+                                              path_experiment=path_experiment, optimizer=optimizer,
+                                              file_name='time_for_surrogate_update.png',
+                                              title='Average time for surrogate function update',
+                                              sum_up_time=True)

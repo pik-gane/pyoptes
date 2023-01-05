@@ -2,11 +2,9 @@ import os
 import cma
 import time
 import numpy as np
-import matplotlib.pyplot
-import pylab as plt
 from tqdm import tqdm
 
-from .utils import map_low_dim_x_to_high_dim, softmax
+from .utils import bo_map_low_dim_x_to_high_dim, bo_softmax
 
 
 # TODO complete documentation for parameters
@@ -51,13 +49,13 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
         # sample a new population of solutions
         solutions = es.ask()
         # evaluate all solutions on the objective function, return only the mean (omit stderr)
-        f_solution = [cma_objective_function(s, **f_kwargs)[0] for s in tqdm(solutions, leave=False)]
+        f_solution = [bo_cma_objective_function(s, **f_kwargs)[0] for s in tqdm(solutions, leave=False)]
             # parallelization is non-trivial, as the objective function is already parallelized and nested
             # parallelization is not allowed by python
         # use the solution and evaluation to update cma-es parameters (covariance-matrix ...)
         es.tell(solutions, f_solution)
         # evaluate the current best parameter and save mean + standard error
-        best_s, best_s_stderr = cma_objective_function(es.result.xbest, **f_kwargs)
+        best_s, best_s_stderr = bo_cma_objective_function(es.result.xbest, **f_kwargs)
         best_solution_history.append(best_s)
         best_solution_stderr_history.append(best_s_stderr)
 
@@ -74,7 +72,7 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
     return best_parameter, best_solution_history, best_solution_stderr_history, time_for_optimization
 
 
-def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function,
+def bo_cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function,
                            statistic, total_budget, parallel, num_cpu_cores):
     """
     An optimizeable objective function.
@@ -99,9 +97,9 @@ def cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_functio
     # and then to nan in the budget
     # Why does the target function not break, when given NaNs ?
     # if we want to keep the softmax, we can do x-max(x) and then softmax
-    x = total_budget * softmax(x)
+    x = total_budget * bo_softmax(x)
 
-    x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
+    x = bo_map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
 
     y, stderr = eval_function(x,
                               n_simulations=n_simulations,

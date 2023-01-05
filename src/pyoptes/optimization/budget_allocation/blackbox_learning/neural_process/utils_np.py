@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 
 
-def context_target_split(x, y, num_context, num_extra_target):
+def bo_context_target_split(x, y, num_context, num_extra_target):
     """Given inputs x and their value y, return random subsets of points for
     context and target. Note that following conventions from "Empirical
     Evaluation of Neural Process Objectives" the context points are chosen as a
@@ -39,7 +39,7 @@ def context_target_split(x, y, num_context, num_extra_target):
     return x_context, y_context, x_target, y_target
 
 
-class TrainingDataset(Dataset):
+class bo_TrainingDataset(Dataset):
     def __init__(self, x, y):
         self.data = [((x[i]), y[i])
                      for i in range(len(x))]

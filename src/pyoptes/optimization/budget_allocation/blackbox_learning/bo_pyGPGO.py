@@ -1,6 +1,6 @@
 import numpy as np
 
-from .utils import map_low_dim_x_to_high_dim, softmax
+from .utils import bo_map_low_dim_x_to_high_dim, bo_softmax
 
 from pyGPGO.acquisition import Acquisition
 from pyGPGO.covfunc import squaredExponential
@@ -9,7 +9,7 @@ from pyGPGO.surrogates.GaussianProcess import GaussianProcess
 from .custom_GPGO import GPGO
 
 
-def bo_pyGPGO(prior, prior_y, prior_stderr,
+def bo_pyGPGO(prior_x, prior_y, prior_stderr,
               max_iterations, n_simulations, node_indices, n_nodes, eval_function,
               total_budget, parallel, num_cpu_cores, acquisition_function, statistic,
               use_prior=True,
@@ -23,7 +23,7 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
     @param prior_stderr:
     @param prior_y:
     @param use_prior: bool, sets whether the surrogate function is pre-fit with a prior or random samples
-    @param prior: list of arrays, the prior for the surrogate function
+    @param prior_x: list of arrays, the prior for the surrogate function
     @param acquisition_function: string, defines the acquisition function to be used.
     @param max_iterations: int, maximum number of iterations for GPGO to run
     @param n_simulations: int, number of simulations the SI-simulation is run with
@@ -52,7 +52,7 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
 
     optimizer = GPGO(surrogate=gp,
                      acquisition=acq,
-                     f=pyGPGO_objective_function,
+                     f=bo_pyGPGO_objective_function,
                      parameter_dict=parameters,
                      n_jobs=num_cpu_cores,
                      save_test_strategies=save_test_strategies,
@@ -63,7 +63,7 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
                                'num_cpu_cores': num_cpu_cores, 'statistic': statistic})
 
     optimizer.run(max_iter=max_iterations,
-                  prior=prior,
+                  prior_x=prior_x,
                   prior_y=prior_y,
                   prior_stderr=prior_stderr,
                   use_prior=use_prior)
@@ -80,7 +80,7 @@ def bo_pyGPGO(prior, prior_y, prior_stderr,
            optimizer.time_for_optimization, optimizer.time_acquisition_optimization, optimizer.time_update_surrogate
 
 
-def pyGPGO_objective_function(x, node_indices, total_budget, n_nodes, eval_function,
+def bo_pyGPGO_objective_function(x, node_indices, total_budget, n_nodes, eval_function,
                               n_simulations, parallel, num_cpu_cores, statistic):
     """
     Objective function for GPGO that is to be optimized.
@@ -101,8 +101,8 @@ def pyGPGO_objective_function(x, node_indices, total_budget, n_nodes, eval_funct
     # TODO fix GPGO breaking when using the prior + sentinels less the n_nodes
 
     # rescale strategy such that it satisfies sum constraint
-    x = total_budget * softmax(x)
-    x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
+    x = total_budget * bo_softmax(x)
+    x = bo_map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
 
     y, stderr = eval_function(budget_allocation=x,
                               n_simulations=n_simulations,

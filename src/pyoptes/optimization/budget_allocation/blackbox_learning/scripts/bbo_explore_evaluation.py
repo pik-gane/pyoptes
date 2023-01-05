@@ -3,7 +3,7 @@ Compare optimizer outputs of the saved in the evaluation_output txt-file with th
 
 '''
 
-from pyoptes import create_graph, compute_average_otf_and_stderr
+from pyoptes import bo_create_graph, bo_compute_average_otf_and_stderr
 
 import glob
 import json

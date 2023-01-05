@@ -1,9 +1,6 @@
 import numpy as np
-
-from .utils import map_low_dim_x_to_high_dim, softmax
-
+from .utils import bo_map_low_dim_x_to_high_dim, bo_softmax
 from pyGPGO.acquisition import Acquisition
-
 from .custom_Neural_Process import NP
 
 
@@ -63,7 +60,7 @@ def bo_neural_process(prior, prior_y, prior_stderr,
                    prior_y=prior_y,
                    prior_stderr=prior_stderr,
                    acquisition=acq,
-                   f=neural_process_objective_function,
+                   f=bo_neural_process_objective_function,
                    parameter_dict=parameters,
                    n_jobs=num_cpu_cores,
                    save_test_strategies=save_test_strategies,
@@ -93,7 +90,7 @@ def bo_neural_process(prior, prior_y, prior_stderr,
            optimizer.time_for_optimization, optimizer.time_acquisition_optimization, optimizer.time_update_surrogate
 
 
-def neural_process_objective_function(x, node_indices, total_budget, n_nodes, eval_function,
+def bo_neural_process_objective_function(x, node_indices, total_budget, n_nodes, eval_function,
                                       n_simulations, parallel, num_cpu_cores, statistic):
     """
     Objective function for GPGO that is to be optimized.
@@ -114,8 +111,8 @@ def neural_process_objective_function(x, node_indices, total_budget, n_nodes, ev
     # TODO fix GPGO breaking when using the prior + sentinels less the n_nodes
 
     # rescale strategy such that it satisfies sum constraint
-    x = total_budget * softmax(x)
-    x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
+    x = total_budget * bo_softmax(x)
+    x = bo_map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
 
     y, stderr = eval_function(budget_allocation=x,
                               n_simulations=n_simulations,

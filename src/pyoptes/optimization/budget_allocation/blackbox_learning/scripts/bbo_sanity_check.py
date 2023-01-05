@@ -4,7 +4,7 @@ Computes the average target function output for the uniform baseline.
 
 
 from pyoptes.optimization.budget_allocation import target_function as f
-from pyoptes import create_graph, compute_average_otf_and_stderr
+from pyoptes import bo_create_graph, bo_compute_average_otf_and_stderr
 
 import numpy as np
 from tqdm import tqdm
@@ -43,7 +43,7 @@ def bbo_sanity_check(n_nodes,
     list_baseline_otf_stderr = []
 
     for n in tqdm(range(n_runs)):
-        transmissions, capacities, degrees = create_graph(n, graph_type, n_nodes, path_networks)
+        transmissions, capacities, degrees = bo_create_graph(n, graph_type, n_nodes, path_networks)
 
         f.prepare(n_nodes=n_nodes,
                   capacity_distribution=capacities,
@@ -65,9 +65,9 @@ def bbo_sanity_check(n_nodes,
         list_baseline_otf.append(m)
         list_baseline_otf_stderr.append(stderr)
     print(list_baseline_otf)
-    average_baseline, average_baseline_stderr = compute_average_otf_and_stderr(list_baseline_otf,
-                                                                               list_baseline_otf_stderr,
-                                                                               n_runs=n_runs)
+    average_baseline, average_baseline_stderr = bo_compute_average_otf_and_stderr(list_baseline_otf,
+                                                                                  list_baseline_otf_stderr,
+                                                                                  n_runs=n_runs)
 
     print('average_baseline', average_baseline)
     print('average_baseline_stderr', average_baseline_stderr)

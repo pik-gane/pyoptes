@@ -4,12 +4,12 @@ from pyoptes.optimization.budget_allocation import target_function as f
 
 from pyoptes import bo_cma, bo_pyGPGO, bo_neural_process
 
-from pyoptes import choose_sentinels, baseline
-from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior
-from pyoptes import save_hyperparameters, save_results, plot_prior, create_graph, save_raw_data
-from pyoptes import plot_time_for_optimization, plot_optimizer_history, evaluate_prior
-from pyoptes import compute_average_otf_and_stderr, softmax
-from pyoptes import rms_tia, percentile_tia, mean_tia
+from pyoptes import bo_choose_sentinels, bo_baseline
+from pyoptes import bo_map_low_dim_x_to_high_dim, bo_create_test_strategy_prior
+from pyoptes import bo_save_hyperparameters, bo_save_results, bo_plot_prior, bo_create_graph, bo_save_raw_data
+from pyoptes import bo_plot_time_for_optimization, bo_plot_optimizer_history, bo_evaluate_prior
+from pyoptes import bo_compute_average_otf_and_stderr, bo_softmax
+from pyoptes import bo_rms_tia, bo_percentile_tia, bo_mean_tia
 
 import numpy as np
 from tqdm import tqdm
@@ -73,11 +73,11 @@ def bbo_optimization(optimizer: str,
 
     # define function to average the results of the simulation
     if statistic_str == 'mean':
-        statistic = mean_tia
+        statistic = bo_mean_tia
     elif statistic_str == 'rms':
-        statistic = rms_tia
+        statistic = bo_rms_tia
     elif statistic_str == '95perc':
-        statistic = percentile_tia
+        statistic = bo_percentile_tia
     else:
         raise ValueError('Statistic not supported')
 
@@ -134,7 +134,7 @@ def bbo_optimization(optimizer: str,
     else:
         raise ValueError('Optimizer not supported')
 
-    save_hyperparameters(hyperparameters=experiment_params, base_path=path_experiment)
+    bo_save_hyperparameters(hyperparameters=experiment_params, base_path=path_experiment)
 
     ####################################################################################################################
     # start optimization
@@ -172,8 +172,8 @@ def bbo_optimization(optimizer: str,
               f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
         #
-        transmissions, capacities, degrees = create_graph(n=n, graph_type=graph_type,
-                                                          n_nodes=n_nodes, base_path=path_networks)
+        transmissions, capacities, degrees = bo_create_graph(n=n, graph_type=graph_type,
+                                                             n_nodes=n_nodes, base_path=path_networks)
 
         # initialize the si-simulation
         f.prepare(n_nodes=n_nodes,
@@ -187,13 +187,13 @@ def bbo_optimization(optimizer: str,
 
         # create a list of test strategies based on different heuristics
         prior, prior_node_indices, prior_parameter = \
-            create_test_strategy_prior(n_nodes=n_nodes,
-                                       node_degrees=degrees,
-                                       node_capacities=capacities,
-                                       total_budget=total_budget,
-                                       sentinels=sentinels,
-                                       mixed_strategies=prior_mixed_strategies,
-                                       only_baseline=prior_only_baseline)
+            bo_create_test_strategy_prior(n_nodes=n_nodes,
+                                          node_degrees=degrees,
+                                          node_capacities=capacities,
+                                          total_budget=total_budget,
+                                          sentinels=sentinels,
+                                          mixed_strategies=prior_mixed_strategies,
+                                          only_baseline=prior_only_baseline)
 
         # evaluate the strategies in the prior
         list_prior_tf = []
@@ -201,9 +201,9 @@ def bbo_optimization(optimizer: str,
 
         for i, p in tqdm(enumerate(prior), leave=False, total=len(prior)):
 
-            p = map_low_dim_x_to_high_dim(x=p,
-                                          number_of_nodes=n_nodes,
-                                          node_indices=prior_node_indices[i])
+            p = bo_map_low_dim_x_to_high_dim(x=p,
+                                             number_of_nodes=n_nodes,
+                                             node_indices=prior_node_indices[i])
 
             m, stderr = f.evaluate(budget_allocation=p,
                                    n_simulations=n_simulations,
@@ -225,18 +225,18 @@ def bbo_optimization(optimizer: str,
         # degrees. The function return the indices of these nodes
         # The indices correspond to the first item of the prior
         node_attributes = [degrees, capacities, transmissions]
-        node_indices = choose_sentinels(node_attributes=node_attributes,
-                                        sentinels=sentinels,
-                                        mode=mode_choose_sentinels)
+        node_indices = bo_choose_sentinels(node_attributes=node_attributes,
+                                           sentinels=sentinels,
+                                           mode=mode_choose_sentinels)
 
         # compute the baseline, i.e., the expected value of the objective function for a uniform distribution of the
         # budget over all nodes (regardless of the number of sentinels)
-        baseline_mean, baseline_stderr, x_baseline = baseline(total_budget=total_budget,
-                                                              eval_function=f.evaluate,
-                                                              n_nodes=n_nodes,
-                                                              parallel=parallel,
-                                                              num_cpu_cores=num_cpu_cores,
-                                                              statistic=statistic)
+        baseline_mean, baseline_stderr, x_baseline = bo_baseline(total_budget=total_budget,
+                                                                 eval_function=f.evaluate,
+                                                                 n_nodes=n_nodes,
+                                                                 parallel=parallel,
+                                                                 num_cpu_cores=num_cpu_cores,
+                                                                 statistic=statistic)
 
         # ----------------------------------------
         # start the chosen optimizer
@@ -269,7 +269,7 @@ def bbo_optimization(optimizer: str,
 
         elif optimizer == 'gpgo':
 
-            optimizer_kwargs['prior'] = prior
+            optimizer_kwargs['prior_x'] = prior
             optimizer_kwargs['prior_y'] = list_prior_tf
             optimizer_kwargs['prior_stderr'] = list_prior_stderr
             optimizer_kwargs['acquisition_function'] = acquisition_function
@@ -313,26 +313,26 @@ def bbo_optimization(optimizer: str,
         print('------------------------------------------------------')
 
         # plot and save to disk the results of the individual optimization runs
-        plot_optimizer_history(optimizer_history=best_solution_history, stderr_history=stderr_history,
-                               baseline_mean=baseline_mean, baseline_stderr=baseline_stderr,
-                               n_nodes=n_nodes, sentinels=sentinels,
-                               path_experiment=path_sub_experiment, optimizer=optimizer)
+        bo_plot_optimizer_history(optimizer_history=best_solution_history, stderr_history=stderr_history,
+                                  baseline_mean=baseline_mean, baseline_stderr=baseline_stderr,
+                                  n_nodes=n_nodes, sentinels=sentinels,
+                                  path_experiment=path_sub_experiment, optimizer=optimizer)
 
-        plot_time_for_optimization(time_for_optimization=time_for_optimization,
-                                   path_experiment=path_sub_experiment,
-                                   optimizer=optimizer)
+        bo_plot_time_for_optimization(time_for_optimization=time_for_optimization,
+                                      path_experiment=path_sub_experiment,
+                                      optimizer=optimizer)
 
         if optimizer == 'gpgo' or optimizer == 'np':
-            plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
-                                       path_experiment=path_sub_experiment,
-                                       optimizer=optimizer,
-                                       file_name='time_for_acquisition_optimization.png',
-                                       title='Time for acquisition function optimization')
-            plot_time_for_optimization(time_for_optimization=time_update_surrogate,
-                                       path_experiment=path_sub_experiment,
-                                       optimizer=optimizer,
-                                       file_name='time_for_surrogate_update.png',
-                                       title='Time for surrogate function update')
+            bo_plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
+                                          path_experiment=path_sub_experiment,
+                                          optimizer=optimizer,
+                                          file_name='time_for_acquisition_optimization.png',
+                                          title='Time for acquisition function optimization')
+            bo_plot_time_for_optimization(time_for_optimization=time_update_surrogate,
+                                          path_experiment=path_sub_experiment,
+                                          optimizer=optimizer,
+                                          file_name='time_for_surrogate_update.png',
+                                          title='Time for surrogate function update')
 
         # get the best strategy from the history of the optimizer
         index = np.argmin(best_solution_history)
@@ -354,9 +354,9 @@ def bbo_optimization(optimizer: str,
                  f'\nRatio OTF: {ratio_otf}'
 
         #
-        save_results(best_test_strategy=best_test_strategy,
-                     path_experiment=path_sub_experiment,
-                     output=output)
+        bo_save_results(best_test_strategy=best_test_strategy,
+                        path_experiment=path_sub_experiment,
+                        output=output)
 
         # save OTFs of baseline and optimizer
         list_best_otf.append(eval_best_test_strategy)
@@ -393,7 +393,7 @@ def bbo_optimization(optimizer: str,
     if optimizer == 'gpgo' or optimizer == 'np':
         kwargs_save_raw_data['list_time_acquisition_optimization'] = list_time_acquisition_optimization
         kwargs_save_raw_data['list_time_update_surrogate'] = list_time_update_surrogate
-    save_raw_data(**kwargs_save_raw_data)
+    bo_save_raw_data(**kwargs_save_raw_data)
 
     # create a .done file in the sub path to indicate the run is finished
     with open(os.path.join(raw_data_path, '.done'), 'w') as done_file:
@@ -407,13 +407,13 @@ def bbo_optimization(optimizer: str,
     # compute the averages over all optimization runs of the prior, the optimizer, the baseline and their standard error
 
     # compute the average OTFs, baseline and their standard errors
-    average_best_otf, average_best_otf_stderr = compute_average_otf_and_stderr(list_otf=list_best_otf,
-                                                                               list_stderr=list_best_otf_stderr,
-                                                                               n_runs=n_runs)
+    average_best_otf, average_best_otf_stderr = bo_compute_average_otf_and_stderr(list_otf=list_best_otf,
+                                                                                  list_stderr=list_best_otf_stderr,
+                                                                                  n_runs=n_runs)
 
-    average_baseline, average_baseline_stderr = compute_average_otf_and_stderr(list_otf=list_baseline_otf,
-                                                                               list_stderr=list_baseline_otf_stderr,
-                                                                               n_runs=n_runs)
+    average_baseline, average_baseline_stderr = bo_compute_average_otf_and_stderr(list_otf=list_baseline_otf,
+                                                                                  list_stderr=list_baseline_otf_stderr,
+                                                                                  n_runs=n_runs)
 
     average_ratio_otf = np.mean(list_ratio_otf)
 
@@ -423,8 +423,8 @@ def bbo_optimization(optimizer: str,
              f'\naverage best strategy OTF and stderr: {average_best_otf}, {average_best_otf_stderr}' \
              f'\nTime for optimization (in hours): {(time() - time_start) / 3600}'
 
-    save_results(best_test_strategy=None,
-                 save_test_strategy=False,
-                 path_experiment=os.path.join(path_experiment, 'raw_data', str(n_runs_start)),
-                 output=output)
+    bo_save_results(best_test_strategy=None,
+                    save_test_strategy=False,
+                    path_experiment=os.path.join(path_experiment, 'raw_data', str(n_runs_start)),
+                    output=output)
     print(output)

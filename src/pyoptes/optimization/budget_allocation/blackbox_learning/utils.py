@@ -7,7 +7,7 @@ import networkx as nx
 from scipy.stats.mstats import mjci
 
 
-def softmax(x: np.array) -> np.array:
+def bo_softmax(x: np.array) -> np.array:
     """
     Softmax function.
     @param x: budget vector, numpy array
@@ -18,9 +18,9 @@ def softmax(x: np.array) -> np.array:
     return x
 
 
-def compute_average_otf_and_stderr(list_otf: list,
-                                   list_stderr: list,
-                                   n_runs: int) -> (float, float):
+def bo_compute_average_otf_and_stderr(list_otf: list,
+                                      list_stderr: list,
+                                      n_runs: int) -> (float, float):
     average_best_otf = np.mean(list_otf, axis=0)
     s = np.mean(list_stderr, axis=0)
     v = np.var(list_otf, axis=0)
@@ -29,9 +29,9 @@ def compute_average_otf_and_stderr(list_otf: list,
     return average_best_otf, average_best_otf_stderr
 
 
-def save_results(best_test_strategy: np.array,
-                 path_experiment: str,
-                 output: str, save_test_strategy: bool = True) -> None:
+def bo_save_results(best_test_strategy: np.array,
+                    path_experiment: str,
+                    output: str, save_test_strategy: bool = True) -> None:
     """
     Saves the evaluation of the output and the corresponding best parameter.
     @param save_test_strategy:
@@ -49,8 +49,8 @@ def save_results(best_test_strategy: np.array,
         np.save(os.path.join(path_experiment, 'best_parameter'), best_test_strategy)
 
 
-def save_hyperparameters(hyperparameters: dict,
-                         base_path: str,) -> None:
+def bo_save_hyperparameters(hyperparameters: dict,
+                            base_path: str,) -> None:
     """
     Saves the parameters for a training run of a model,
     Parameters are saved as a json file.
@@ -69,15 +69,15 @@ def save_hyperparameters(hyperparameters: dict,
 
 
 # TODO add function to load raw data from file
-def save_raw_data(list_best_otf: list, list_best_otf_stderr: list,
-                  list_baseline_otf: list, list_baseline_otf_stderr: list,
-                  list_ratio_otf: list,
-                  list_best_solution_history: list, list_stderr_history: list,
-                  list_time_for_optimization: list,
-                  list_all_prior_tf: list, list_all_prior_stderr: list,
-                  list_time_acquisition_optimization: list = None,
-                  list_time_update_surrogate: list = None,
-                  path_experiment: str = '') -> None:
+def bo_save_raw_data(list_best_otf: list, list_best_otf_stderr: list,
+                     list_baseline_otf: list, list_baseline_otf_stderr: list,
+                     list_ratio_otf: list,
+                     list_best_solution_history: list, list_stderr_history: list,
+                     list_time_for_optimization: list,
+                     list_all_prior_tf: list, list_all_prior_stderr: list,
+                     list_time_acquisition_optimization: list = None,
+                     list_time_update_surrogate: list = None,
+                     path_experiment: str = '') -> None:
     """
     Saves the raw data of the optimization process.
     @param list_time_update_surrogate:
@@ -114,7 +114,7 @@ def save_raw_data(list_best_otf: list, list_best_otf_stderr: list,
         np.save(os.path.join(path_experiment, 'list_time_update_surrogate'), list_time_update_surrogate)
 
 
-def load_raw_data(path_experiment: str) -> dict:
+def bo_load_raw_data(path_experiment: str) -> dict:
     """
 
     @param path_experiment:
@@ -154,9 +154,9 @@ def load_raw_data(path_experiment: str) -> dict:
                 'list_all_prior_tf': list_all_prior_tf, 'list_all_prior_stderr': list_all_prior_stderr}
 
 
-def choose_sentinels(node_attributes: list,
-                     sentinels: int,
-                     mode: str) -> list:
+def bo_choose_sentinels(node_attributes: list,
+                        sentinels: int,
+                        mode: str) -> list:
     """
     Chooses the sentinels with the highest attribute for the given mode.
     The first item in the list is always the highest of the chosen attribute
@@ -188,8 +188,8 @@ def choose_sentinels(node_attributes: list,
         raise ValueError(f'Mode "{mode}" not supported')
 
 
-def get_node_attributes(node_attributes: list,
-                        mode: str) -> list:
+def bo_get_node_attributes(node_attributes: list,
+                           mode: str) -> list:
     """
     Returns the node attributes for the given mode.
     The node attributes are sorted by their
@@ -219,9 +219,9 @@ def get_node_attributes(node_attributes: list,
         raise ValueError(f'Mode "{mode}" not supported')
 
 
-def map_low_dim_x_to_high_dim(x: np.array,
-                              number_of_nodes: int,
-                              node_indices: list) -> np.array:
+def bo_map_low_dim_x_to_high_dim(x: np.array,
+                                 number_of_nodes: int,
+                                 node_indices: list) -> np.array:
     """
     Map the values in an array x to an empty array of size n_nodes. The location of each xi is based on node_indices.
     @param x: numpy array, output array to be extended to size n_nodes
@@ -236,13 +236,13 @@ def map_low_dim_x_to_high_dim(x: np.array,
     return x_true
 
 
-def create_test_strategy_prior(n_nodes: int,
-                               node_degrees: list,
-                               node_capacities: list,
-                               total_budget: float,
-                               sentinels: int,
-                               mixed_strategies: bool = True,
-                               only_baseline: bool = False) -> tuple:
+def bo_create_test_strategy_prior(n_nodes: int,
+                                  node_degrees: list,
+                                  node_capacities: list,
+                                  total_budget: float,
+                                  sentinels: int,
+                                  mixed_strategies: bool = True,
+                                  only_baseline: bool = False) -> tuple:
     """
     Creates a list of test strategies to be used as a prior.
     First element in the list is a strategy where the budget is uniformly distributed over all sentinel nodes
@@ -268,13 +268,11 @@ def create_test_strategy_prior(n_nodes: int,
     sentinels_list = [int(sentinels / 6), int(sentinels / 12), int(sentinels / 24)]
 
     # get the (sorted) indices of the highest degree nodes. A list of length sentinels
-    indices_highest_degree_nodes = choose_sentinels(node_attributes=[node_degrees, None, None],
-                                                    sentinels=sentinels,
-                                                    mode='degree')
+    indices_highest_degree_nodes = bo_choose_sentinels(node_attributes=[node_degrees, None, None], sentinels=sentinels,
+                                                       mode='degree')
 
-    indices_highest_capacity_nodes = choose_sentinels(node_attributes=[None, node_capacities, None],
-                                                      sentinels=sentinels,
-                                                      mode='capacity')
+    indices_highest_capacity_nodes = bo_choose_sentinels(node_attributes=[None, node_capacities, None],
+                                                         sentinels=sentinels, mode='capacity')
 
     # ------------------------------------------------------------------------
     # the uniform distribution of the total budget over all sentinels
@@ -297,9 +295,9 @@ def create_test_strategy_prior(n_nodes: int,
             # create strategy for s highest degree nodes, budget is allocated uniformly
             x_sentinels = np.array([total_budget / s for _ in range(s)])
             # map the new strategy to the original number of sentinels
-            new_strategy = map_low_dim_x_to_high_dim(x=x_sentinels,
-                                                     number_of_nodes=sentinels,
-                                                     node_indices=idx)
+            new_strategy = bo_map_low_dim_x_to_high_dim(x=x_sentinels,
+                                                        number_of_nodes=sentinels,
+                                                        node_indices=idx)
             prior_test_strategies.append(new_strategy)
             prior_node_indices.append(indices_highest_degree_nodes)
 
@@ -309,9 +307,9 @@ def create_test_strategy_prior(n_nodes: int,
             # create strategy for s highest capacity nodes, budget is allocated uniformly
 
             x_sentinels = np.array([total_budget / s for _ in range(s)])
-            new_strategy = map_low_dim_x_to_high_dim(x=x_sentinels,
-                                                     number_of_nodes=sentinels,
-                                                     node_indices=idx)
+            new_strategy = bo_map_low_dim_x_to_high_dim(x=x_sentinels,
+                                                        number_of_nodes=sentinels,
+                                                        node_indices=idx)
             prior_test_strategies.append(new_strategy)
             prior_node_indices.append(indices_highest_capacity_nodes)
 
@@ -354,12 +352,12 @@ def create_test_strategy_prior(n_nodes: int,
     return prior_test_strategies, prior_node_indices, test_strategy_parameter
 
 
-def baseline(total_budget: float,
-             eval_function: callable,
-             n_nodes: int,
-             parallel: bool,
-             num_cpu_cores: int,
-             statistic: callable) -> tuple:
+def bo_baseline(total_budget: float,
+                eval_function: callable,
+                n_nodes: int,
+                parallel: bool,
+                num_cpu_cores: int,
+                statistic: callable) -> tuple:
     """
     Creates a test strategy where the total budget is uniformly allocated to all nodes.
     Evaluates the test strategy with the given evaluation function for 10000 simulation runs.
@@ -384,7 +382,7 @@ def baseline(total_budget: float,
     return m, stderr, x_baseline
 
 
-def test_function(x: np.array, *args, **kwargs) -> float:
+def bo_test_function(x: np.array, *args, **kwargs) -> float:
     """
     Quadratic function just for test purposes
     @param x: numpy array, input vector
@@ -393,12 +391,12 @@ def test_function(x: np.array, *args, **kwargs) -> float:
     return x[0]**2
 
 
-def evaluate_prior(prior: list,
-                   n_simulations: int,
-                   eval_function: callable,
-                   parallel: bool,
-                   num_cpu_cores: int,
-                   statistic: callable) -> np.array:
+def bo_evaluate_prior(prior: list,
+                      n_simulations: int,
+                      eval_function: callable,
+                      parallel: bool,
+                      num_cpu_cores: int,
+                      statistic: callable) -> np.array:
     """
     Evaluate the strategies in the prior and return the mean and standard error
     @param statistic:
@@ -422,10 +420,10 @@ def evaluate_prior(prior: list,
     return np.array(y_prior)
 
 
-def create_graph(n: int,
-                 graph_type: str,
-                 n_nodes: int,
-                 base_path: str = '../data/') -> tuple:
+def bo_create_graph(n: int,
+                    graph_type: str,
+                    n_nodes: int,
+                    base_path: str = '../data/') -> tuple:
     """
     Loads n_runs graphs from disk and returns them as a list
     @param n_nodes:
@@ -514,7 +512,7 @@ def create_graph(n: int,
     return transmissions, capacities, degrees
 
 
-def rms_tia(n_infected_animals: np.array) -> tuple:
+def bo_rms_tia(n_infected_animals: np.array) -> tuple:
     values = n_infected_animals**2
     estimate = np.sqrt(np.mean(values, axis=0))
     stderr = np.std(values, ddof=1, axis=0) / np.sqrt(values.shape[0])
@@ -522,13 +520,13 @@ def rms_tia(n_infected_animals: np.array) -> tuple:
     return estimate, stderr
 
 
-def mean_tia(n_infected_animals: np.array) -> tuple:
+def bo_mean_tia(n_infected_animals: np.array) -> tuple:
     estimate = np.mean(n_infected_animals, axis=0)
     stderr = np.std(n_infected_animals, ddof=1, axis=0) / np.sqrt(n_infected_animals.shape[0])
     return estimate, stderr
 
 
-def percentile_tia(n_infected_animals: np.array) -> tuple:
+def bo_percentile_tia(n_infected_animals: np.array) -> tuple:
     estimate = np.percentile(n_infected_animals, 95, axis=0)
     stderr = mjci(n_infected_animals, prob=[0.95], axis=0)[0]
     return estimate, stderr

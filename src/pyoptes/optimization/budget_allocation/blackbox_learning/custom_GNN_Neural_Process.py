@@ -13,9 +13,9 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy.optimize import minimize
 
-from .neural_process.neural_process import NeuralProcess
-from .neural_process.training import NeuralProcessTrainer
-from .neural_process.utils_np import context_target_split, TrainingDataset
+from .neural_process.neural_process import bo_NeuralProcess
+from .neural_process.training import bo_NeuralProcessTrainer
+from .neural_process.utils_np import bo_context_target_split, bo_TrainingDataset
 from torch.utils.data import DataLoader
 import torch
 from torch.distributions import Normal
@@ -55,7 +55,7 @@ class NP:
         self.num_context = num_context
         self.num_target = num_target
 
-        self.NP = NeuralProcess(self.x_dim, r_dim=r_dim, z_dim=z_dim, h_dim=h_dim, y_dim=1)
+        self.NP = bo_NeuralProcess(self.x_dim, r_dim=r_dim, z_dim=z_dim, h_dim=h_dim, y_dim=1)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.optimizer = torch.optim.Adam(self.NP.parameters(), lr=3e-4)
 
@@ -260,21 +260,19 @@ class NP:
             # print('np shape new_elem_y: ', np.shape(new_elem_y), type(new_elem_y), new_elem_y)
             self.x = torch.cat((self.x, new_elem_x), 1)
             self.y = torch.cat((self.y, new_elem_y), 1)
-        training_dataset = TrainingDataset(self.x, self.y)
+        training_dataset = bo_TrainingDataset(self.x, self.y)
         self.dataloader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
-        np_trainer = NeuralProcessTrainer(self.device, self.NP, self.optimizer,
-                                          num_context_range=(self.num_context, self.num_context),
-                                          num_extra_target_range=(self.num_target, self.num_target),
-                                          print_freq=200)
+        np_trainer = bo_NeuralProcessTrainer(self.device, self.NP, self.optimizer,
+                                             num_context_range=(self.num_context, self.num_context),
+                                             num_extra_target_range=(self.num_target, self.num_target),
+                                             print_freq=200)
         np_trainer.train(self.dataloader, epochs)
 
         # use the first element in the data as the context for the next prediction
         for batch in self.dataloader:
             break
         x, y = batch
-        x_context, y_context, _, _ = context_target_split(x[0:1], y[0:1],
-                                                          self.num_context,
-                                                          self.num_target)
+        x_context, y_context, _, _ = bo_context_target_split(x[0:1], y[0:1], self.num_context, self.num_target)
 
         # whenever the neural process is trained (or updated), z is updated as well
         mu_context, sigma_context = self.NP.xy_to_mu_sigma(x_context, y_context)

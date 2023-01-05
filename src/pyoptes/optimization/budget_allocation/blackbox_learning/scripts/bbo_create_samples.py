@@ -6,8 +6,8 @@ import os.path
 
 from pyoptes.optimization.budget_allocation import target_function as f
 
-from pyoptes import map_low_dim_x_to_high_dim, create_test_strategy_prior, create_graph
-from pyoptes import rms_tia, percentile_tia, mean_tia
+from pyoptes import bo_map_low_dim_x_to_high_dim, bo_create_test_strategy_prior, bo_create_graph
+from pyoptes import bo_rms_tia, bo_percentile_tia, bo_mean_tia
 
 import argparse
 import numpy as np
@@ -55,11 +55,11 @@ def bbo_create_samples(sentinels: int = 1040,
 
                         # define function to average the results of the simulation
                         if statistic_str == 'mean':
-                            statistic = mean_tia
+                            statistic = bo_mean_tia
                         elif statistic_str == 'rms':
-                            statistic = rms_tia
+                            statistic = bo_rms_tia
                         elif statistic_str == '95perc':
-                            statistic = percentile_tia
+                            statistic = bo_percentile_tia
                         else:
                             raise ValueError('Statistic not supported')
 
@@ -74,7 +74,7 @@ def bbo_create_samples(sentinels: int = 1040,
                             # print(f'Run {n + 1} of {n_runs},'
                             #       f' start time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
-                            transmissions, capacities, degrees = create_graph(n, graph_type, n_nodes, path_networks)
+                            transmissions, capacities, degrees = bo_create_graph(n, graph_type, n_nodes, path_networks)
 
                             f.prepare(n_nodes=n_nodes,
                                       capacity_distribution=capacities,
@@ -87,13 +87,13 @@ def bbo_create_samples(sentinels: int = 1040,
 
                             # create a list of test strategies based on different heuristics
                             prior, prior_node_indices, prior_parameter = \
-                                create_test_strategy_prior(n_nodes=n_nodes,
-                                                           node_degrees=degrees,
-                                                           node_capacities=capacities,
-                                                           total_budget=total_budget,
-                                                           sentinels=sentinels,
-                                                           mixed_strategies=False,
-                                                           only_baseline=False)
+                                bo_create_test_strategy_prior(n_nodes=n_nodes,
+                                                              node_degrees=degrees,
+                                                              node_capacities=capacities,
+                                                              total_budget=total_budget,
+                                                              sentinels=sentinels,
+                                                              mixed_strategies=False,
+                                                              only_baseline=False)
 
                             # evaluate the strategies in the prior
                             list_prior_tf = []
@@ -101,9 +101,9 @@ def bbo_create_samples(sentinels: int = 1040,
 
                             for i, p in tqdm(enumerate(prior), leave=False, total=len(prior)):
 
-                                p = map_low_dim_x_to_high_dim(x=p,
-                                                              number_of_nodes=n_nodes,
-                                                              node_indices=prior_node_indices[i])
+                                p = bo_map_low_dim_x_to_high_dim(x=p,
+                                                                 number_of_nodes=n_nodes,
+                                                                 node_indices=prior_node_indices[i])
 
                                 m, stderr = f.evaluate(budget_allocation=p,
                                                        n_simulations=n_simulations,

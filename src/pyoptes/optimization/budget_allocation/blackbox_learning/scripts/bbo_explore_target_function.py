@@ -4,10 +4,10 @@ Compute the target function value for different number of sentinels (either high
 '''
 
 from pyoptes.optimization.budget_allocation import target_function as f
-from pyoptes import create_graph, compute_average_otf_and_stderr, map_low_dim_x_to_high_dim
-from pyoptes import choose_sentinels
-from pyoptes import rms_tia, percentile_tia, mean_tia
-from pyoptes import plot_effect_of_different_sentinels
+from pyoptes import bo_create_graph, bo_compute_average_otf_and_stderr, bo_map_low_dim_x_to_high_dim
+from pyoptes import bo_choose_sentinels
+from pyoptes import bo_rms_tia, bo_percentile_tia, bo_mean_tia
+from pyoptes import bo_plot_effect_of_different_sentinels
 
 import numpy as np
 from tqdm import tqdm
@@ -32,11 +32,11 @@ def bbo_explore_target_function(n_runs: int = 100,
 
     # define function to average the results of the simulation
     if statistic_str == 'mean':
-        statistic = mean_tia
+        statistic = bo_mean_tia
     elif statistic_str == 'rms':
-        statistic = rms_tia
+        statistic = bo_rms_tia
     elif statistic_str == '95perc':
-        statistic = percentile_tia
+        statistic = bo_percentile_tia
     else:
         raise ValueError('Statistic not supported')
 
@@ -57,10 +57,10 @@ def bbo_explore_target_function(n_runs: int = 100,
             for run in tqdm(range(n_runs), leave=False):
 
                 # create graph and prepare the simulation
-                transmissions, capacities, degrees = create_graph(n=run,
-                                                                  graph_type=graph_type,
-                                                                  n_nodes=n,
-                                                                  base_path=path_networks)
+                transmissions, capacities, degrees = bo_create_graph(n=run,
+                                                                     graph_type=graph_type,
+                                                                     n_nodes=n,
+                                                                     base_path=path_networks)
 
                 f.prepare(n_nodes=n,
                           capacity_distribution=capacities,
@@ -71,12 +71,12 @@ def bbo_explore_target_function(n_runs: int = 100,
                           static_network=None,
                           use_real_data=False)
 
-                sentinel_indices = choose_sentinels([degrees, None, None], s, mode_choose_sentinels)
+                sentinel_indices = bo_choose_sentinels([degrees, None, None], s, mode_choose_sentinels)
 
                 # create a budget vector
                 budget = np.ones(s)*total_budget/s
 
-                budget = map_low_dim_x_to_high_dim(budget, n, sentinel_indices)
+                budget = bo_map_low_dim_x_to_high_dim(budget, n, sentinel_indices)
 
                 m, stderr = f.evaluate(budget_allocation=budget,
                                        n_simulations=n_simulations,
@@ -87,7 +87,7 @@ def bbo_explore_target_function(n_runs: int = 100,
                 list_m.append(m)
                 list_stderr.append(stderr)
             # average run results
-            mm, m_stderr = compute_average_otf_and_stderr(list_m, list_stderr, n_runs)
+            mm, m_stderr = bo_compute_average_otf_and_stderr(list_m, list_stderr, n_runs)
             # save the averaged results
             list_all_m.append(mm)
             list_all_stderr.append(m_stderr)
@@ -95,9 +95,9 @@ def bbo_explore_target_function(n_runs: int = 100,
         # x-axis is number of sentinels, y are mean and stderr
 
         # TODO maybe create additional plots with capacity sentinels and other attributes
-        plot_effect_of_different_sentinels(number_of_sentinels=sentinels,
-                                           m=list_all_m,
-                                           stderr=list_all_stderr,
-                                           path_experiment='',
-                                           title=f'Simulations with increasing number of sentinels. {n} nodes',
-                                           n_nodes=n)
+        bo_plot_effect_of_different_sentinels(number_of_sentinels=sentinels,
+                                              m=list_all_m,
+                                              stderr=list_all_stderr,
+                                              path_experiment='',
+                                              title=f'Simulations with increasing number of sentinels. {n} nodes',
+                                              n_nodes=n)

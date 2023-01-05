@@ -8,8 +8,8 @@ import pylab as plt
 import glob
 import json
 from tqdm import tqdm
-from pyoptes import load_raw_data, compute_average_otf_and_stderr
-from pyoptes import plot_optimizer_history_with_two_baselines, plot_prior, plot_multiple_optimizer
+from pyoptes import bo_load_raw_data, bo_compute_average_otf_and_stderr
+from pyoptes import bo_plot_optimizer_history_with_two_baselines, bo_plot_prior, bo_plot_multiple_optimizer
 
 
 def bbo_combined_plots(path_plot,
@@ -67,20 +67,20 @@ def bbo_combined_plots(path_plot,
             # get the path to the experiment
             path_experiment = os.path.split(experiment_params)[0]
             # save date of the experiment for plotting
-            raw_data = load_raw_data(os.path.join(path_experiment, 'raw_data/'))
+            raw_data = bo_load_raw_data(os.path.join(path_experiment, 'raw_data/'))
 
             # compute the averages of the c_raw_data
-            optimizer_history, stderr_history = compute_average_otf_and_stderr(raw_data['list_best_solution_history'],
-                                                                               raw_data['list_stderr_history'],
+            optimizer_history, stderr_history = bo_compute_average_otf_and_stderr(raw_data['list_best_solution_history'],
+                                                                                  raw_data['list_stderr_history'],
+                                                                                  n_runs)
+
+            baseline_mean, baseline_stderr = bo_compute_average_otf_and_stderr(raw_data['list_baseline_otf'],
+                                                                               raw_data['list_baseline_otf_stderr'],
                                                                                n_runs)
 
-            baseline_mean, baseline_stderr = compute_average_otf_and_stderr(raw_data['list_baseline_otf'],
-                                                                            raw_data['list_baseline_otf_stderr'],
-                                                                            n_runs)
-
-            prior_mean, prior_stderr = compute_average_otf_and_stderr(raw_data['list_all_prior_tf'],
-                                                                      raw_data['list_all_prior_stderr'],
-                                                                      n_runs)
+            prior_mean, prior_stderr = bo_compute_average_otf_and_stderr(raw_data['list_all_prior_tf'],
+                                                                         raw_data['list_all_prior_stderr'],
+                                                                         n_runs)
 
             do = {'optimizer_history': optimizer_history,
                   'stderr_history': stderr_history,
@@ -103,6 +103,6 @@ def bbo_combined_plots(path_plot,
                       'baseline_stderr': prior_stderr[1],
                       'name': 'highest degree'}]
 
-    plot_multiple_optimizer(path_plot, data_optimizer, data_baseline, n_nodes, sentinels)
+    bo_plot_multiple_optimizer(path_plot, data_optimizer, data_baseline, n_nodes, sentinels)
 
 

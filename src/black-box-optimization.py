@@ -187,7 +187,6 @@ if __name__ == '__main__':
 
     # TODO compute_baseline
 
-    # TODO postprocessing
     elif args.mode == 'postprocessing':
         bbo_postprocessing(path_plot=args.path_plot,)
 

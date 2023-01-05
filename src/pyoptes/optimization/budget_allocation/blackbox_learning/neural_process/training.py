@@ -1,11 +1,10 @@
 import torch
 from random import randint
-from torch import nn
 from torch.distributions.kl import kl_divergence
-from .utils_np import (context_target_split)
+from .utils_np import (bo_context_target_split)
 
 
-class NeuralProcessTrainer():
+class bo_NeuralProcessTrainer():
     """
     Class to handle training of Neural Processes for functions and images.
 
@@ -64,7 +63,7 @@ class NeuralProcessTrainer():
                 # Create context and target points and apply neural process
                 x, y = data
                 x_context, y_context, x_target, y_target = \
-                    context_target_split(x, y, num_context, num_extra_target)
+                    bo_context_target_split(x, y, num_context, num_extra_target)
                 p_y_pred, q_target, q_context = \
                     self.neural_process(x_context, y_context, x_target, y_target)
 

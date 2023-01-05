@@ -4,7 +4,7 @@ from torch.distributions import Normal
 from .models import Encoder, MuSigmaEncoder, Decoder
 
 
-class NeuralProcess(nn.Module):
+class bo_NeuralProcess(nn.Module):
     """
     Implements Neural Process for functions of arbitrary dimensions.
 
@@ -26,7 +26,7 @@ class NeuralProcess(nn.Module):
         Dimension of hidden layer in encoder and decoder.
     """
     def __init__(self, x_dim, y_dim, r_dim, z_dim, h_dim):
-        super(NeuralProcess, self).__init__()
+        super(bo_NeuralProcess, self).__init__()
         self.x_dim = x_dim
         self.y_dim = y_dim
         self.r_dim = r_dim

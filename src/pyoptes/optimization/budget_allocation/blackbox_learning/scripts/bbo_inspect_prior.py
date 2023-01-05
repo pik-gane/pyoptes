@@ -1,8 +1,9 @@
+# TODO write explanation
 import numpy as np
 import glob
 import pylab as plt
 import os
-from pyoptes import compute_average_otf_and_stderr
+from pyoptes import bo_compute_average_otf_and_stderr
 
 
 def bbo_inspect_prior(path_plot):
@@ -19,9 +20,10 @@ def bbo_inspect_prior(path_plot):
 
         print(list_all_prior_tf.shape, list_all_prior_stderr.shape)
 
-        av_prior_tf, av_prior_stderr = compute_average_otf_and_stderr(list_all_prior_tf,
-                                                                      list_all_prior_stderr,
-                                                                      len(list_all_prior_tf))
+        # TODO use positional arguments
+        av_prior_tf, av_prior_stderr = bo_compute_average_otf_and_stderr(list_all_prior_tf,
+                                                                         list_all_prior_stderr,
+                                                                         len(list_all_prior_tf))
 
         print(av_prior_tf.shape, av_prior_stderr.shape)
 

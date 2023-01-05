@@ -59,6 +59,8 @@ class GPGO:
         self.parameter_type = [p[0] for p in self.parameter_value]
         self.parameter_range = [p[1] for p in self.parameter_value]
 
+        self.current_best_budget = {}
+
         self.history = []
 
         self.time_for_optimization = []
@@ -119,6 +121,8 @@ class GPGO:
         self.tau = Y[i]
         tau_stderr = Y_stderr[i]
         self.tau = np.round(self.tau, decimals=8)
+
+        self.current_best_budget[self.tau] = X[i]
 
         self.history.append(self.tau)
         self.stderr[self.tau] = tau_stderr
@@ -241,34 +245,36 @@ class GPGO:
                 res_d.append(opt_x[i])
         return res_d, self.tau
 
-    def _fitGP(self, prior, prior_y, prior_stderr):
+    def _fitGP(self, prior_x, prior_y, prior_stderr):
         """
 
-        @param prior: list of test strategies
+        @param prior_x: list of test strategies
         @param prior_y: list of corresponding function evaluations
         @param prior_stderr: list of corresponding stderr
         """
 
         prior_y = -1 * np.array(prior_y)
-        self.GP.fit(np.array(prior), np.array(prior_y))
+        self.GP.fit(np.array(prior_x), np.array(prior_y))
 
         # get the best y and corresponding stderr
         i = np.argmax(prior_y)
         self.tau = np.round(prior_y[i], decimals=8)
         tau_stderr = prior_stderr[i]
 
+        self.current_best_budget[self.tau] = prior_x[i]
+
         self.history.append(self.tau)
         self.stderr[self.tau] = tau_stderr
 
     def run(self, max_iter=10, init_evals=3, use_prior=False,
-            prior=None, prior_y=None, prior_stderr=None):
+            prior_x=None, prior_y=None, prior_stderr=None):
         """
         Runs the Bayesian Optimization procedure.
         @param prior_y:
         @param prior_stderr:
         @param max_iter: maximum number of iterations for GPGO
         @param init_evals:  number of random samples for fitting the GP
-        @param prior: list of test strategies
+        @param prior_x: list of test strategies
         @param use_prior: boolean to use the prior
         """
 
@@ -278,7 +284,7 @@ class GPGO:
         else:
             print('Running GPGO with surrogate function fitted on prior.\n'
                   'Fitting the GP takes about a minute (depending on the size of the prior and the size of the graph)')
-            self._fitGP(prior=prior,
+            self._fitGP(prior_x=prior_x,
                         prior_y=prior_y,
                         prior_stderr=prior_stderr)
             print('GP fitted.')

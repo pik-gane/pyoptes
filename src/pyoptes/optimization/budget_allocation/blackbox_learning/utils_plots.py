@@ -3,10 +3,10 @@ import numpy as np
 import pylab as plt
 
 
-def plot_time_for_optimization(time_for_optimization: list, path_experiment: str, optimizer: str,
-                               file_name='time_for_optimization.png',
-                               title='Time for objective function evaluation of',
-                               sum_up_time=False):
+def bo_plot_time_for_optimization(time_for_optimization: list, path_experiment: str, optimizer: str,
+                                  file_name='time_for_optimization.png',
+                                  title='Time for objective function evaluation of',
+                                  sum_up_time=False):
     """
 
     @param sum_up_time:
@@ -28,13 +28,13 @@ def plot_time_for_optimization(time_for_optimization: list, path_experiment: str
     plt.clf()
 
 
-def plot_optimizer_history(optimizer_history: list, stderr_history: list,
-                           baseline_mean: float, baseline_stderr: float,
-                           n_nodes: int,
-                           sentinels: int,
-                           path_experiment: str,
-                           optimizer: str,
-                           name='_plot') -> None:
+def bo_plot_optimizer_history(optimizer_history: list, stderr_history: list,
+                              baseline_mean: float, baseline_stderr: float,
+                              n_nodes: int,
+                              sentinels: int,
+                              path_experiment: str,
+                              optimizer: str,
+                              name='_plot') -> None:
     """
 
     @param name:
@@ -75,14 +75,14 @@ def plot_optimizer_history(optimizer_history: list, stderr_history: list,
     plt.clf()
 
 
-def plot_optimizer_history_with_two_baselines(optimizer_history: list, stderr_history: list,
-                                              baseline_mean: list, baseline_stderr: list,
-                                              prior_mean: list, prior_stderr: list,
-                                              n_nodes: int,
-                                              sentinels: int,
-                                              path_experiment: str,
-                                              optimizer: str,
-                                              name: str = '_plot') -> None:
+def bo_plot_optimizer_history_with_two_baselines(optimizer_history: list, stderr_history: list,
+                                                 baseline_mean: list, baseline_stderr: list,
+                                                 prior_mean: list, prior_stderr: list,
+                                                 n_nodes: int,
+                                                 sentinels: int,
+                                                 path_experiment: str,
+                                                 optimizer: str,
+                                                 name: str = '_plot') -> None:
     """
 
     @param optimizer_history:
@@ -189,10 +189,10 @@ def plot_optimizer_history_with_two_baselines(optimizer_history: list, stderr_hi
     plt.clf()
 
 
-def plot_prior(path_experiment: str,
-               n_nodes: int,
-               y_prior_mean: np.array, y_prior_stderr: np.array,
-               n_runs: int) -> None:
+def bo_plot_prior(path_experiment: str,
+                  n_nodes: int,
+                  y_prior_mean: np.array, y_prior_stderr: np.array,
+                  n_runs: int) -> None:
     """
 
     @param n_runs:
@@ -220,11 +220,11 @@ def plot_prior(path_experiment: str,
     plt.clf()
 
 
-def plot_effect_of_different_sentinels(number_of_sentinels: list,
-                                       m: list, stderr: list,
-                                       n_nodes: int,
-                                       path_experiment: str,
-                                       title: str = '') -> None:
+def bo_plot_effect_of_different_sentinels(number_of_sentinels: list,
+                                          m: list, stderr: list,
+                                          n_nodes: int,
+                                          path_experiment: str,
+                                          title: str = '') -> None:
     """
 
     @param number_of_sentinels:
@@ -245,11 +245,11 @@ def plot_effect_of_different_sentinels(number_of_sentinels: list,
     plt.clf()
 
 
-def plot_multiple_optimizer(path_experiment: str,
-                            data_optimizer: list,
-                            data_baseline: list,
-                            n_nodes: int,
-                            sentinels: int) -> None:
+def bo_plot_multiple_optimizer(path_experiment: str,
+                               data_optimizer: list,
+                               data_baseline: list,
+                               n_nodes: int,
+                               sentinels: int) -> None:
     """
     Plot any number of optimizers against any number baselines
     @param sentinels:
@@ -299,12 +299,12 @@ def plot_multiple_optimizer(path_experiment: str,
     plt.clf()
 
 
-def scatter_plot(path_experiment: str,
-                 data_x: list, data_y: list,
-                 plot_name: str,
-                 plot_title: str,
-                 x_label: str,
-                 y_label: str):
+def bo_scatter_plot(path_experiment: str,
+                    data_x: list, data_y: list,
+                    plot_name: str,
+                    plot_title: str,
+                    x_label: str,
+                    y_label: str):
     """
 
     @param path_experiment:

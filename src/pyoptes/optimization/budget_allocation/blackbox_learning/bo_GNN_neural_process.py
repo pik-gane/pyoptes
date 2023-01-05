@@ -1,6 +1,6 @@
 import numpy as np
 
-from .utils import map_low_dim_x_to_high_dim, softmax
+from .utils import bo_map_low_dim_x_to_high_dim, bo_softmax
 
 from pyGPGO.acquisition import Acquisition
 
@@ -114,8 +114,8 @@ from .GNN_neural_process.Meta_Layer import MetaLayer
 #     # TODO fix GPGO breaking when using the prior + sentinels less the n_nodes
 #
 #     # rescale strategy such that it satisfies sum constraint
-#     x = total_budget * softmax(x)
-#     x = map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
+#     x = total_budget * bo_softmax(x)
+#     x = bo_map_low_dim_x_to_high_dim(x, n_nodes, node_indices)
 #
 #     y, stderr = eval_function(budget_allocation=x,
 #                               n_simulations=n_simulations,
