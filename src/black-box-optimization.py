@@ -3,7 +3,7 @@ Collects and runs all different scripts used for the black-box optimization, gen
 '''
 
 import argparse
-from pyoptes import bbo_optimization, bbo_document_experiments
+from pyoptes import bbo_optimization, bbo_postprocessing, bbo_document_experiments
 from pyoptes import bbo_combined_plots, bbo_create_individual_plots
 from pyoptes import inspect_test_strategies, bbo_inspect_prior, bbo_sanity_check
 from pyoptes import bbo_create_samples, bbo_explore_evaluation
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument("mode",
-                        choices=['optimization', 'document_experiments',
+                        choices=['optimization', 'postprocessing', 'document_experiments',
                                  'combined_plots', 'individual_plots',
                                  'inspect_test_strategies,', 'inspect_prior', 'sanity_check',
                                  'create_samples', 'explore_evaluation',
@@ -188,6 +188,8 @@ if __name__ == '__main__':
     # TODO compute_baseline
 
     # TODO postprocessing
+    elif args.mode == 'postprocessing':
+        bbo_postprocessing(path_plot=args.path_plot,)
 
     elif args.mode == 'create_combined_plots':
 

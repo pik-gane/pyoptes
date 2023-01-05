@@ -19,3 +19,4 @@ from .optimization.budget_allocation.blackbox_learning.scripts.bbo_explore_evalu
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_explore_target_function import bbo_explore_target_function
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_inspect_prior import bbo_inspect_prior
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_sanity_check import bbo_sanity_check
+from .optimization.budget_allocation.blackbox_learning.scripts.bbo_postprocessing import bbo_postprocessing
