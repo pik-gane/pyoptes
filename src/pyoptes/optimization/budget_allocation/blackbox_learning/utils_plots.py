@@ -68,7 +68,7 @@ def bo_plot_optimizer_history(optimizer_history: list, stderr_history: list,
 
     plt.title(f'{optimizer}, {n_nodes} nodes, {sentinels} sentinels')
     plt.xlabel('Iteration')
-    plt.ylabel('Number of infected animals') # TODO change name to something more descriptive, like number of infected animals
+    plt.ylabel('Number of infected animals')
     plt.legend()
 
     plt.savefig(os.path.join(path_experiment, f'{optimizer}{name}.png'))

@@ -1,4 +1,6 @@
-# TODO write explanation
+'''
+Computes the objective function value of the prior for each strategy and the standard error of the mean for each strategy.
+'''
 import numpy as np
 import glob
 import pylab as plt
@@ -6,6 +8,7 @@ import os
 from pyoptes import bo_compute_average_otf_and_stderr
 
 
+# TODO can probably be moved into bo_postprocessing
 def bbo_inspect_prior(path_plot):
 
     path_to_numpy_files = glob.glob(os.path.join(path_plot, '**/list_all_prior_tf.npy'), recursive=True)
@@ -20,10 +23,9 @@ def bbo_inspect_prior(path_plot):
 
         print(list_all_prior_tf.shape, list_all_prior_stderr.shape)
 
-        # TODO use positional arguments
-        av_prior_tf, av_prior_stderr = bo_compute_average_otf_and_stderr(list_all_prior_tf,
-                                                                         list_all_prior_stderr,
-                                                                         len(list_all_prior_tf))
+        av_prior_tf, av_prior_stderr = bo_compute_average_otf_and_stderr(list_otf=list_all_prior_tf,
+                                                                         list_stderr=list_all_prior_stderr,
+                                                                         n_runs=len(list_all_prior_tf))
 
         print(av_prior_tf.shape, av_prior_stderr.shape)
 

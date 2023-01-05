@@ -68,7 +68,6 @@ def bo_save_hyperparameters(hyperparameters: dict,
     print('saved hyperparameters\n')
 
 
-# TODO add function to load raw data from file
 def bo_save_raw_data(list_best_otf: list, list_best_otf_stderr: list,
                      list_baseline_otf: list, list_baseline_otf_stderr: list,
                      list_ratio_otf: list,

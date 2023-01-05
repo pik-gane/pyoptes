@@ -91,12 +91,6 @@ def bo_cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_func
     @return: two floats, the SI-simulation result and standard error
     """
     # rescale strategy such that it satisfies sum constraint
-    # print('budget', x, np.max(x), np.min(x), np.mean(x), '\n')
-    # print('budget', np.exp(x), np.max(np.exp(x)), np.min(np.exp(x)), np.mean(np.exp(x)))
-    # TODO when the budgets get to big, exp(x) leads to infinities
-    # and then to nan in the budget
-    # Why does the target function not break, when given NaNs ?
-    # if we want to keep the softmax, we can do x-max(x) and then softmax
     x = total_budget * bo_softmax(x)
 
     x = bo_map_low_dim_x_to_high_dim(x, n_nodes, node_indices)

@@ -6,7 +6,6 @@ import json
 import glob
 
 
-# TODO refactor to work with top-level script
 # TODO add force_redo parameter
 def bbo_postprocessing(path_plot):
 

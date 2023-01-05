@@ -13,7 +13,6 @@ import numpy as np
 from tqdm import tqdm
 
 
-# TODO look into maltes file in the repo
 def bbo_explore_target_function(n_runs: int = 100,
                                 statistic_str: str = "mean",
                                 n_simulations: int = 1000,
@@ -27,8 +26,7 @@ def bbo_explore_target_function(n_runs: int = 100,
                                 mode_choose_sentinels: str = "degree",
                                 path_networks: str = "../../networks/data"):
 
-    #
-    nodes = [57590]#[120, 1040, 57590]
+    nodes = [120, 1040, 57590]
 
     # define function to average the results of the simulation
     if statistic_str == 'mean':

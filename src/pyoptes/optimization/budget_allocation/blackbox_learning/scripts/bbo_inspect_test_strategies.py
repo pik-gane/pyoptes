@@ -1,12 +1,10 @@
 '''
 Creates scatter plots showing the relationship between the nodes, their attributes and the allocated budget.
-
 '''
 
 from pyoptes import bo_create_graph, bo_scatter_plot, bo_get_node_attributes
 
 import numpy as np
-import pylab as plt
 from tqdm import tqdm
 import os
 import glob
@@ -91,4 +89,4 @@ def inspect_test_strategies(path_plot):
                         x_label='Node capacity',
                         y_label='Budget')
 
-    # TODO how to the values in the prior look like, compared to the baseline
+    # TODO how do the values in the prior look like, compared to the baseline

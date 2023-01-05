@@ -108,8 +108,6 @@ def bo_neural_process_objective_function(x, node_indices, total_budget, n_nodes,
     @param num_cpu_cores: int, number of cpu cores to use for the SI-simulation
     @return: two floats, the SI-simulation result and standard error
     """
-    # TODO fix GPGO breaking when using the prior + sentinels less the n_nodes
-
     # rescale strategy such that it satisfies sum constraint
     x = total_budget * bo_softmax(x)
     x = bo_map_low_dim_x_to_high_dim(x, n_nodes, node_indices)

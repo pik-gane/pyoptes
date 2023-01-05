@@ -64,8 +64,7 @@ def bbo_optimization(optimizer: str,
     # prepare hyperparameters
     ###################################################################################################################
 
-    # TODO change hyperparameter of acquisition function
-    # TODO test different acquisition functions
+    # TODO change the hyperparameters of the acquisition functions
     # map acquisition function string to one useable by pyGPGO. This is just to keep command-line args short
     af = {'EI': 'ExpectedImprovement', 'PI': 'ProbabilityImprovement', 'UCB': 'UCB',
           'Entropy': 'Entropy', 'tEI': 'tExpectedImprovement'}
