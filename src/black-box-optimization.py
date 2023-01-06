@@ -5,9 +5,11 @@ Collects and runs all different scripts used for the black-box optimization, gen
 import argparse
 from pyoptes import bbo_optimization, bbo_postprocessing, bbo_document_experiments
 from pyoptes import bbo_combined_plots, bbo_create_individual_plots
-from pyoptes import inspect_test_strategies, bbo_inspect_prior, bbo_sanity_check
+from pyoptes import bbo_inspect_test_strategies, bbo_inspect_prior, bbo_sanity_check
 from pyoptes import bbo_create_samples, bbo_explore_evaluation
-from pyoptes import bbo_explore_target_function
+from pyoptes import bbo_explore_target_function, bbo_fix_budgets
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -15,9 +17,9 @@ if __name__ == '__main__':
     parser.add_argument("mode",
                         choices=['optimization', 'postprocessing', 'document_experiments',
                                  'combined_plots', 'individual_plots',
-                                 'inspect_test_strategies,', 'inspect_prior', 'sanity_check',
+                                 'inspect_test_strategies', 'inspect_prior', 'sanity_check',
                                  'create_samples', 'explore_evaluation',
-                                 'explore_target_function'],
+                                 'explore_target_function', 'bbo_fix_budgets'],
                         default='optimization',
                         help="The mode of operation. Either 'inspect' or 'optimization'.")
 
@@ -183,9 +185,10 @@ if __name__ == '__main__':
                          path_plot=args.path_plot,
                          path_networks=args.path_networks,
         )
-    elif args.mode == 'inspect':
+    elif args.mode == 'inspect_test_strategies':
         # TODO fix faulty paths
-        inspect_test_strategies(path_plot=args.path_plot)
+        bbo_inspect_test_strategies(path_plot=args.path_plot,
+                                    path_networks=args.path_networks,)
 
     # TODO compute_baseline
 
@@ -197,20 +200,20 @@ if __name__ == '__main__':
 
         bbo_combined_plots(path_plot=args.path_plot,
                            optimizer=args.optimizer,
-                            n_nodes=args.n_nodes,
-                            sentinels=args.sentinels,
-                            max_iterations=args.max_iterations,
-                            acquisition_function=args.acquisition_function,
-                            use_prior=args.use_prior,
-                            prior_only_baseline=args.prior_only_baseline,
-                            prior_mixed_strategies=args.prior_mixed_strategies,
-                            popsize=args.popsize,
-                            scale_sigma=args.scale_sigma,
-                            statistic=args.statistic,
-                            n_simulations=args.n_simulations,
-                            graph_type=args.graph_type,
-                            scale_total_budget=args.scale_total_budget,
-                            mode_choose_sentinels=args.mode_choose_sentinels)
+                           n_nodes=args.n_nodes,
+                           sentinels=args.sentinels,
+                           max_iterations=args.max_iterations,
+                           acquisition_function=args.acquisition_function,
+                           use_prior=args.use_prior,
+                           prior_only_baseline=args.prior_only_baseline,
+                           prior_mixed_strategies=args.prior_mixed_strategies,
+                           popsize=args.popsize,
+                           scale_sigma=args.scale_sigma,
+                           statistic=args.statistic,
+                           n_simulations=args.n_simulations,
+                           graph_type=args.graph_type,
+                           scale_total_budget=args.scale_total_budget,
+                           mode_choose_sentinels=args.mode_choose_sentinels)
 
     elif args.mode == 'individual_plots':
         bbo_create_individual_plots(path_plot=args.path_plot)
@@ -263,4 +266,8 @@ if __name__ == '__main__':
                          graph_type=args.graph_type,
                          scale_total_budget=args.scale_total_budget,
                          path_networks=args.path_networks)
+
+    elif args.mode == 'fix_budgets':
+        bbo_fix_budgets(path_plot=args.path_plot,
+                        path_networks=args.path_networks,)
 

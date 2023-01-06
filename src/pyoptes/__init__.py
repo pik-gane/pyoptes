@@ -8,7 +8,7 @@ from .optimization.budget_allocation.blackbox_learning.neural_process.neural_pro
 from .optimization.budget_allocation.blackbox_learning.neural_process.training import bo_NeuralProcessTrainer
 from .optimization.budget_allocation.blackbox_learning.neural_process.utils_np import bo_context_target_split, bo_TrainingDataset
 
-from .optimization.budget_allocation.blackbox_learning.scripts.bbo_inspect_test_strategies import inspect_test_strategies
+from .optimization.budget_allocation.blackbox_learning.scripts.bbo_inspect_test_strategies import bbo_inspect_test_strategies
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_optimization import bbo_optimization
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_create_combined_plots import bbo_combined_plots
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_create_individual_plots import bbo_create_individual_plots
@@ -19,3 +19,4 @@ from .optimization.budget_allocation.blackbox_learning.scripts.bbo_explore_targe
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_inspect_prior import bbo_inspect_prior
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_sanity_check import bbo_sanity_check
 from .optimization.budget_allocation.blackbox_learning.scripts.bbo_postprocessing import bbo_postprocessing
+from .optimization.budget_allocation.blackbox_learning.scripts.bbo_fix_budgets import bbo_fix_budgets

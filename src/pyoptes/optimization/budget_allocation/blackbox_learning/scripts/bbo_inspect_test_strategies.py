@@ -11,9 +11,9 @@ import glob
 import json
 
 
-def inspect_test_strategies(path_plot):
+def bbo_inspect_test_strategies(path_plot, path_networks):
 
-    paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'))
+    paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'), recursive=True)
     for experiment_params in tqdm(paths_experiment_params):
 
         # get experiment specific hyperparameters
@@ -29,13 +29,6 @@ def inspect_test_strategies(path_plot):
         experiment_directory = os.path.split(experiment_params)[0]
         experiment_name = os.path.split(experiment_directory)[1][9:]
 
-        if network_type == 'ba' or network_type == 'waxman':
-            path_networks = '../data'
-        elif network_type == 'syn':
-            path_networks = '../networks/data'
-        else:
-            raise Exception('Network type not supported')
-
         all_degrees = []
         all_capacities = []
         all_budgets = []
@@ -46,9 +39,13 @@ def inspect_test_strategies(path_plot):
             best_strategy = np.load(path_best_strategy)
 
             # get the network and its attribute
-            transmissions, capacities, degrees = bo_create_graph(n, network_type, n_nodes, path_networks)
+            transmissions, capacities, degrees = bo_create_graph(n=n,
+                                                                 graph_type=network_type,
+                                                                 n_nodes=n_nodes,
+                                                                 base_path=path_networks)
 
-            degrees = bo_get_node_attributes([degrees, None, None], 'degree')
+            degrees = bo_get_node_attributes(node_attributes=[degrees, None, None],
+                                             mode='degree')
 
             bo_scatter_plot(path_experiment=os.path.join(experiment_directory, f'individual/{n}'),
                             data_x=degrees,
@@ -58,7 +55,8 @@ def inspect_test_strategies(path_plot):
                             y_label='Budget',
                             plot_name='Scatter-plot_node_degree_vs_budget.png')
 
-            capacities = bo_get_node_attributes([None, capacities, None], 'capacity')
+            capacities = bo_get_node_attributes(node_attributes=[None, capacities, None],
+                                                mode='capacity')
 
             # scatterplot of the capacity vs the allocated budget
             bo_scatter_plot(path_experiment=os.path.join(experiment_directory, f'individual/{n}'),
