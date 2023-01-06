@@ -192,7 +192,7 @@ def bo_get_node_attributes(node_attributes: list,
     """
     Returns the node attributes for the given mode.
     The node attributes are sorted by their
-    node_attributes is a list to allow the dynamic use of the function in the main script.
+    node_attributes is a list to allow getting one, two or all attributes.
     @param node_attributes: list of all node attributes (degrees, capacity, transmission)
     @param mode: string, attribute to return
     @return: list of node_attributes sorted by index

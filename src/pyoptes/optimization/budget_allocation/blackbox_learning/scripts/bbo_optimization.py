@@ -88,7 +88,7 @@ def bbo_optimization(optimizer: str,
     # for CMA-ES, sigma is set as 0.25 of the total budget
     cma_sigma = scale_sigma * total_budget
 
-    # map the descriptor for the intial population of cma to an index of the prior
+    # map the descriptor for the initial population of cma to an index of the prior
     map_cma_initial_population = {'uniform': 0, 'degree': 1, 'capacity': 2}
     cma_initial_population = map_cma_initial_population[cma_initial_population]
 
@@ -104,6 +104,7 @@ def bbo_optimization(optimizer: str,
                                                         'n_runs': n_runs,
                                                         'statistic': statistic_str,
                                                         'n_runs_start': n_runs_start,
+                                                        'mode_choose_sentinels': mode_choose_sentinels,
                                                         },
                          'optimizer_hyperparameters': {'optimizer': optimizer,
                                                        'max_iterations': max_iterations,
