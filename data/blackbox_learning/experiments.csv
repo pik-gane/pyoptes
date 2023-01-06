@@ -73,6 +73,7 @@ gpgo,1040,1040,50,4160,mean,ExpectedImprovement,,,,60,,30,syn,,100,,10000,,,0.5,
 cma,120,120,50,480,mean,,,uniform,120.0,60,,30,syn,,100,,10000,,,0.5,9,,,,,,
 cma,1040,1040,50,1040,rms,,,uniform,260.0,60,,30,syn,,100,,10000,,,0.5,2,,,,,,
 gpgo,57590,3455,10,57590,mean,ExpectedImprovement,,,,60,,30,syn,,10,,10000,,,0.5,,False,False,,True,,
+gpgo,1040,1040,20,1040,rms,ExpectedImprovement,,,,60,,30,syn,,2,0,1,,,0.5,,False,False,,True,,
 gpgo,120,12,400,120,mean,ExpectedImprovement,,,,60,,30,syn,,100,,1000,,,0.5,,False,False,,True,,
 np,120,120,2000,120,mean,ExpectedImprovement,10,,,60,30,30,syn,50,100,,1000,3,3,0.5,,False,False,50,,50,10
 np,120,12,1000,120,mean,ExpectedImprovement,10,,,60,30,30,syn,50,100,,1000,3,3,0.5,,False,False,50,,50,

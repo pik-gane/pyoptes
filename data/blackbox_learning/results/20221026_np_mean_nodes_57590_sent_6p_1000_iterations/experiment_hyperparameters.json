@@ -18,6 +18,7 @@
         "delta_t_symptoms": 60,
         "expected_time_of_first_infection": 30,
         "graph": "syn",
+        "mode_choose_sentinels": "degree",
         "n_nodes": 57590,
         "n_runs": 10,
         "n_runs_start": 5,
