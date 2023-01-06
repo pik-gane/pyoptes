@@ -150,7 +150,9 @@ def bo_load_raw_data(path_experiment: str) -> dict:
                 'list_ratio_otf': list_ratio_otf,
                 'list_best_solution_history': list_best_solution_history, 'list_stderr_history': list_stderr_history,
                 'list_time_for_optimization': list_time_for_optimization,
-                'list_all_prior_tf': list_all_prior_tf, 'list_all_prior_stderr': list_all_prior_stderr}
+                'list_all_prior_tf': list_all_prior_tf, 'list_all_prior_stderr': list_all_prior_stderr,
+                'list_time_acquisition_optimization': None,
+                'list_time_update_surrogate': None}
 
 
 def bo_choose_sentinels(node_attributes: list,
