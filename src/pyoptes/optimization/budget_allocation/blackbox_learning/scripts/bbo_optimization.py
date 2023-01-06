@@ -1,3 +1,6 @@
+'''
+Runs the black-box optimization, saves experiment hyperparameters and results.
+'''
 import os.path
 
 from pyoptes.optimization.budget_allocation import target_function as f

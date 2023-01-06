@@ -19,7 +19,7 @@ if __name__ == '__main__':
                                  'combined_plots', 'individual_plots',
                                  'inspect_test_strategies', 'inspect_prior', 'sanity_check',
                                  'create_samples', 'explore_evaluation',
-                                 'explore_target_function', 'bbo_fix_budgets'],
+                                 'explore_target_function', 'fix_budgets'],
                         default='optimization',
                         help="The mode of operation. Either 'inspect' or 'optimization'.")
 
