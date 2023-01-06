@@ -83,6 +83,9 @@ from .GNN_neural_process.Meta_Layer import MetaLayer
 #     optimizer.run(max_iter=max_iterations)
 #
 #     best_test_strategy = optimizer.getResult()[0]
+#     # parameters have to be rescaled to the original scale of the budget  and mapped to the original dimensions
+#     best_test_strategy = total_budget * bo_softmax(best_test_strategy)
+#     best_test_strategy = bo_map_low_dim_x_to_high_dim(best_test_strategy, n_nodes, node_indices)
 #     # gpgo.history contains the best y of the gp at each iteration
 #     # reverse the sign change of optimizer history to get a more readable plot
 #     best_solution_history = -np.array(optimizer.history)

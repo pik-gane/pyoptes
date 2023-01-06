@@ -67,9 +67,12 @@ def bo_cma(initial_population, max_iterations, n_simulations, node_indices, n_no
             np.save(os.path.join(save_test_strategies_path, f'test_strategy_{n}'), solutions)
             n += 1
 
-    best_parameter = es.result.xbest
+    best_test_strategy = es.result.xbest
+    # parameters have to be rescaled to the original scale of the budget  and mapped to the original dimensions
+    best_test_strategy = total_budget * bo_softmax(best_test_strategy)
+    best_test_strategy = bo_map_low_dim_x_to_high_dim(best_test_strategy, n_nodes, node_indices)
 
-    return best_parameter, best_solution_history, best_solution_stderr_history, time_for_optimization
+    return best_test_strategy, best_solution_history, best_solution_stderr_history, time_for_optimization
 
 
 def bo_cma_objective_function(x, n_simulations, node_indices, n_nodes, eval_function,
