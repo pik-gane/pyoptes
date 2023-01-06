@@ -9,7 +9,7 @@ from pyoptes import bo_plot_optimizer_history_with_two_baselines, bo_plot_prior,
 
 def bbo_create_individual_plots(path_plot):
 
-    paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'))
+    paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'), recursive=True)
     for experiment_params in tqdm(paths_experiment_params):
         # get experiment specific hyperparameters
         with open(experiment_params, 'r') as f:

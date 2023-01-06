@@ -1,3 +1,7 @@
+'''
+@deprecated Fixes errors in the calculation of the ratio of otf to baseline.
+'''
+
 import numpy
 import os
 import glob

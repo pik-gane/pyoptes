@@ -33,7 +33,7 @@ def bbo_combined_plots(path_plot,
     # TODO maybe set desired parameters with command line arguments, then search the plots directory for all
     # all experiments satisfying the desired settings
 
-    paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'))
+    paths_experiment_params = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'), recursive=True)
 
     data_optimizer = []
 

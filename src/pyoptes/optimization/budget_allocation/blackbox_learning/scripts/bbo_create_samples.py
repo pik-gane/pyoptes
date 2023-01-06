@@ -28,8 +28,7 @@ def bbo_create_samples(sentinels: int = 1040,
                        p_infection_by_transmission: float = 0.5,
                        expected_time_of_first_infection: int = 30,
                        path_data: str = "../../data_pyoptes/",
-                       path_networks: str = "../../networks/data"
-):
+                       path_networks: str = "../../networks/data"):
 
     list_nodes = [120, 1040, 57590]
     list_sentinels = [0.03, 0.06, 1]

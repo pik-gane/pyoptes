@@ -20,21 +20,11 @@ def bbo_postprocessing(path_plot, force_postprocessing=False):
     # iterate over all experiments
     for experiment_params in path_to_experiments:
 
-        # check whether the experiment has been processed already by checking for the existence of the evaluation_output.txt file
+        # check the main path, whether the experiment has been processed already
+        # by checking for the existence of the evaluation_output.txt file
         path_evaluation_output = os.path.join(os.path.dirname(experiment_params), 'evaluation_output.txt')
         if os.path.exists(path_evaluation_output) or not force_postprocessing:
             print('Experiment already processed')
-        # checking for incomplete experiments shouldn't be needed, as those are not pushed to the repository
-        # elif f:
-        #     # check whether the experiment has been run successfully
-        #     experiment_complete = True
-        #     for r in runs:  # TODO better name needed
-        #         p = os.path.join(raw_data_path, r, '.done')
-        #         if not os.path.isfile(p):
-        #             experiment_complete = False
-        #     if not experiment_complete:
-        #         print(f'Experiment "{path_experiment}" incomplete.')
-        #         break
         else:
 
             path_experiment = os.path.dirname(experiment_params)
@@ -69,7 +59,7 @@ def bbo_postprocessing(path_plot, force_postprocessing=False):
             list_time_acquisition_optimization = []
             list_time_update_surrogate = []
 
-            # load the raw data from the experiment and compute the average OTF and STDERR
+            # combine the raw data from the (separate) experiments into one list each
             for r in individual_runs:
 
                 p = os.path.join(raw_data_path, r)

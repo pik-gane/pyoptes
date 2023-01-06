@@ -3,8 +3,6 @@ Visualize how the optimizers move through the search space with each iteration.
 
 '''
 
-from pyoptes import create_graph, compute_average_otf_and_stderr
-
 import glob
 import json
 import os
@@ -16,12 +14,9 @@ import pylab as plt
 
 def bbo_explore_optimizer(path_plot):
 
-    path_to_optimizer = '../../pyoptes_plots/*/experiment_hyperparameters.json'
+    path_to_experiments = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'), recursive=True)
 
-    # glob optimizer hyperparameters
-    optimizer_hyperparameters = glob.glob(path_to_optimizer)
-
-    for experiment_params in optimizer_hyperparameters:
+    for experiment_params in path_to_experiments:
 
         # get experiment specific hyperparameters
         with open(experiment_params, 'r') as f:

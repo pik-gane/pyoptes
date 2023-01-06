@@ -6,7 +6,7 @@ import argparse
 from pyoptes import bbo_optimization, bbo_postprocessing, bbo_document_experiments
 from pyoptes import bbo_combined_plots, bbo_create_individual_plots
 from pyoptes import bbo_inspect_test_strategies, bbo_inspect_prior, bbo_sanity_check
-from pyoptes import bbo_create_samples, bbo_explore_evaluation
+from pyoptes import bbo_create_samples
 from pyoptes import bbo_explore_target_function, bbo_fix_budgets
 
 
@@ -18,7 +18,7 @@ if __name__ == '__main__':
                         choices=['optimization', 'postprocessing', 'document_experiments',
                                  'combined_plots', 'individual_plots',
                                  'inspect_test_strategies', 'inspect_prior', 'sanity_check',
-                                 'create_samples', 'explore_evaluation',
+                                 'create_samples',
                                  'explore_target_function', 'fix_budgets'],
                         default='optimization',
                         help="The mode of operation. Either 'inspect' or 'optimization'.")
@@ -236,9 +236,6 @@ if __name__ == '__main__':
                            sentinels=args.sentinels,
                            statistic_str=args.statistic,
                            path_networks=args.path_networks,)
-
-    elif args.mode == 'explore_evaluation':
-        bbo_explore_evaluation()
 
     elif args.mode == 'explore_evaluation':
         # call bbo_explore_target_function with the arguments from the command line
