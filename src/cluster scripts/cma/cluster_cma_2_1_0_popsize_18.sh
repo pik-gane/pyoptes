@@ -4,13 +4,13 @@
 
 #SBATCH --qos=medium
 
-#SBATCH --job-name=loebkens_cma_0_2_0
+#SBATCH --job-name=loebkens_cma_2_1_0_popsize_18
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_cma_0_2_0.out
+#SBATCH --output=logs/outputs_cma_2_1_0_popsize_18.out
 
-#SBATCH --error=logs/errors_cma_0_2_0.err
+#SBATCH --error=logs/errors_cma_2_1_0_popsize_18.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -26,13 +26,13 @@ module load anaconda/5.0.0_py3
 source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
   --optimizer cma \
-  --name_experiment 20230109_cma_95perc_nodes_1040 \
+  --name_experiment 20230109_cma_nodes_120_popsize_18 \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
   --path_networks /home/loebkens/network/data \
   --graph syn \
-  --n_nodes 1040 \
-  --sentinels 1040 \
-  --statistic 95perc \
+  --n_nodes 120 \
+  --sentinels 120 \
+  --statistic mean \
   --scale_total_budget 1 \
   --prior_mixed_strategies '' \
-  --popsize 9
+  --popsize 18
