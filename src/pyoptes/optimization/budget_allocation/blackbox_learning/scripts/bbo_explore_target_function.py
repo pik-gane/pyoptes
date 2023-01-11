@@ -43,7 +43,7 @@ def bbo_explore_target_function(n_runs: int = 100,
     for n in nodes:
         print(f'Running simulation with {n} nodes')
         # create a list of sentinels from 0 to all sentinels
-        sentinels = list(range(0, n+step_size, step_size)) #TODO make 5 a parameter
+        sentinels = list(range(0, n+step_size, step_size))
 
         total_budget = n
 

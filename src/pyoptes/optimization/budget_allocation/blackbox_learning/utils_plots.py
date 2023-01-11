@@ -241,16 +241,9 @@ def bo_plot_effect_of_different_sentinels(number_of_sentinels: list,
     @param path_experiment:
     @param title:
     """
-    # create the labeling for the x-axis by hand to include the number of sentinels were the objective function is minimal
-    new_step_size = int(n_nodes / (step_size * 6) * step_size)
-    x_axis_ticks = list(range(0, n_nodes+new_step_size, new_step_size))
-    x_axis_ticks.append(minimum[0])
-    x_axis_ticks = sorted(x_axis_ticks)
-
     plt.clf()
-    plt.xticks(x_axis_ticks)
     plt.axvspan(minimum[0]-int(step_size/2),
-                minimum[0]+int(step_size/2), alpha=0.5, color='red', label='minimum')
+                minimum[0]+int(step_size/2), alpha=0.5, color='red', label=f'minimum at {minimum[0]} sentinels')
     plt.bar(number_of_sentinels, m)
     plt.errorbar(number_of_sentinels, m, yerr=stderr, fmt='o', color="r")
     plt.title(title)
@@ -258,7 +251,7 @@ def bo_plot_effect_of_different_sentinels(number_of_sentinels: list,
     plt.ylabel('Infected animals')
     plt.legend()
 
-    plt.savefig(os.path.join(path_experiment, f'Sentinel_budgets_{n_nodes}_nodes_mode_{mode_choose_sentinels}.png'))
+    plt.savefig(os.path.join(path_experiment, f'1Sentinel_budgets_{n_nodes}_nodes_mode_{mode_choose_sentinels}.png'))
     plt.clf()
 
 
