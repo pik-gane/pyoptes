@@ -39,7 +39,7 @@ def bbo_document_experiments(path_plot):
         # write header, these are the hyperparameters that are shared by every experiment
         # and will be the first columns to make the csv more readable
         start_of_row = ['optimizer', 'n_nodes', 'sentinels', 'max_iterations', 'total_budget', 'statistic',
-                        'ratio', 'otf', 'baseline', 'time (in hours)']
+                        'ratio', 'otf', 'baseline', 'time (in hours)', 'n_runs', 'name_experiment']
         # remove start_of_row from param_set
         param_set = param_set.difference(set(start_of_row))
         param_list = list(param_set)
@@ -65,7 +65,8 @@ def bbo_document_experiments(path_plot):
                 evaluation_results = {'ratio': ratio_otf_baseline,
                                       'baseline': baseline,
                                       'otf': otf,
-                                      'time (in hours)': time_to_optimize}
+                                      'time (in hours)': time_to_optimize,
+                                      'name_experiment': os.path.basename(os.path.dirname(experiment_params))}
 
                 # read the hyperparameter for the .json-file
                 with open(experiment_params, 'r') as f:

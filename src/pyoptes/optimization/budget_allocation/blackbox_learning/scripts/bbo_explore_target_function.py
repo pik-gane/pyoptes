@@ -24,7 +24,9 @@ def bbo_explore_target_function(n_runs: int = 100,
                                 p_infection_by_transmission: float = 0.5,
                                 expected_time_of_first_infection: int = 30,
                                 mode_choose_sentinels: str = "degree",
-                                path_networks: str = "../../networks/data"):
+                                path_networks: str = "../../networks/data",
+                                path_plot: str = '../data/blackbox_learning/results/',
+                                step_size: int = 5):
 
     nodes = [120, 1040, 57590]
 
@@ -41,7 +43,7 @@ def bbo_explore_target_function(n_runs: int = 100,
     for n in nodes:
         print(f'Running simulation with {n} nodes')
         # create a list of sentinels from 0 to all sentinels
-        sentinels = list(range(0, n+5, 5)) #TODO make 5 a parameter
+        sentinels = list(range(0, n+step_size, step_size)) #TODO make 5 a parameter
 
         total_budget = n
 
@@ -92,10 +94,17 @@ def bbo_explore_target_function(n_runs: int = 100,
         # create a bar plot from mean, stderr pair for each sentinel number
         # x-axis is number of sentinels, y are mean and stderr
 
+        index_minimum = np.argmin(list_all_m)
+        minimum = [sentinels[index_minimum], list_all_m[index_minimum]]
+        print('minimum', minimum)
+
         # TODO maybe create additional plots with capacity sentinels and other attributes
         bo_plot_effect_of_different_sentinels(number_of_sentinels=sentinels,
                                               m=list_all_m,
                                               stderr=list_all_stderr,
-                                              path_experiment='',
+                                              path_experiment=path_plot,
                                               title=f'Simulations with increasing number of sentinels. {n} nodes',
-                                              n_nodes=n)
+                                              n_nodes=n,
+                                              mode_choose_sentinels=mode_choose_sentinels,
+                                              minimum=minimum,
+                                              step_size=step_size)

@@ -88,7 +88,8 @@ if __name__ == '__main__':
                              '-> 18 of 120, 24 for 1040, 36 for 57590.'
                              'Is set to 9 for performance reasons.')
     parser.add_argument('--scale_sigma', type=float, default=0.25,
-                        help='CMA-ES optimizer parameter. Defines the scaling of the standard deviation. '
+                        help='CMA-ES optimizer parameter. Defines the scaling of the standard deviation'
+                             'as a function of the total budget. '
                              'Default is a standard deviation of 0.25 of the total budget.')
     parser.add_argument('--cma_initial_population', default='uniform', choices=['uniform', 'degree', 'capacity'],
                         help='CMA-ES optimizer parameter. Sets which test strategy in the prior is used as the initial '
@@ -267,4 +268,21 @@ if __name__ == '__main__':
     elif args.mode == 'fix_budgets':
         bbo_fix_budgets(path_plot=args.path_plot,
                         path_networks=args.path_networks,)
+
+    elif args.mode == 'explore_target_function':
+        bbo_explore_target_function(n_runs=args.n_runs,
+                                    statistic_str=args.statistic,
+                                    n_simulations=args.n_simulations,
+                                    graph_type=args.graph_type,
+                                    scale_total_budget=args.scale_total_budget,
+                                    parallel=args.parallel,
+                                    num_cpu_cores=args.num_cpu_cores,
+                                    delta_t_symptoms=args.delta_t_symptoms,
+                                    p_infection_by_transmission=args.p_infection_by_transmission,
+                                    expected_time_of_first_infection=args.expected_time_of_first_infection,
+                                    mode_choose_sentinels=args.mode_choose_sentinels,
+                                    path_networks=args.path_networks,
+                                    path_plot=args.path_plot)
+    else:
+        raise ValueError('Mode not recognized')
 
