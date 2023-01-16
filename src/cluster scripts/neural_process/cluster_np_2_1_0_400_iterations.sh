@@ -24,9 +24,11 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 20221021_np_mean_nodes_120_400_iterations \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
+  --optimizer np \
+  --name_experiment 20230109_np_nodes_120_400_iterations \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
-  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --path_networks /home/loebkens/network/data \
   --graph syn \
   --prior_mixed_strategies '' \
   --n_nodes 120 \
@@ -41,4 +43,4 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 2
   --batch_size 10 \
   --epochs 30 \
   --max_iterations 400 \
-  --n_runs 100
+  --n_runs 1
