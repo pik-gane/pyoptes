@@ -35,5 +35,5 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --statistic mean \
   --scale_total_budget 1 \
   --prior_mixed_strategies '' \
-  --popsize 2
+  --popsize 18
 
