@@ -96,7 +96,8 @@ def bbo_explore_target_function(n_runs: int = 100,
 
         index_minimum = np.argmin(list_all_m)
         minimum = [sentinels[index_minimum], list_all_m[index_minimum]]
-        print('minimum', minimum)
+
+        # TODO save the raw-data of the stuff
 
         # TODO maybe create additional plots with capacity sentinels and other attributes
         bo_plot_effect_of_different_sentinels(number_of_sentinels=sentinels,
