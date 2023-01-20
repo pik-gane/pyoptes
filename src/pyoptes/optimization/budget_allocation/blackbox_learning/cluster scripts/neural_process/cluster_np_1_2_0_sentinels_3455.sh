@@ -4,13 +4,13 @@
 
 #SBATCH --qos=medium
 
-#SBATCH --job-name=loebkens_np_2_1_0
+#SBATCH --job-name=loebkens_np_1_2_0
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_np_2_1_0.out
+#SBATCH --output=logs/outputs_np_1_2_0.out
 
-#SBATCH --error=logs/errors_np_2_1_0.err
+#SBATCH --error=logs/errors_np_1_2_0.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -26,13 +26,13 @@ module load anaconda/5.0.0_py3
 source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
   --optimizer np \
-  --name_experiment 20230120_np_mean_nodes_120 \
+  --name_experiment 20230120_np_rms_nodes_57590_sentinels_3455 \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
   --path_networks /home/loebkens/network/data \
   --graph syn \
   --prior_mixed_strategies '' \
-  --n_nodes 120 \
-  --sentinels 120 \
+  --n_nodes 57590 \
+  --sentinels 3455 \
   --statistic mean \
   --scale_total_budget 1 \
   --r_dim 50 \
@@ -43,4 +43,4 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --batch_size 10 \
   --epochs 30 \
   --max_iterations 30 \
-  --n_runs 100
+  --n_runs 10
