@@ -29,7 +29,7 @@ def bbo_explore_target_function(n_runs: int = 100,
                                 step_size: int = 5):
 
     nodes = [120, 1040, 57590]
-
+    n_runs = [100, 100, 10]
     # define function to average the results of the simulation
     if statistic_str == 'mean':
         statistic = bo_mean_tia
@@ -40,7 +40,7 @@ def bbo_explore_target_function(n_runs: int = 100,
     else:
         raise ValueError('Statistic not supported')
 
-    for n in nodes:
+    for i, n in enumerate(nodes):
         print(f'Running simulation with {n} nodes')
         # create a list of sentinels from 0 to all sentinels
         sentinels = list(range(0, n+step_size, step_size))
@@ -54,7 +54,7 @@ def bbo_explore_target_function(n_runs: int = 100,
         for s in tqdm(sentinels):
             list_m = []
             list_stderr = []
-            for run in tqdm(range(n_runs), leave=False):
+            for run in tqdm(range(n_runs[i]), leave=False):
 
                 # create graph and prepare the simulation
                 transmissions, capacities, degrees = bo_create_graph(n=run,
