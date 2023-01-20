@@ -16,14 +16,13 @@ def bbo_postprocessing(path_plot, force_postprocessing=False):
 
     # get all experiments in the folder with a json file
     path_to_experiments = glob.glob(os.path.join(path_plot, '**/experiment_hyperparameters.json'), recursive=True)
-
     # iterate over all experiments
     for experiment_params in path_to_experiments:
 
         # check the main path, whether the experiment has been processed already
         # by checking for the existence of the evaluation_output.txt file
         path_evaluation_output = os.path.join(os.path.dirname(experiment_params), 'evaluation_output.txt')
-        if os.path.exists(path_evaluation_output) or not force_postprocessing:
+        if os.path.exists(path_evaluation_output) and not force_postprocessing:
             print('Experiment already processed')
         else:
 
@@ -79,8 +78,10 @@ def bbo_postprocessing(path_plot, force_postprocessing=False):
                 list_all_prior_stderr.extend(raw_data['list_all_prior_stderr'])
 
                 list_time_for_optimization.extend(raw_data['list_time_for_optimization'])
-                list_time_acquisition_optimization.extend(raw_data['list_time_acquisition_optimization'])
-                list_time_update_surrogate.extend(raw_data['list_time_update_surrogate'])
+
+                if optimizer == 'gpgo' or optimizer == 'np':
+                    list_time_acquisition_optimization.extend(raw_data['list_time_acquisition_optimization'])
+                    list_time_update_surrogate.extend(raw_data['list_time_update_surrogate'])
 
             # ------------------------------------------------------------
             # postprocessing of all runs
