@@ -251,7 +251,7 @@ def bo_plot_effect_of_different_sentinels(number_of_sentinels: list,
     plt.ylabel('Infected animals')
     plt.legend()
 
-    plt.savefig(os.path.join(path_experiment, f'1Sentinel_budgets_{n_nodes}_nodes_mode_{mode_choose_sentinels}.png'))
+    plt.savefig(os.path.join(path_experiment, f'Sentinel_budgets_{n_nodes}_nodes_mode_{mode_choose_sentinels}.png'))
     plt.clf()
 
 
