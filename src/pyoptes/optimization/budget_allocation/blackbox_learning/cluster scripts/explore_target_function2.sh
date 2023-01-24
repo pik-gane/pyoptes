@@ -4,13 +4,13 @@
 
 #SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_explore_0
+#SBATCH --job-name=loebkens_explore_2
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_explore_0.out
+#SBATCH --output=logs/outputs_explore_2.out
 
-#SBATCH --error=logs/errors_explore_0.err
+#SBATCH --error=logs/errors_explore_2.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -27,6 +27,6 @@ source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py explore_target_function \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
   --path_networks /home/loebkens/network/data \
-  --n_runs 100 \
-  --n_nodes 120
+  --n_runs 10 \
+  --n_nodes 57590
 

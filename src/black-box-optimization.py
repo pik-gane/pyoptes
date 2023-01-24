@@ -282,7 +282,8 @@ if __name__ == '__main__':
                                     expected_time_of_first_infection=args.expected_time_of_first_infection,
                                     mode_choose_sentinels=args.mode_choose_sentinels,
                                     path_networks=args.path_networks,
-                                    path_plot=args.path_plot)
+                                    path_plot=args.path_plot,
+                                    n_nodes=args.n_nodes)
     else:
         raise ValueError('Mode not recognized')
 
