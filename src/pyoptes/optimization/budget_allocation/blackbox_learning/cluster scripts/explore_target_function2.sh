@@ -28,5 +28,6 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
   --path_networks /home/loebkens/network/data \
   --n_runs 10 \
-  --n_nodes 57590
+  --n_nodes 57590 \
+  --step_size 2215
 

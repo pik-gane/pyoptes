@@ -23,7 +23,7 @@ def bbo_postprocessing(path_plot, force_postprocessing=False):
         # by checking for the existence of the evaluation_output.txt file
         path_evaluation_output = os.path.join(os.path.dirname(experiment_params), 'evaluation_output.txt')
         if os.path.exists(path_evaluation_output) and not force_postprocessing:
-            print('Experiment already processed')
+            print('\nExperiment already processed\n')
         else:
 
             path_experiment = os.path.dirname(experiment_params)
