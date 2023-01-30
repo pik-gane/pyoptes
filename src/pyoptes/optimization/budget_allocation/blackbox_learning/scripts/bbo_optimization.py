@@ -116,6 +116,7 @@ def bbo_optimization(optimizer: str,
     if optimizer == 'cma':
         experiment_params['optimizer_hyperparameters']['cma_sigma'] = cma_sigma
         experiment_params['optimizer_hyperparameters']['popsize'] = popsize
+        # TODO saves the value (int) of the dict instead of the key (string)
         experiment_params['optimizer_hyperparameters']['cma_initial_population'] = cma_initial_population
     elif optimizer == 'gpgo':
         experiment_params['optimizer_hyperparameters']['use_prior'] = use_prior

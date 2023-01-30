@@ -135,6 +135,8 @@ if __name__ == '__main__':
                         help='')
     parser.add_argument('--force_postprocessing', type=bool, default=False,
                         help='Sets whether to force the postprocessing of the optimization results.')
+    parser.add_argument('--step_size', type=int, default=5,
+                        help='Sets the step size of the target function exploration.')
 
     parser.add_argument('--path_plot', default='../data/blackbox_learning/results/',
                         help="Optimizer parameter. Location where all the individual results"
@@ -282,7 +284,9 @@ if __name__ == '__main__':
                                     expected_time_of_first_infection=args.expected_time_of_first_infection,
                                     mode_choose_sentinels=args.mode_choose_sentinels,
                                     path_networks=args.path_networks,
-                                    path_plot=args.path_plot)
+                                    path_plot=args.path_plot,
+                                    n_nodes=args.n_nodes,
+                                    step_size=args.step_size,)
     else:
         raise ValueError('Mode not recognized')
 

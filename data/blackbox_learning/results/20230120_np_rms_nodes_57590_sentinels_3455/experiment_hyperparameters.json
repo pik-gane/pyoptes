@@ -1,0 +1,31 @@
+{
+    "optimizer_hyperparameters": {
+        "acquisition_function": "ExpectedImprovement",
+        "batch_size": 10,
+        "epochs": 30,
+        "h_dim": 50,
+        "max_iterations": 30,
+        "num_context": 3,
+        "num_target": 3,
+        "optimizer": "np",
+        "prior_mixed_strategies": false,
+        "prior_only_baseline": false,
+        "r_dim": 50,
+        "z_dim": 50,
+        "z_sample_size": 10
+    },
+    "simulation_hyperparameters": {
+        "delta_t_symptoms": 60,
+        "expected_time_of_first_infection": 30,
+        "graph": "syn",
+        "mode_choose_sentinels": "degree",
+        "n_nodes": 57590,
+        "n_runs": 10,
+        "n_runs_start": 0,
+        "n_simulations": 1000,
+        "p_infection_by_transmission": 0.5,
+        "sentinels": 3455,
+        "statistic": "mean",
+        "total_budget": 57590
+    }
+}

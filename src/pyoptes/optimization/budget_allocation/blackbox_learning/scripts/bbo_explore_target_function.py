@@ -26,10 +26,11 @@ def bbo_explore_target_function(n_runs: int = 100,
                                 mode_choose_sentinels: str = "degree",
                                 path_networks: str = "../../networks/data",
                                 path_plot: str = '../data/blackbox_learning/results/',
-                                step_size: int = 5):
+                                step_size: int = 5,
+                                n_nodes: int = 120,):
 
-    nodes = [120, 1040, 57590]
-    n_runs = [100, 100, 10]
+    nodes = [n_nodes]
+    n_runs = [n_runs]#[100, 100, 10]
     # define function to average the results of the simulation
     if statistic_str == 'mean':
         statistic = bo_mean_tia
@@ -86,8 +87,9 @@ def bbo_explore_target_function(n_runs: int = 100,
 
                 list_m.append(m)
                 list_stderr.append(stderr)
+
             # average run results
-            mm, m_stderr = bo_compute_average_otf_and_stderr(list_m, list_stderr, n_runs)
+            mm, m_stderr = bo_compute_average_otf_and_stderr(list_m, list_stderr, n_runs[i])
             # save the averaged results
             list_all_m.append(mm)
             list_all_stderr.append(m_stderr)
