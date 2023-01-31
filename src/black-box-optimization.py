@@ -35,7 +35,7 @@ if __name__ == '__main__':
     parser.add_argument("--optimizer", choices=['cma', 'gpgo', 'np'],
                         help="Choose the optimizer to run on the SI-model. Choose between CMA-ES, "
                              "Gaussian Process (GP) and Neural Process (NP).")
-    parser.add_argument("--name_experiment",
+    parser.add_argument("--name_experiment", default='test',
                         help="The name of the folder where the results of the optimizer run are saved to.")
     parser.add_argument('--n_runs', type=int, default=100,
                         help='The number of times the optimizer is run. Results are then averaged over all runs.'

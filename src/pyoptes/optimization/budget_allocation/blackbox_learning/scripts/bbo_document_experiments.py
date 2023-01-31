@@ -39,7 +39,16 @@ def bbo_document_experiments(path_plot):
         # write header, these are the hyperparameters that are shared by every experiment
         # and will be the first columns to make the csv more readable
         start_of_row = ['optimizer', 'n_nodes', 'sentinels', 'max_iterations', 'total_budget', 'statistic',
-                        'ratio', 'otf', 'baseline', 'time (in hours)', 'n_runs', 'name_experiment']
+                        'ratio', 'otf', 'baseline', 'time (in hours)', 'n_runs', 'name_experiment',
+                        'graph', 'n_simulations', 'mode_choose_sentinels']
+        cma_params = ["popsize", "cma_sigma", "cma_initial_population"]
+        gpgo_params = ['prior_mixed_strategies', 'prior_only_baseline', 'use_prior', 'acquisition_function']
+        np_params = ['batch_size', 'epochs', 'z_sample_size', 'r_dim', 'z_dim', 'h_dim', 'num_target', 'num_context']
+
+        start_of_row.extend(cma_params)
+        start_of_row.extend(gpgo_params)
+        start_of_row.extend(np_params)
+
         # remove start_of_row from param_set
         param_set = param_set.difference(set(start_of_row))
         param_list = list(param_set)
