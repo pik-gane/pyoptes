@@ -4,13 +4,13 @@
 
 #SBATCH --qos=medium
 
-#SBATCH --job-name=loebkens_cma_1_0_0_sigma_075
+#SBATCH --job-name=loebkens_cma_1_1_0_sigma_075
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_cma_1_0_0_sigma_075.out
+#SBATCH --output=logs/outputs_cma_1_1_0_sigma_075.out
 
-#SBATCH --error=logs/errors_cma_1_0_0_sigma_075.err
+#SBATCH --error=logs/errors_cma_1_1_0_sigma_075.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -24,13 +24,15 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py cma 20220710_cma_rms_nodes_57590_sentinels_3455_sigma_075 \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
+  --optimizer cma \
+  --name_experiment 20230131_cma_nodes_57590_sentinels_3455_sigma_075 \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
-  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --path_networks /home/loebkens/network/data \
   --graph syn \
   --n_nodes 57590 \
   --sentinels 3455 \
-  --statistic rms \
+  --statistic mean \
   --scale_total_budget 1 \
   --popsize 9 \
   --num_cpu_cores 32 \
