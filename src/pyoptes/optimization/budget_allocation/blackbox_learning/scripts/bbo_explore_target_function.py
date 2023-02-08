@@ -9,8 +9,10 @@ from pyoptes import bo_choose_sentinels
 from pyoptes import bo_rms_tia, bo_percentile_tia, bo_mean_tia
 from pyoptes import bo_plot_effect_of_different_sentinels
 
+import os
 import numpy as np
 from tqdm import tqdm
+import json
 
 
 def bbo_explore_target_function(n_runs: int = 100,
@@ -30,7 +32,7 @@ def bbo_explore_target_function(n_runs: int = 100,
                                 n_nodes: int = 120,):
 
     nodes = [n_nodes]
-    n_runs = [n_runs]#[100, 100, 10]
+    n_runs = [n_runs]
     # define function to average the results of the simulation
     if statistic_str == 'mean':
         statistic = bo_mean_tia
@@ -72,7 +74,7 @@ def bbo_explore_target_function(n_runs: int = 100,
                           static_network=None,
                           use_real_data=False)
 
-                sentinel_indices = bo_choose_sentinels([degrees, None, None], s, mode_choose_sentinels)
+                sentinel_indices = bo_choose_sentinels([degrees, capacities, None], s, mode_choose_sentinels)
 
                 # create a budget vector
                 budget = np.ones(s)*total_budget/s
@@ -99,15 +101,37 @@ def bbo_explore_target_function(n_runs: int = 100,
         index_minimum = np.argmin(list_all_m)
         minimum = [sentinels[index_minimum], list_all_m[index_minimum]]
 
-        # TODO save the raw-data of the stuff
+        # create a folder "exploration" at the path if it does not exist
+        exploration_path = path_plot + 'exploration/'
+        if not os.path.exists(exploration_path):
+            os.makedirs(exploration_path)
 
-        # TODO maybe create additional plots with capacity sentinels and other attributes
-        bo_plot_effect_of_different_sentinels(number_of_sentinels=sentinels,
-                                              m=list_all_m,
-                                              stderr=list_all_stderr,
-                                              path_experiment=path_plot,
-                                              title=f'Simulations with increasing number of sentinels. {n} nodes',
-                                              n_nodes=n,
-                                              mode_choose_sentinels=mode_choose_sentinels,
-                                              minimum=minimum,
-                                              step_size=step_size)
+        # save the data as a dictionary with json in exploration folder
+        data = {'sentinels': sentinels,
+                'mean': list_all_m,
+                'stderr': list_all_stderr,
+                'minimum': minimum,
+                'n_nodes': n_nodes,
+                'n_runs': n_runs,
+                'n_simulations': n_simulations,
+                'graph_type': graph_type,
+                'scale_total_budget': scale_total_budget,
+                'step_size': step_size,
+                'statistic': statistic_str,
+                'mode_choose_sentinels': mode_choose_sentinels}
+
+        with open(exploration_path + f'{n_nodes}_nodes'
+                                     f'_{graph_type}_graph'
+                                     f'_{mode_choose_sentinels}_mode.json', 'w') as fp:
+            json.dump(data, fp)
+
+        # # TODO maybe create additional plots with capacity sentinels and other attributes
+        # bo_plot_effect_of_different_sentinels(number_of_sentinels=sentinels,
+        #                                       m=list_all_m,
+        #                                       stderr=list_all_stderr,
+        #                                       path_experiment=path_plot,
+        #                                       title=f'Simulations with increasing number of sentinels. {n} nodes',
+        #                                       n_nodes=n,
+        #                                       mode_choose_sentinels=mode_choose_sentinels,
+        #                                       minimum=minimum,
+        #                                       step_size=step_size)

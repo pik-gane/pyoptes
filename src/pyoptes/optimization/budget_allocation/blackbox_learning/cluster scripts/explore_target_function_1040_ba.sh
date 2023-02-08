@@ -4,13 +4,13 @@
 
 #SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_explore_1
+#SBATCH --job-name=loebkens_explore_1040_ba
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_explore_1.out
+#SBATCH --output=logs/outputs_explore_1040_ba.out
 
-#SBATCH --error=logs/errors_explore_1.err
+#SBATCH --error=logs/errors_explore_1040_ba.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -28,5 +28,8 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
   --path_networks /home/loebkens/network/data \
   --n_runs 100 \
-  --n_nodes 1040
+  --n_nodes 1040 \
+  --step_size 5 \
+  --graph_type ba \
+  --mode_choose_sentinels degree
 
