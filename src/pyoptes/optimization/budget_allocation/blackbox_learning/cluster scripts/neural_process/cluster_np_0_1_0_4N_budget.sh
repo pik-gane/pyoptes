@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
 #SBATCH --job-name=loebkens_np_0_1_0_4N_budget
 
