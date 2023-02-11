@@ -220,38 +220,37 @@ def bo_plot_prior(path_experiment: str,
     plt.clf()
 
 
-def bo_plot_effect_of_different_sentinels(number_of_sentinels: list,
-                                          m: list, stderr: list,
-                                          n_nodes: int,
-                                          path_experiment: str,
-                                          minimum: list,
+def bo_plot_effect_of_different_sentinels(path_experiment: str,
                                           title: str = '',
-                                          mode_choose_sentinels: str = 'degree',
-                                          step_size: int = 5
+                                          data: list = None,
                                           ) -> None:
     """
 
-    @param step_size:
-    @param minimum:
-    @param mode_choose_sentinels:
-    @param number_of_sentinels:
-    @param m:
-    @param stderr:
-    @param n_nodes:
+    @param data:
     @param path_experiment:
     @param title:
     """
     plt.clf()
-    plt.axvspan(minimum[0]-int(step_size/2),
-                minimum[0]+int(step_size/2), alpha=0.5, color='red', label=f'minimum at {minimum[0]} sentinels')
-    plt.bar(number_of_sentinels, m)
-    plt.errorbar(number_of_sentinels, m, yerr=stderr, fmt='o', color="r")
+
+    colors = ['orange', 'blue', 'green', 'red']
+    for i, d in enumerate(data):
+        plt.axvspan(d['minimum'][0]-int(d['step_size']/2),
+                    d['minimum'][0]+int(d['step_size']/2), alpha=0.5, color=colors[i],
+                    label=f'{d["graph_type"]}-network, '
+                          f'choose sentinels by {d["mode_choose_sentinels"]}. '
+                          f'Minimum at {d["minimum"][0]} sentinels')
+        # plt.plot(d['sentinels'], d['mean'])
+        plt.errorbar(d['sentinels'], d['mean'], yerr=d['stderr'], fmt='o', color=colors[i])
+
     plt.title(title)
     plt.xlabel('Number of sentinels')
     plt.ylabel('Infected animals')
+    plt.rc('legend', fontsize=7)
     plt.legend()
 
-    plt.savefig(os.path.join(path_experiment, f'Sentinel_budgets_{n_nodes}_nodes_mode_{mode_choose_sentinels}.png'))
+    plt.savefig(os.path.join(path_experiment,
+                             f'Sentinel_budgets_{d["n_nodes"]}_nodes_mode_{d["mode_choose_sentinels"]}.png'),
+                dpi=300)
     plt.clf()
 
 
