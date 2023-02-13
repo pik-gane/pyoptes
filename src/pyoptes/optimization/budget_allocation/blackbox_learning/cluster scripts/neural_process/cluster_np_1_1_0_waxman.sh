@@ -32,7 +32,7 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --graph syn \
   --prior_mixed_strategies '' \
   --n_nodes 57590 \
-  --sentinels 57590 \
+  --sentinels 1329 \
   --statistic mean \
   --scale_total_budget 1 \
   --r_dim 50 \
