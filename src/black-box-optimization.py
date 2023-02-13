@@ -7,7 +7,7 @@ from pyoptes import bbo_optimization, bbo_postprocessing, bbo_document_experimen
 from pyoptes import bbo_combined_plots, bbo_create_individual_plots
 from pyoptes import bbo_inspect_test_strategies, bbo_inspect_prior, bbo_sanity_check
 from pyoptes import bbo_create_samples
-from pyoptes import bbo_explore_target_function, bbo_fix_budgets
+from pyoptes import bbo_explore_target_function, bbo_fix_budgets, bbo_plot_target_function
 
 
 if __name__ == '__main__':
@@ -19,7 +19,8 @@ if __name__ == '__main__':
                                  'combined_plots', 'individual_plots',
                                  'inspect_test_strategies', 'inspect_prior', 'sanity_check',
                                  'create_samples',
-                                 'explore_target_function', 'fix_budgets'],
+                                 'explore_target_function', 'fix_budgets',
+                                 'plot_target_function'],
                         default='optimization',
                         help="The mode of operation. Either 'inspect' or 'optimization'.")
 
@@ -287,6 +288,9 @@ if __name__ == '__main__':
                                     path_plot=args.path_plot,
                                     n_nodes=args.n_nodes,
                                     step_size=args.step_size,)
+
+    elif args.mode == 'plot_target_function':
+        bbo_plot_target_function(path_plot=args.path_plot,)
     else:
         raise ValueError('Mode not recognized')
 
