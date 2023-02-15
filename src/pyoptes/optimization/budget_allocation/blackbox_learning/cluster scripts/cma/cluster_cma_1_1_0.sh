@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
 #SBATCH --job-name=loebkens_cma_1_1_0
 
@@ -28,7 +28,7 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --optimizer cma \
   --name_experiment 20230213_cma_mean_nodes_57590_sentinels_1329 \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
-  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --path_networks /home/loebkens/network/data \
   --graph syn \
   --n_nodes 57590 \
   --sentinels 1329 \

@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
 #SBATCH --job-name=loebkens_cma_0_0_1
 
@@ -26,7 +26,7 @@ module load anaconda/5.0.0_py3
 source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
   --optimizer cma \
-  --name_experiment 20220109_cma_rms_nodes_1040_budget_4N \
+  --name_experiment 20220215_cma_rms_nodes_1040_budget_4N \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
   --path_networks /home/loebkens/network/data \
   --graph syn \
