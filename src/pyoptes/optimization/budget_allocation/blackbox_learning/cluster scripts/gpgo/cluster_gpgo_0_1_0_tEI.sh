@@ -4,13 +4,13 @@
 
 #SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_gpgo_0_0_0_UCB
+#SBATCH --job-name=loebkens_gpgo_0_1_0_tEI
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_gpgo_0_0_0_UCB.out
+#SBATCH --output=logs/outputs_gpgo_0_1_0_tEI.out
 
-#SBATCH --error=logs/errors_gpgo_0_0_0_UCB.err
+#SBATCH --error=logs/errors_gpgo_0_1_0_tEI.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -24,13 +24,15 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220710_gpgo_rms_nodes_1040_UCB \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
+  --optimizer gpgo \
+  --name_experiment 20230215_gpgo_mean_nodes_1040_tEI \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
-  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --path_networks /home/loebkens/network/data \
   --graph syn \
   --prior_mixed_strategies '' \
   --n_nodes 1040 \
   --sentinels 1040 \
-  --statistic rms \
+  --statistic mean \
   --scale_total_budget 1 \
-  --acquisition_function UCB
+  --acquisition_function tEI
