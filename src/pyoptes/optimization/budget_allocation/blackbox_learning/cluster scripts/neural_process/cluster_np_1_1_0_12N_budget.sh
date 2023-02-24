@@ -42,4 +42,5 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --num_context 3 \
   --batch_size 10 \
   --epochs 30 \
-  --max_iterations 30
+  --max_iterations 30 \
+  --n_runs 10

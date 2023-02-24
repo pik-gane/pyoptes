@@ -4,13 +4,13 @@
 
 #SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_cma_2_1_0_init_degree
+#SBATCH --job-name=loebkens_cma_2_1_0_init_degree_part2
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_cma_2_1_0_init_degree.out
+#SBATCH --output=logs/outputs_cma_2_1_0_init_degree_part2.out
 
-#SBATCH --error=logs/errors_cma_2_1_0_init_degree.err
+#SBATCH --error=logs/errors_cma_2_1_0_init_degree_part2.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -38,4 +38,4 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --popsize 9 \
   --cma_initial_population degree \
   --n_runs 50 \
-  --n_runs_start 0
+  --n_runs_start 50

@@ -1,16 +1,16 @@
-#!/bin/bash
+#!/bin/bashcluster_cma_2_1_0_waxmancluster_cma_2_1_0_waxman
 
 #SBATCH --constraint=broadwell
 
 #SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_cma_2_1_0_init_degree
+#SBATCH --job-name=loebkens_cma_2_1_0_waxman_part2
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_cma_2_1_0_init_degree.out
+#SBATCH --output=logs/outputs_cma_2_1_0_waxman_part2.out
 
-#SBATCH --error=logs/errors_cma_2_1_0_init_degree.err
+#SBATCH --error=logs/errors_cma_2_1_0_waxman_part2.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -26,9 +26,9 @@ module load anaconda/5.0.0_py3
 source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization\
   --optimizer cma \
-  --name_experiment 20230131_cma_mean_nodes_120_init_degree \
+  --name_experiment 20230206_cma_mean_nodes_120_waxman \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
-  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --path_networks /home/loebkens/network/data \
   --graph syn \
   --n_nodes 120 \
   --sentinels 120 \
@@ -36,6 +36,6 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --scale_total_budget 1 \
   --prior_mixed_strategies '' \
   --popsize 9 \
-  --cma_initial_population degree \
+  --graph_type waxman \
   --n_runs 50 \
-  --n_runs_start 0
+  --n_runs_start 50
