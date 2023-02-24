@@ -4,11 +4,11 @@
 
 #SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_gpgo_0_0_0_only_baseline
+#SBATCH --job-name=loebkens_gpgo_0_1_0_only_baseline
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_gpgo_0_0_0_only_baseline.out
+#SBATCH --output=logs/outputs_gpgo_0_1_0_only_baseline.out
 
 #SBATCH --error=logs/errors_gpgo_0_0_0_only_baseline.err
 
@@ -24,9 +24,11 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py gpgo 20220612_gpgo_rms_nodes_1040_only_baseline \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
+  --optimizer gpgo \
+  --name_experiment 20230215_gpgo_rms_nodes_1040_only_baseline \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
-  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --path_networks /home/loebkens/network/data \
   --graph syn \
   --prior_mixed_strategies '' \
   --prior_only_baseline True \
