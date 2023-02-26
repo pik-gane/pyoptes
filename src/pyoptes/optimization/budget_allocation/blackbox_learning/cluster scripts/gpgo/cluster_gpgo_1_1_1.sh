@@ -4,13 +4,13 @@
 
 #SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_gpgo_2_0_0
+#SBATCH --job-name=loebkens_gpgo_1_1_1
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_gpgo_2_0_0.out
+#SBATCH --output=logs/outputs_gpgo_1_1_1.out
 
-#SBATCH --error=logs/errors_gpgo_2_0_0.err
+#SBATCH --error=logs/errors_gpgo_1_1_1.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -18,20 +18,24 @@
 
 #SBATCH --ntasks=1      # tasks requested
 
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=10
 
-#SBATCH --mem=64000
+#SBATCH --mem=120000
 
 module load anaconda/5.0.0_py3
 source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
   --optimizer gpgo \
-  --name_experiment 20230226_gpgo_rms_nodes_120 \
+  --name_experiment 20230226_gpgo_mean_nodes_57590_sentinels_1329_budget_4N \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
   --path_networks /home/loebkens/network/data \
   --graph syn \
   --prior_mixed_strategies '' \
-  --n_nodes 120 \
-  --sentinels 120 \
-  --statistic rms \
-  --scale_total_budget 1 \
+  --n_nodes 57590 \
+  --sentinels 1329 \
+  --statistic mean \
+  --scale_total_budget 4 \
+  --num_cpu_cores 32 \
+  --n_runs 10 \
+  --max_iterations 10
+

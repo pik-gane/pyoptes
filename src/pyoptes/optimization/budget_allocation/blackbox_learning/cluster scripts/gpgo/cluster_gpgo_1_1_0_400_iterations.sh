@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=short
+#SBATCH --qos=medium
 
 #SBATCH --job-name=loebkens_gpgo_1_1_0_400_iterations
 
