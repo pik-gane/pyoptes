@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
 #SBATCH --job-name=loebkens_cma_2_1_1
 
@@ -35,4 +35,6 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --statistic mean \
   --scale_total_budget 4 \
   --prior_mixed_strategies '' \
-  --popsize 9
+  --popsize 9 \
+  --n_runs 50 \
+  --n_runs_start 0

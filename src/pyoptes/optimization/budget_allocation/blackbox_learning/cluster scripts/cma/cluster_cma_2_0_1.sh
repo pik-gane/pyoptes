@@ -35,4 +35,6 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --statistic rms \
   --scale_total_budget 4 \
   --prior_mixed_strategies '' \
-  --popsize 9
+  --popsize 9 \
+  --n_runs 50 \
+  --n_runs_start 0
