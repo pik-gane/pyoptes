@@ -2,15 +2,15 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_cma_0_1_0_sigma_099
+#SBATCH --job-name=loebkens_cma_2_0_1_part2
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_cma_0_1_0_sigma_099.out
+#SBATCH --output=logs/outputs_cma_2_0_1_part2.out
 
-#SBATCH --error=logs/errors_cma_0_1_0_sigma_099.err
+#SBATCH --error=logs/errors_cma_2_0_1_part2.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -26,15 +26,15 @@ module load anaconda/5.0.0_py3
 source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
   --optimizer cma \
-  --name_experiment 20230109_cma_mean_nodes_1040_sigma_099 \
+  --name_experiment 20230226_cma_nodes_120_rms_budget_4N \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
-  --path_networks /home/loebkens/network/data\
+  --path_networks /home/loebkens/network/data \
   --graph syn \
-  --n_nodes 1040 \
-  --sentinels 1040 \
-  --statistic mean \
-  --scale_total_budget 1 \
+  --n_nodes 120 \
+  --sentinels 120 \
+  --statistic rms \
+  --scale_total_budget 4 \
   --prior_mixed_strategies '' \
   --popsize 9 \
-  --scale_sigma 0.99
-
+  --n_runs 50 \
+  --n_runs_start 50
