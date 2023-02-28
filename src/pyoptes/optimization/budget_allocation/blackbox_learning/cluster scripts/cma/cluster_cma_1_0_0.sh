@@ -37,5 +37,7 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --popsize 9 \
   --num_cpu_cores 32 \
   --prior_mixed_strategies '' \
-  --n_runs 10
+  --n_runs 10 \
+  --n_runs 5 \
+  --n_runs_start 0
 
