@@ -215,6 +215,7 @@ class GPGO:
         # add new stderr to the stderr dictionary. This ensures that there is always a stderr for each measurement
         f_new = np.round(f_new, decimals=8)
         self.stderr[f_new] = stderr_f_new
+        self.current_best_budget[f_new] = param
 
         # get the current optimum of the GP
         self.tau = np.max(self.GP.y) # self.GP "saves" the y from the objective f,

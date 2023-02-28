@@ -4,13 +4,13 @@
 
 #SBATCH --qos=medium
 
-#SBATCH --job-name=loebkens_cma_1_1_0
+#SBATCH --job-name=loebkens_cma_1_1_0_part2
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_cma_1_1_0.out
+#SBATCH --output=logs/outputs_cma_1_1_0_part2.out
 
-#SBATCH --error=logs/errors_cma_1_1_0.err
+#SBATCH --error=logs/errors_cma_1_1_0_part2.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -38,4 +38,4 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --num_cpu_cores 32 \
   --prior_mixed_strategies '' \
   --n_runs 5 \
-  --n_runs_start 0
+  --n_runs_start 5
