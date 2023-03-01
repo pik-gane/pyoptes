@@ -1,4 +1,4 @@
-#!/bin/bashcluster_cma_2_1_0_waxmancluster_cma_2_1_0_waxman
+#!/bin/bash
 
 #SBATCH --constraint=broadwell
 
