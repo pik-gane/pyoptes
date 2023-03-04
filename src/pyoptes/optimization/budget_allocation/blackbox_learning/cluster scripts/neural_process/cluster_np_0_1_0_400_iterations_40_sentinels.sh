@@ -2,15 +2,15 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
-#SBATCH --job-name=loebkens_np_2_1_0_1000_iterations_12_sentinels
+#SBATCH --job-name=loebkens_np_0_1_0_400_iterations_40_sentinels
 
 #SBATCH --account=gane
 
-#SBATCH --output=logs/outputs_np_2_1_0_1000_iterations_12_sentinels.out
+#SBATCH --output=logs/outputs_np_0_1_0_400_iterations_40_sentinels.out
 
-#SBATCH --error=logs/errors_np_2_1_0_1000_iterations_12_sentinels.err
+#SBATCH --error=logs/errors_np_0_1_0_400_iterations_40_sentinels.err
 
 #SBATCH --workdir=/home/loebkens
 
@@ -24,13 +24,15 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 20220927_np_mean_nodes_120_1000_iterations_12_sentinels \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
+  --optimizer np \
+  --name_experiment 20230305_np_mean_nodes_1040_400_iterations_40_sentinels \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
-  --path_networks /p/projects/ou/labs/gane/optes/mcmc_100nets/data/ \
+  --path_networks /home/loebkens/network/data \
   --graph syn \
   --prior_mixed_strategies '' \
-  --n_nodes 120 \
-  --sentinels 12 \
+  --n_nodes 1040 \
+  --sentinels 40 \
   --statistic mean \
   --scale_total_budget 1 \
   --r_dim 50 \
@@ -40,5 +42,5 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/bb_optimization.py np 2
   --num_context 3 \
   --batch_size 10 \
   --epochs 30 \
-  --max_iterations 1000 \
-  --n_runs 100
+  --max_iterations 400 \
+  --n_runs 10
