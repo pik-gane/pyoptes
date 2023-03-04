@@ -24,7 +24,7 @@
 
 module load anaconda/5.0.0_py3
 source activate bbo
-srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py \
+srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
   --optimizer np \
   --name_experiment 20230305_np_mean_nodes_120_400_iterations_4_sentinels \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
