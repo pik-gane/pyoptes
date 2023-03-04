@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
 #SBATCH --job-name=loebkens_cma_1_2_0_part2
 
