@@ -26,7 +26,7 @@ module load anaconda/5.0.0_py3
 source activate bbo
 srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.py optimization \
   --optimizer cma \
-  --name_experiment 20230305_cma_mean_nodes_1040_1000_iterations_40_sentinels \
+  --name_experiment 20230305_cma_mean_nodes_120_1000_iterations_4_sentinels \
   --path_plot /home/loebkens/pyoptes/data/blackbox_learning/results/ \
   --path_networks /home/loebkens/network/data \
   --graph syn \
