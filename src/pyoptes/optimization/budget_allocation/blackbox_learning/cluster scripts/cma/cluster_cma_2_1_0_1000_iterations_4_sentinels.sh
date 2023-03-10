@@ -2,7 +2,7 @@
 
 #SBATCH --constraint=broadwell
 
-#SBATCH --qos=medium
+#SBATCH --qos=short
 
 #SBATCH --job-name=loebkens_cma_2_1_0_1000_iterations_4_sentinels
 
@@ -37,4 +37,6 @@ srun -n $SLURM_NTASKS python3 /home/loebkens/pyoptes/src/black-box-optimization.
   --prior_mixed_strategies '' \
   --popsize 9 \
   --max_iterations 1000 \
-  --n_runs 10
+  --n_runs 5 \
+  --n_runs_start 0
+
