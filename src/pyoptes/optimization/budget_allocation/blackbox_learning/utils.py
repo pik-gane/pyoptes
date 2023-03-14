@@ -21,6 +21,16 @@ def bo_softmax(x: np.array) -> np.array:
 def bo_compute_average_otf_and_stderr(list_otf: list,
                                       list_stderr: list,
                                       n_runs: int) -> (float, float):
+    # # if list_otf is a nested list, remove the outer list
+    # if isinstance(list_otf[0], list):
+    #     list_otf = list_otf[0]
+    # # if list_stderr is a nested list, remove the outer list
+    # if isinstance(list_stderr[0], list):
+    #     list_stderr = list_stderr[0]
+
+    # print('list_otf', np.shape(list_otf), np.shape(list_otf[0]), type(list_otf), type(list_otf[0]))
+    # print(list_otf[0])
+    # print('list_stderr', np.shape(list_stderr), type(list_stderr), type(list_stderr[0]))
     average_best_otf = np.mean(list_otf, axis=0)
     s = np.mean(list_stderr, axis=0)
     v = np.var(list_otf, axis=0)
@@ -119,22 +129,48 @@ def bo_load_raw_data(path_experiment: str) -> dict:
     @param path_experiment:
     @return:
     """
-    list_best_otf = np.load(os.path.join(path_experiment, 'list_best_otf.npy'))
-    list_best_otf_stderr = np.load(os.path.join(path_experiment, 'list_best_otf_stderr.npy'))
-    list_baseline_otf = np.load(os.path.join(path_experiment, 'list_baseline_otf.npy'))
-    list_baseline_otf_stderr = np.load(os.path.join(path_experiment, 'list_baseline_otf_stderr.npy'))
-    list_ratio_otf = np.load(os.path.join(path_experiment, 'list_ratio_otf.npy'))
-    list_best_solution_history = np.load(os.path.join(path_experiment, 'list_best_solution_history.npy'))
-    list_stderr_history = np.load(os.path.join(path_experiment, 'list_stderr_history.npy'))
-    list_time_for_optimization = np.load(os.path.join(path_experiment, 'list_time_for_optimization.npy'))
-    list_all_prior_tf = np.load(os.path.join(path_experiment, 'list_all_prior_tf.npy'))
-    list_all_prior_stderr = np.load(os.path.join(path_experiment, 'list_all_prior_stderr.npy'), )
+
+    list_best_otf = np.load(
+        os.path.join(path_experiment, 'list_best_otf.npy'),
+        allow_pickle=True)
+    list_best_otf_stderr = np.load(
+        os.path.join(path_experiment, 'list_best_otf_stderr.npy'),
+        allow_pickle=True)
+    list_baseline_otf = np.load(
+        os.path.join(path_experiment, 'list_baseline_otf.npy'),
+        allow_pickle=True)
+    list_baseline_otf_stderr = np.load(
+        os.path.join(path_experiment, 'list_baseline_otf_stderr.npy'),
+        allow_pickle=True)
+    list_ratio_otf = np.load(
+        os.path.join(path_experiment, 'list_ratio_otf.npy'),
+        allow_pickle=True)
+    list_best_solution_history = np.load(
+        os.path.join(path_experiment, 'list_best_solution_history.npy'),
+        allow_pickle=True)
+    list_stderr_history = np.load(
+        os.path.join(path_experiment, 'list_stderr_history.npy'),
+        allow_pickle=True)
+    list_time_for_optimization = np.load(
+        os.path.join(path_experiment, 'list_time_for_optimization.npy'),
+        allow_pickle=True)
+    list_all_prior_tf = np.load(
+        os.path.join(path_experiment, 'list_all_prior_tf.npy'),
+        allow_pickle=True)
+    list_all_prior_stderr = np.load(
+        os.path.join(path_experiment, 'list_all_prior_stderr.npy'),
+        allow_pickle=True)
 
     # TODO this is a temporary fix, because old experiments do not have these files
     if os.path.isfile(os.path.join(path_experiment, 'list_time_acquisition_optimization.npy')) \
             and os.path.isfile(os.path.join(path_experiment, 'list_time_update_surrogate.npy')):
-        list_time_acquisition_optimization = np.load(os.path.join(path_experiment, 'list_time_acquisition_optimization.npy'))
-        list_time_update_surrogate = np.load(os.path.join(path_experiment, 'list_time_update_surrogate.npy'))
+        list_time_acquisition_optimization = np.load(
+            os.path.join(path_experiment, 'list_time_acquisition_optimization.npy'),
+            allow_pickle=True)
+        list_time_update_surrogate = np.load(
+            os.path.join(path_experiment, 'list_time_update_surrogate.npy'),
+            allow_pickle=True
+                                             )
         return {'list_best_otf': list_best_otf, 'list_best_otf_stderr': list_best_otf_stderr,
                 'list_baseline_otf': list_baseline_otf, 'list_baseline_otf_stderr': list_baseline_otf_stderr,
                 'list_ratio_otf': list_ratio_otf,
