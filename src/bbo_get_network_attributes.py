@@ -9,6 +9,7 @@ import pandas as pd
 import networkx as nx
 import csv
 import json
+import pylab as plt
 
 
 def create_graph(n: int,
@@ -80,7 +81,6 @@ def create_graph(n: int,
     path_best_strategy = os.path.join(experiment_directory, f'individual/{n}', 'best_parameter.npy')
     best_strategy = np.load(path_best_strategy)
     # replace the values in best_strategy smaller or equal than the median by 0
-    median = np.median(best_strategy)
     best_strategy[best_strategy <= 1e-4] = 0
     # print('max,min, mean, median, sum budget share', np.max(best_strategy), np.min(best_strategy),
     #       np.mean(best_strategy), np.median(best_strategy), np.sum(best_strategy))
@@ -114,6 +114,24 @@ def create_graph(n: int,
         writer.writerows([('node_id', 'Budget_share', 'degree', 'capacity')])
         for i in range(n_nodes):
             writer.writerows([(degrees[i][0], best_strategy[i], degrees[i][1], capacities[i])])
+
+    hist(n=n,
+         path='../data/blackbox_learning/budget/',
+         best_strategy=best_strategy,
+         name_plot=f'hist_{optimizer}_{n_nodes}_nodes_network')
+
+
+def hist(n,
+         path,
+         name_plot,
+         best_strategy,):
+
+    # print(np.histogram(best_strategy, bins=10))
+
+    plt.hist(best_strategy, bins=10)
+    plt.savefig(os.path.join(path, f'{name_plot}.png'),
+                dpi=300)
+    plt.clf()
 
 
 if __name__ == '__main__':
