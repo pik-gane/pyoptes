@@ -79,9 +79,12 @@ def bbo_postprocessing(path_plot, force_postprocessing=False):
 
                 list_time_for_optimization.extend(raw_data['list_time_for_optimization'])
 
-                if optimizer == 'gpgo' or optimizer == 'np':
-                    list_time_acquisition_optimization.extend(raw_data['list_time_acquisition_optimization'])
-                    list_time_update_surrogate.extend(raw_data['list_time_update_surrogate'])
+                try:
+                    if optimizer == 'gpgo' or optimizer == 'np':
+                        list_time_acquisition_optimization.extend(raw_data['list_time_acquisition_optimization'])
+                        list_time_update_surrogate.extend(raw_data['list_time_update_surrogate'])
+                except:
+                    pass
 
             # ------------------------------------------------------------
             # postprocessing of all runs
@@ -137,20 +140,23 @@ def bbo_postprocessing(path_plot, force_postprocessing=False):
             print('--> finished postprocessing')
             print(output, '\n')
 
-            # ---- misc ----
-            if optimizer == 'gpgo' or optimizer == 'np':
-                # plot the average time the optimization of the acquisition function takes
-                # as well as the update of the surrogate function
-                time_acquisition_optimization = np.mean(list_time_acquisition_optimization, axis=0)
-                time_update_surrogate = np.mean(list_time_update_surrogate, axis=0)
+            try:
+                # ---- misc ----
+                if optimizer == 'gpgo' or optimizer == 'np':
+                    # plot the average time the optimization of the acquisition function takes
+                    # as well as the update of the surrogate function
+                    time_acquisition_optimization = np.mean(list_time_acquisition_optimization, axis=0)
+                    time_update_surrogate = np.mean(list_time_update_surrogate, axis=0)
 
-                bo_plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
-                                              path_experiment=path_experiment, optimizer=optimizer,
-                                              file_name='time_for_acquisition_optimization.png',
-                                              title='Average time for acquisition function optimization',
-                                              sum_up_time=True)
-                bo_plot_time_for_optimization(time_for_optimization=time_update_surrogate,
-                                              path_experiment=path_experiment, optimizer=optimizer,
-                                              file_name='time_for_surrogate_update.png',
-                                              title='Average time for surrogate function update',
-                                              sum_up_time=True)
+                    bo_plot_time_for_optimization(time_for_optimization=time_acquisition_optimization,
+                                                  path_experiment=path_experiment, optimizer=optimizer,
+                                                  file_name='time_for_acquisition_optimization.png',
+                                                  title='Average time for acquisition function optimization',
+                                                  sum_up_time=True)
+                    bo_plot_time_for_optimization(time_for_optimization=time_update_surrogate,
+                                                  path_experiment=path_experiment, optimizer=optimizer,
+                                                  file_name='time_for_surrogate_update.png',
+                                                  title='Average time for surrogate function update',
+                                                  sum_up_time=True)
+            except:
+                pass

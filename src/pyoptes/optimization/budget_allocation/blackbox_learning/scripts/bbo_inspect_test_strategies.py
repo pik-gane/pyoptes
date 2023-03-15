@@ -2,7 +2,7 @@
 Creates scatter plots showing the relationship between the nodes, their attributes and the allocated budget.
 '''
 
-from pyoptes import bo_create_graph, bo_scatter_plot, bo_get_node_attributes
+from pyoptes import bo_create_graph, bo_scatter_plot, bo_get_node_attributes, bo_choose_sentinels
 
 import numpy as np
 from tqdm import tqdm
@@ -25,10 +25,11 @@ def bbo_inspect_test_strategies(path_plot, path_networks):
         n_runs = hyperparameters['simulation_hyperparameters']['n_runs']
         n_nodes = hyperparameters['simulation_hyperparameters']['n_nodes']
         sentinels = hyperparameters['simulation_hyperparameters']['sentinels']
+        mode_choose_sentinels = hyperparameters['simulation_hyperparameters']['mode_choose_sentinels']
 
         experiment_directory = os.path.split(experiment_params)[0]
         experiment_name = os.path.split(experiment_directory)[1][9:]
-
+        print(experiment_name)
         all_degrees = []
         all_capacities = []
         all_budgets = []
@@ -46,6 +47,8 @@ def bbo_inspect_test_strategies(path_plot, path_networks):
 
             degrees = bo_get_node_attributes(node_attributes=[degrees, None, None],
                                              mode='degree')
+
+            indices_sentinels = bo_choose_sentinels(n_nodes=n_nodes,)
 
             bo_scatter_plot(path_experiment=os.path.join(experiment_directory, f'individual/{n}'),
                             data_x=degrees,
@@ -66,25 +69,5 @@ def bbo_inspect_test_strategies(path_plot, path_networks):
                             x_label='Node capacity',
                             y_label='Budget',
                             plot_name='Scatter-plot_node_capacity_vs_budget.png')
-
-            all_degrees.extend(degrees)
-            all_capacities.extend(capacities)
-            all_budgets.extend(best_strategy)
-
-        bo_scatter_plot(path_experiment=experiment_directory,
-                        data_x=all_degrees,
-                        data_y=all_budgets,
-                        plot_name='combined_scatter-plot_node_degree_vs_budget.png',
-                        plot_title=f'Node degree vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}',
-                        x_label='Node degree',
-                        y_label='Budget')
-
-        bo_scatter_plot(path_experiment=experiment_directory,
-                        data_x=all_capacities,
-                        data_y=all_budgets,
-                        plot_name='combined_scatter-plot_node_capacity_vs_budget.png',
-                        plot_title=f'Node capacity vs allocated budget over {n_runs} runs.\n Experiment {experiment_name}',
-                        x_label='Node capacity',
-                        y_label='Budget')
 
     # TODO how do the values in the prior look like, compared to the baseline
