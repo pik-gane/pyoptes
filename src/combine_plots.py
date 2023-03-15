@@ -5,9 +5,9 @@ import pylab as plt
 from pyoptes import bo_load_raw_data, bo_compute_average_otf_and_stderr
 
 
-def plotting(data, labels, name_plot, path):
+def plotting(data, labels, name_plot, title_plot, path):
     plt.clf()
-    colors = ['orange', 'blue', 'green', 'red']
+    colors = ['orange', 'blue', 'green', 'red', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
 
     print(f'\n{name_plot}')
 
@@ -66,22 +66,29 @@ def plotting(data, labels, name_plot, path):
 
         b = np.ones(len(optimizer_history)) * baseline_mean
         ratio_history = 100-(100*(optimizer_history / b))
-        print(list_best_otf, np.shape(list_best_otf))
-        print([np.min(g) for g in list_best_solution_history])
-        print(optimizer_history, np.shape(optimizer_history))
-        assert list_best_otf == [np.min(g) for g in list_best_solution_history]
-        print(np.mean(list_best_otf), np.mean([np.min(g) for g in list_best_solution_history]))
+        ######
+        # DEBUG
+        # print('best otf', list_best_otf, np.shape(list_best_otf))
+        # print([np.min(g) for g in list_best_solution_history])
+        # print('optimizer history', optimizer_history, np.shape(optimizer_history))
+        # assert list_best_otf == [np.min(g) for g in list_best_solution_history]
+        # print(np.mean(list_best_otf), np.mean([np.min(g) for g in list_best_solution_history]))
         # print(ratio_history)
         # print('optimizer',optimizer_history)
         # print('baseline',b)
         # print('min pos',[np.argmin(g) for g in list_best_solution_history])
         # print('min ',[np.min(g) for g in list_best_solution_history], np.mean([np.min(g) for g in list_best_solution_history]))
         # print(list_baseline_otf)
-        print('--')
+        # print('--')
+        # DEBUG
+        ######
 
-        plt.plot(range(len(optimizer_history)), ratio_history, label=labels[i], color=colors[i])
+        if title_plot == 'Comparison, 57590 nodes' and optimizer == 'gpgo':
+            ratio_history = ratio_history[0] * np.ones(51)
 
-        plt.title(f'{name_plot}') #TODO add useful information to the title
+        plt.plot(range(len(ratio_history)), ratio_history, label=labels[i], color=colors[i])
+
+        plt.title(f'{title_plot}')
         plt.xlabel('Iteration')
         plt.ylabel('r_o') #TODO more useful label
 
@@ -96,20 +103,23 @@ if __name__ == '__main__':
 
     path = '../data/blackbox_learning/results/'
 
+    # ----------------------------------------------------------------------------------------------
     # gpgo 1040 default + 4N budget. 12N budget + UCB
     # Load the data
     data = ['20230226_gpgo_mean_nodes_1040',
-            # '20230226_gpgo_mean_nodes_1040_budget_4N', # missing
-            # '20230226_gpgo_mean_nodes_1040_budget_12N', # missing
-            # '20230226_gpgo_mean_nodes_1040_UCB']
-            ]
+            '20230309_gpgo_mean_nodes_1040_budget_4N',
+            '20230309_gpgo_mean_nodes_1040_budget_12N',
+            '20230226_gpgo_mean_nodes_1040_UCB',
+            '20230307_gpgo_mean_nodes_1040_40_sentinels',]
     labels = ['default',
-              'budget 4N', 'budget 12N', 'UCB']
+              'budget 4N', 'budget 12N', 'UCB', '40 sentinels']
 
+    title_plot = 'Gaussian Process, 1040 nodes'
     name_plot = 'gpgo_1040'
 
-    plotting(data, labels, name_plot, path)
+    plotting(data, labels, name_plot, title_plot, path)
 
+    # ----------------------------------------------------------------------------------------------
     # gpgo 57590 normal + 4N. 12N budget + x
 
     data = ['20230226_gpgo_mean_nodes_57590_sentinels_1329',
@@ -118,24 +128,27 @@ if __name__ == '__main__':
 
     labels = ['default', 'budget 4N', 'budget 12N']
 
+    title_plot = 'Gaussian Process, 57590 nodes, 1329 sentinels'
     name_plot = 'gpgo_57590'
 
-    # plotting(data, labels, name_plot, path)
+    plotting(data, labels, name_plot, title_plot, path)
+    # print(dsfsadf)
 
+    # ----------------------------------------------------------------------------------------------
     # cma 1040 normal + 4N. 12N budget + x
 
     data = ['20230109_cma_mean_nodes_1040',
-            # '20230226_cma_mean_nodes_1040_budget_4N',
-            # '20230226_cma_mean_nodes_1040_budget_12N']
-            ]
+            '20230226_cma_mean_nodes_1040_budget_4N',
+            '20230226_cma_mean_nodes_1040_budget_12N']
     labels = ['default',
               'budget 4N', 'budget 12N']
 
+    title_plot = 'CMA-ES, 1040 nodes'
     name_plot = 'cma_1040'
 
-    plotting(data, labels, name_plot, path)
+    plotting(data, labels, name_plot, title_plot, path)
 
-    print(dsfsadf)
+    # ----------------------------------------------------------------------------------------------
     # cma 57590 normal + 4N. 12N budget + x
 
     data = ['20230226_cma_mean_nodes_57590_sentinels_1329',
@@ -144,10 +157,12 @@ if __name__ == '__main__':
 
     labels = ['default', 'budget 4N', 'budget 12N']
 
+    title_plot = 'CMA-ES, 57590 nodes, 1329 sentinels'
     name_plot = 'cma_57590'
 
-    plotting(data, labels, name_plot, path)
+    plotting(data, labels, name_plot, title_plot, path)
 
+    # ----------------------------------------------------------------------------------------------
     # np 1040 normal + 4N. 12N budget + x
 
     data = ['20230120_np_mean_nodes_1040',
@@ -156,10 +171,12 @@ if __name__ == '__main__':
 
     labels = ['default', 'budget 4N', 'budget 12N']
 
+    title_plot = 'Neural Process, 1040 nodes'
     name_plot = 'np_1040'
 
-    plotting(data, labels, name_plot, path)
+    plotting(data, labels, name_plot, title_plot, path)
 
+    # ----------------------------------------------------------------------------------------------
     # np 57590 normal + 4N. 12N budget + x
 
     data = ['20230301_np_mean_nodes_57590_sentinels_1329',
@@ -168,35 +185,49 @@ if __name__ == '__main__':
 
     labels = ['default', 'budget 4N', 'budget 12N']
 
+    title_plot = 'Neural Process, 57590 nodes, 1329 sentinels'
     name_plot = 'np_57590'
 
-    plotting(data, labels, name_plot, path)
+    plotting(data, labels, name_plot, title_plot, path)
 
+    # ----------------------------------------------------------------------------------------------
     # combined 1040 and 57590
 
-    data = [#'20230226_gpgo_mean_nodes_1040',
+    data = ['20230226_gpgo_mean_nodes_1040',
             '20230109_cma_mean_nodes_1040',
             '20230309_np_mean_nodes_1040_50_iterations'] #TODO add NP data
 
-    labels = [#'gpgo',
-              'cma', 'np']
+    labels = ['GP', 'CMA-ES', 'NP']
 
+    title_plot = 'Comparison, 1040 nodes'
     name_plot = 'combined_1040'
 
-    plotting(data, labels, name_plot, path)
+    plotting(data, labels, name_plot, title_plot, path)
 
+    # ----------------------------------------------------------------------------------------------
     data = ['20230226_gpgo_mean_nodes_57590_sentinels_1329', #TODO fix length of gpgo, just pelicate the data
             '20230226_cma_mean_nodes_57590_sentinels_1329',
             '20230308_np_mean_nodes_57590_sentinels_1329_50_iterations']
 
-    labels = ['gpgo', 'cma', 'np']
+    labels = ['GP', 'CMA-ES', 'NP']
 
+    title_plot = 'Comparison, 57590 nodes, 1329 sentinels'
     name_plot = 'combined_57590'
 
-    plotting(data, labels, name_plot, path)
+    plotting(data, labels, name_plot, title_plot, path)
 
+    # ----------------------------------------------------------------------------------------------
 
+    data = ['20230301_cma_mean_nodes_57590_sentinels_1329_400_iterations',
+            '20230301_cma_mean_nodes_57590_sentinels_1329_750_iterations',
+            '20230301_cma_mean_nodes_57590_sentinels_1329_1000_iterations',]
 
+    labels = ['400 iterations', '750 iterations', '1000 iterations']
 
+    title_plot = 'CMA-ES, 57590 nodes. 1329 sentinels'
+
+    name_plot = 'cma_57590_it_iterations'
+
+    plotting(data, labels, name_plot, title_plot, path)
 
 
