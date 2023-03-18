@@ -1,0 +1,5 @@
+Results averaged over 85 optimizer runs
+average ratio otf to baseline: -248.33787138665653
+average baseline and stderr: 1503.9563999999998, 30.476489143908093
+average best strategy OTF and stderr: 5238.512533333333, 233.01466345753414
+Time for optimization (in hours): 26.33990316266484
