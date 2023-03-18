@@ -1,0 +1,8 @@
+number	description
+0	uniform distribution over all 120 nodes
+1	uniform distribution over 0 highest degree nodes
+2	uniform distribution over 0 highest capacity nodes
+3	uniform distribution over 0 highest degree nodes
+4	uniform distribution over 0 highest capacity nodes
+5	uniform distribution over 0 highest degree nodes
+6	uniform distribution over 0 highest capacity nodes
