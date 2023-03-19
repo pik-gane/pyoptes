@@ -93,141 +93,196 @@ def plotting(data, labels, name_plot, title_plot, path):
         plt.ylabel('r_o') #TODO more useful label
 
     plt.plot(range(len(b)), np.ones(len(b)), label='baseline', color='black')
-    plt.legend()
+    plt.legend(prop={'size': 12})
     plt.savefig(os.path.join(path, 'combined_plots', f'{name_plot}.png'),
                 dpi=300)
     plt.clf()
+
+
+def create_histogram(data, path, name=''):
+
+    plt.clf()
+
+    print('\n', data)
+
+    for i, d in enumerate(data):
+        path_experiment = os.path.join(path, d)
+
+        raw_data_path = os.path.join(path_experiment, 'raw_data/')
+
+        individual_runs = os.listdir(raw_data_path)
+
+        experiment_params = os.path.join(path_experiment, "experiment_hyperparameters.json")
+        with open(experiment_params, 'r') as f:
+            hyperparameters = json.load(f)
+
+        optimizer = hyperparameters['optimizer_hyperparameters']['optimizer']
+        network_type = hyperparameters['simulation_hyperparameters']['graph']
+        n_runs = hyperparameters['simulation_hyperparameters']['n_runs']
+        n_nodes = hyperparameters['simulation_hyperparameters']['n_nodes']
+        sentinels = hyperparameters['simulation_hyperparameters']['sentinels']
+
+        experiment_directory = os.path.split(experiment_params)[0]
+        path_best_strategy = os.path.join(experiment_directory, 'individual/0', 'best_parameter.npy')
+        best_strategy = np.load(path_best_strategy)
+        # replace the values in best_strategy smaller or equal than the median by 0
+        best_strategy[best_strategy <= 1e-4] = 0
+
+        histogram = np.histogram(best_strategy, bins=10)
+        print(histogram)
+        plt.stairs(values=histogram[0],  # counts
+                   edges=histogram[1],  # bins
+                   fill=True)
+        plt.ylabel('Count')
+        plt.xlabel('Budget share')
+        plt.savefig(os.path.join(os.path.split(os.path.dirname(path))[0], 'budget',
+                                 f'hist_{optimizer}_{n_nodes}_nodes_{name}network.png'),
+                    dpi=300)
+        plt.clf()
 
 
 if __name__ == '__main__':
 
     path = '../data/blackbox_learning/results/'
 
-    # ----------------------------------------------------------------------------------------------
-    # gpgo 1040 default + 4N budget. 12N budget + UCB
-    # Load the data
-    data = ['20230226_gpgo_mean_nodes_1040',
-            '20230309_gpgo_mean_nodes_1040_budget_4N',
-            '20230309_gpgo_mean_nodes_1040_budget_12N',
-            '20230226_gpgo_mean_nodes_1040_UCB',
-            '20230307_gpgo_mean_nodes_1040_40_sentinels',]
-    labels = ['default',
-              'budget 4N', 'budget 12N', 'UCB', '40 sentinels']
+    if False:
+        # ----------------------------------------------------------------------------------------------
+        # gpgo 1040 default + 4N budget. 12N budget + UCB
+        # Load the data
+        data = ['20230226_gpgo_mean_nodes_1040',
+                '20230309_gpgo_mean_nodes_1040_budget_4N',
+                '20230309_gpgo_mean_nodes_1040_budget_12N',
+                '20230226_gpgo_mean_nodes_1040_UCB',
+                '20230307_gpgo_mean_nodes_1040_40_sentinels',]
+        labels = ['default',
+                  'budget 4N', 'budget 12N', 'UCB', '40 sentinels']
 
-    title_plot = 'Gaussian Process, 1040 nodes'
-    name_plot = 'gpgo_1040'
+        title_plot = 'Gaussian Process, 1040 nodes'
+        name_plot = 'gpgo_1040'
 
-    plotting(data, labels, name_plot, title_plot, path)
+        plotting(data, labels, name_plot, title_plot, path)
 
-    # ----------------------------------------------------------------------------------------------
-    # gpgo 57590 normal + 4N. 12N budget + x
+        # ----------------------------------------------------------------------------------------------
+        # gpgo 57590 normal + 4N. 12N budget + x
 
-    data = ['20230226_gpgo_mean_nodes_57590_sentinels_1329',
-            '20230226_gpgo_mean_nodes_57590_sentinels_1329_budget_4N',
-            '20230226_gpgo_mean_nodes_57590_sentinels_1329_budget_12N',]
+        data = ['20230226_gpgo_mean_nodes_57590_sentinels_1329',
+                '20230226_gpgo_mean_nodes_57590_sentinels_1329_budget_4N',
+                '20230226_gpgo_mean_nodes_57590_sentinels_1329_budget_12N',]
 
-    labels = ['default', 'budget 4N', 'budget 12N']
+        labels = ['default', 'budget 4N', 'budget 12N']
 
-    title_plot = 'Gaussian Process, 57590 nodes, 1329 sentinels'
-    name_plot = 'gpgo_57590'
+        title_plot = 'Gaussian Process, 57590 nodes, 1329 sentinels'
+        name_plot = 'gpgo_57590'
 
-    plotting(data, labels, name_plot, title_plot, path)
-    # print(dsfsadf)
+        plotting(data, labels, name_plot, title_plot, path)
+        # print(dsfsadf)
 
-    # ----------------------------------------------------------------------------------------------
-    # cma 1040 normal + 4N. 12N budget + x
+        # ----------------------------------------------------------------------------------------------
+        # cma 1040 normal + 4N. 12N budget + x
 
-    data = ['20230109_cma_mean_nodes_1040',
-            '20230226_cma_mean_nodes_1040_budget_4N',
-            '20230226_cma_mean_nodes_1040_budget_12N']
-    labels = ['default',
-              'budget 4N', 'budget 12N']
+        data = ['20230109_cma_mean_nodes_1040',
+                '20230226_cma_mean_nodes_1040_budget_4N',
+                '20230226_cma_mean_nodes_1040_budget_12N']
+        labels = ['default',
+                  'budget 4N', 'budget 12N']
 
-    title_plot = 'CMA-ES, 1040 nodes'
-    name_plot = 'cma_1040'
+        title_plot = 'CMA-ES, 1040 nodes'
+        name_plot = 'cma_1040'
 
-    plotting(data, labels, name_plot, title_plot, path)
+        plotting(data, labels, name_plot, title_plot, path)
 
-    # ----------------------------------------------------------------------------------------------
-    # cma 57590 normal + 4N. 12N budget + x
+        # ----------------------------------------------------------------------------------------------
+        # cma 57590 normal + 4N. 12N budget + x
 
-    data = ['20230226_cma_mean_nodes_57590_sentinels_1329',
-            '20230301_cma_mean_nodes_57590_sentinels_1329_budget_4N',
-            '20230301_cma_mean_nodes_57590_sentinels_1329_budget_12N']
+        data = ['20230226_cma_mean_nodes_57590_sentinels_1329',
+                '20230301_cma_mean_nodes_57590_sentinels_1329_budget_4N',
+                '20230301_cma_mean_nodes_57590_sentinels_1329_budget_12N']
 
-    labels = ['default', 'budget 4N', 'budget 12N']
+        labels = ['default', 'budget 4N', 'budget 12N']
 
-    title_plot = 'CMA-ES, 57590 nodes, 1329 sentinels'
-    name_plot = 'cma_57590'
+        title_plot = 'CMA-ES, 57590 nodes, 1329 sentinels'
+        name_plot = 'cma_57590'
 
-    plotting(data, labels, name_plot, title_plot, path)
+        plotting(data, labels, name_plot, title_plot, path)
 
-    # ----------------------------------------------------------------------------------------------
-    # np 1040 normal + 4N. 12N budget + x
+        # ----------------------------------------------------------------------------------------------
+        # np 1040 normal + 4N. 12N budget + x
 
-    data = ['20230120_np_mean_nodes_1040',
-            '20230206_np_mean_nodes_1040_4N_budget',
-            '20230206_np_mean_nodes_1040_12N_budget']
+        data = ['20230120_np_mean_nodes_1040',
+                '20230206_np_mean_nodes_1040_4N_budget',
+                '20230206_np_mean_nodes_1040_12N_budget']
 
-    labels = ['default', 'budget 4N', 'budget 12N']
+        labels = ['default', 'budget 4N', 'budget 12N']
 
-    title_plot = 'Neural Process, 1040 nodes'
-    name_plot = 'np_1040'
+        title_plot = 'Neural Process, 1040 nodes'
+        name_plot = 'np_1040'
 
-    plotting(data, labels, name_plot, title_plot, path)
+        plotting(data, labels, name_plot, title_plot, path)
 
-    # ----------------------------------------------------------------------------------------------
-    # np 57590 normal + 4N. 12N budget + x
+        # ----------------------------------------------------------------------------------------------
+        # np 57590 normal + 4N. 12N budget + x
 
-    data = ['20230301_np_mean_nodes_57590_sentinels_1329',
-            '20230301_np_mean_nodes_57590_4N_budget',
-            '20230301_np_mean_nodes_57590_12N_budget']
+        data = ['20230301_np_mean_nodes_57590_sentinels_1329',
+                '20230301_np_mean_nodes_57590_4N_budget',
+                '20230301_np_mean_nodes_57590_12N_budget']
 
-    labels = ['default', 'budget 4N', 'budget 12N']
+        labels = ['default', 'budget 4N', 'budget 12N']
 
-    title_plot = 'Neural Process, 57590 nodes, 1329 sentinels'
-    name_plot = 'np_57590'
+        title_plot = 'Neural Process, 57590 nodes, 1329 sentinels'
+        name_plot = 'np_57590'
 
-    plotting(data, labels, name_plot, title_plot, path)
+        plotting(data, labels, name_plot, title_plot, path)
 
-    # ----------------------------------------------------------------------------------------------
-    # combined 1040 and 57590
+        # ----------------------------------------------------------------------------------------------
+        # combined 1040 and 57590
 
-    data = ['20230226_gpgo_mean_nodes_1040',
-            '20230109_cma_mean_nodes_1040',
-            '20230309_np_mean_nodes_1040_50_iterations'] #TODO add NP data
+        data = ['20230226_gpgo_mean_nodes_1040',
+                '20230109_cma_mean_nodes_1040',
+                '20230309_np_mean_nodes_1040_50_iterations']
 
-    labels = ['GP', 'CMA-ES', 'NP']
+        labels = ['GP', 'CMA-ES', 'NP']
 
-    title_plot = 'Comparison, 1040 nodes'
-    name_plot = 'combined_1040'
+        title_plot = 'Comparison, 1040 nodes'
+        name_plot = 'combined_1040'
 
-    plotting(data, labels, name_plot, title_plot, path)
+        plotting(data, labels, name_plot, title_plot, path)
 
-    # ----------------------------------------------------------------------------------------------
-    data = ['20230226_gpgo_mean_nodes_57590_sentinels_1329', #TODO fix length of gpgo, just pelicate the data
-            '20230226_cma_mean_nodes_57590_sentinels_1329',
-            '20230308_np_mean_nodes_57590_sentinels_1329_50_iterations']
+        # ----------------------------------------------------------------------------------------------
+        data = ['20230226_gpgo_mean_nodes_57590_sentinels_1329', #TODO fix length of gpgo, just pelicate the data
+                '20230226_cma_mean_nodes_57590_sentinels_1329',
+                '20230308_np_mean_nodes_57590_sentinels_1329_50_iterations']
 
-    labels = ['GP', 'CMA-ES', 'NP']
+        labels = ['GP', 'CMA-ES', 'NP']
 
-    title_plot = 'Comparison, 57590 nodes, 1329 sentinels'
-    name_plot = 'combined_57590'
+        title_plot = 'Comparison, 57590 nodes, 1329 sentinels'
+        name_plot = 'combined_57590'
 
-    plotting(data, labels, name_plot, title_plot, path)
+        plotting(data, labels, name_plot, title_plot, path)
 
-    # ----------------------------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------
 
-    data = ['20230301_cma_mean_nodes_57590_sentinels_1329_400_iterations',
-            '20230301_cma_mean_nodes_57590_sentinels_1329_750_iterations',
-            '20230301_cma_mean_nodes_57590_sentinels_1329_1000_iterations',]
+        data = ['20230301_cma_mean_nodes_57590_sentinels_1329_400_iterations',
+                '20230301_cma_mean_nodes_57590_sentinels_1329_750_iterations',
+                '20230301_cma_mean_nodes_57590_sentinels_1329_1000_iterations',]
 
-    labels = ['400 iterations', '750 iterations', '1000 iterations']
+        labels = ['400 iterations', '750 iterations', '1000 iterations']
 
-    title_plot = 'CMA-ES, 57590 nodes. 1329 sentinels'
+        title_plot = 'CMA-ES, 57590 nodes. 1329 sentinels'
 
-    name_plot = 'cma_57590_it_iterations'
+        name_plot = 'cma_57590_it_iterations'
 
-    plotting(data, labels, name_plot, title_plot, path)
+        plotting(data, labels, name_plot, title_plot, path)
 
+    path = '../data/blackbox_learning/results/'
+    if True:
+        data = ['20230109_cma_mean_nodes_120',
+                '20230120_np_mean_nodes_120',
+                '20230226_gpgo_mean_nodes_120']
 
+        create_histogram(data=data, path=path)
+
+        data = ['20230226_gpgo_mean_nodes_1040',
+                '20230109_cma_mean_nodes_1040',
+                '20230309_np_mean_nodes_1040_50_iterations']
+
+        create_histogram(data=data, path=path)

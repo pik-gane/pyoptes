@@ -115,24 +115,6 @@ def create_graph(n: int,
         for i in range(n_nodes):
             writer.writerows([(degrees[i][0], best_strategy[i], degrees[i][1], capacities[i])])
 
-    hist(n=n,
-         path='../data/blackbox_learning/budget/',
-         best_strategy=best_strategy,
-         name_plot=f'hist_{optimizer}_{n_nodes}_nodes_network')
-
-
-def hist(n,
-         path,
-         name_plot,
-         best_strategy,):
-
-    # print(np.histogram(best_strategy, bins=10))
-
-    plt.hist(best_strategy, bins=10)
-    plt.savefig(os.path.join(path, f'{name_plot}.png'),
-                dpi=300)
-    plt.clf()
-
 
 if __name__ == '__main__':
     # for all three optimizers
