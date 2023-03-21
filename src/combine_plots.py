@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     path = '../data/blackbox_learning/results/'
 
-    if False:
+    if True:
         # ----------------------------------------------------------------------------------------------
         # gpgo 1040 default + 4N budget. 12N budget + UCB
         # Load the data

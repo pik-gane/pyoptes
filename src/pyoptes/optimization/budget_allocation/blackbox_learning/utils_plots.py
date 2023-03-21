@@ -234,8 +234,9 @@ def bo_plot_effect_of_different_sentinels(path_experiment: str,
 
     colors = ['orange', 'blue', 'green', 'red']
     for i, d in enumerate(data):
-        plt.axvspan(d['minimum'][0]-int(d['step_size']/2),
-                    d['minimum'][0]+int(d['step_size']/2), alpha=0.5, color=colors[i],
+
+        plt.axvspan(d['minimum'][0]-d['step_size']/2,
+                    d['minimum'][0]+d['step_size']/2, alpha=0.5, color=colors[i],
                     label=f'{d["graph_type"]}-network, '
                           f'choose sentinels by {d["mode_choose_sentinels"]}. '
                           f'Minimum at {d["minimum"][0]} sentinels')
@@ -245,8 +246,9 @@ def bo_plot_effect_of_different_sentinels(path_experiment: str,
     plt.title(title)
     plt.xlabel('Number of sentinels')
     plt.ylabel('Infected animals')
-    plt.rc('legend', fontsize=7)
-    plt.legend()
+    # plt.rc('legend', fontsize=7)
+    plt.legend(prop={'size': 8.2})
+    # plt.legend()
 
     plt.savefig(os.path.join(path_experiment,
                              f'Sentinel_budgets_{d["n_nodes"]}_nodes_mode_{d["mode_choose_sentinels"]}.png'),
