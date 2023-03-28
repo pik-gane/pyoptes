@@ -67,7 +67,7 @@ class NP:
         # ----
 
         self.prior_x = prior_x
-        self.prior_y = -1*np.array(prior_y) # TODO why is this necessary?
+        self.prior_y = -1*np.array(prior_y)
         self.prior_stderr = prior_stderr
 
         self.x = torch.tensor(np.array(prior_x)).unsqueeze(0).float()
@@ -147,10 +147,12 @@ class NP:
             Acquisition function value for `xnew`.
 
         """
-        new_mean, new_std = self.NP_predict(xnew)
+        new_mean, new_sigma = self.NP_predict(xnew)
 
         new_mean = new_mean.detach().reshape(-1).numpy()
-        new_std = new_std.detach().reshape(-1).numpy()
+        new_sigma = new_sigma.detach().reshape(-1).numpy()
+        new_std = np.sqrt(new_sigma + 1e-6)
+
         return -self.A.eval(self.tau, new_mean, new_std)
 
     def _optimizeAcq(self, method='L-BFGS-B', n_start=100, ):
@@ -253,15 +255,11 @@ class NP:
         # train the neural process on the available data. Either the initial data or the new data
         self.NP.training = True
 
-        # TODO there possibly needs to be a -1
         # add one new budget and its corresponding function evaluation to the GP
         if new_elem_x is not None:
             # reshape data to fit the neural process
             new_elem_x = torch.tensor(new_elem_x).reshape((1, 1, self.x_dim)).float()
             new_elem_y = torch.tensor(new_elem_y).reshape((1, 1, 1)).float()
-            # TODO something is wrong with the shapes and cat here
-            # print('np shape new_elem_x: ', np.shape(new_elem_x), type(new_elem_x), new_elem_x)
-            # print('np shape new_elem_y: ', np.shape(new_elem_y), type(new_elem_y), new_elem_y)
             self.x = torch.cat((self.x, new_elem_x), 1)
             self.y = torch.cat((self.y, new_elem_y), 1)
         training_dataset = bo_TrainingDataset(self.x, self.y)
@@ -291,7 +289,6 @@ class NP:
 
         # tensor needs shape (batch_size, num_samples, function_dim), function_dim is equal to the number of sentinels
         target_budget_tensor = torch.tensor(xnew).float().unsqueeze(0).unsqueeze(0)
-        # print('shape target budget', target_budget_tensor.shape)
 
         p_y_pred = self.NP(x_target=target_budget_tensor, z_sample_predict=self.z_sample,
                            x_context=None, y_context=None)
