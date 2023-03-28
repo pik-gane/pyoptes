@@ -105,6 +105,7 @@ def create_graph(n: int,
     print('shape degrees', np.shape(degrees))
     print('shape capacities', np.shape(capacities))
     print('shape best strategy', np.shape(best_strategy))
+    print(np.histogram(best_strategy))
 
     # sort degrees ascending
     degrees = degrees[degrees[:, 0].argsort()]
@@ -125,29 +126,38 @@ if __name__ == '__main__':
     network_path = '../../networks/data/'
     base_path = '../data/blackbox_learning/results'
 
-    experiment = '20230109_cma_mean_nodes_120'
+    # experiment = '20230109_cma_mean_nodes_120'
+    # experiment_directory = os.path.join(base_path, experiment)
+    #
+    # create_graph(n=0,
+    #              n_nodes=120,
+    #              base_path=network_path,
+    #              experiment_directory=experiment_directory)
+    #
+    # # ---------------------
+    # experiment = '20230120_np_mean_nodes_120'
+    # experiment_directory = os.path.join(base_path, experiment)
+    #
+    # create_graph(n=0,
+    #              n_nodes=120,
+    #              base_path=network_path,
+    #              experiment_directory=experiment_directory)
+    #
+    # # ---------------------
+    # experiment = '20230226_gpgo_mean_nodes_120'
+    # experiment_directory = os.path.join(base_path, experiment)
+    #
+    # create_graph(n=0,
+    #              n_nodes=120,
+    #              base_path=network_path,
+    #              experiment_directory=experiment_directory)
+
+    experiment = '20230109_cma_mean_nodes_1040'
     experiment_directory = os.path.join(base_path, experiment)
 
     create_graph(n=0,
-                 n_nodes=120,
-                 base_path=network_path,
-                 experiment_directory=experiment_directory)
+                    n_nodes=1040,
+                    base_path=network_path,
+                    experiment_directory=experiment_directory)
 
-    # ---------------------
-    experiment = '20230120_np_mean_nodes_120'
-    experiment_directory = os.path.join(base_path, experiment)
-
-    create_graph(n=0,
-                 n_nodes=120,
-                 base_path=network_path,
-                 experiment_directory=experiment_directory)
-
-    # ---------------------
-    experiment = '20230226_gpgo_mean_nodes_120'
-    experiment_directory = os.path.join(base_path, experiment)
-
-    create_graph(n=0,
-                 n_nodes=120,
-                 base_path=network_path,
-                 experiment_directory=experiment_directory)
 
