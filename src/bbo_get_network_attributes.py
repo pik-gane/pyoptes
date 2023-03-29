@@ -155,8 +155,16 @@ if __name__ == '__main__':
     experiment = '20230109_cma_mean_nodes_1040'
     experiment_directory = os.path.join(base_path, experiment)
 
-    create_graph(n=0,
-                    n_nodes=1040,
+    # create_graph(n=1,
+    #                 n_nodes=1040,
+    #                 base_path=network_path,
+    #                 experiment_directory=experiment_directory)
+
+    experiment = '20230226_gpgo_rms_nodes_57590_sentinels_1329'
+    experiment_directory = os.path.join(base_path, experiment)
+
+    create_graph(n=2,
+                    n_nodes=57590,
                     base_path=network_path,
                     experiment_directory=experiment_directory)
 
