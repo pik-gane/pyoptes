@@ -143,18 +143,11 @@ if __name__ == '__main__':
     #              base_path=network_path,
     #              experiment_directory=experiment_directory)
     #
-    # # ---------------------
-    # experiment = '20230226_gpgo_mean_nodes_120'
-    # experiment_directory = os.path.join(base_path, experiment)
-    #
-    # create_graph(n=0,
-    #              n_nodes=120,
-    #              base_path=network_path,
-    #              experiment_directory=experiment_directory)
-
-    experiment = '20230109_cma_mean_nodes_1040'
+    # ---------------------
+    experiment = '20230226_gpgo_rms_nodes_120'
     experiment_directory = os.path.join(base_path, experiment)
 
+<<<<<<< Updated upstream
     # create_graph(n=1,
     #                 n_nodes=1040,
     #                 base_path=network_path,
@@ -167,5 +160,19 @@ if __name__ == '__main__':
                     n_nodes=57590,
                     base_path=network_path,
                     experiment_directory=experiment_directory)
+=======
+    create_graph(n=0,
+                 n_nodes=120,
+                 base_path=network_path,
+                 experiment_directory=experiment_directory)
+
+    # experiment = '20230109_cma_mean_nodes_1040'
+    # experiment_directory = os.path.join(base_path, experiment)
+    #
+    # create_graph(n=0,
+    #                 n_nodes=1040,
+    #                 base_path=network_path,
+    #                 experiment_directory=experiment_directory)
+>>>>>>> Stashed changes
 
 
